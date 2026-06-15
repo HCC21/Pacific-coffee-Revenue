@@ -1,1186 +1,1113 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="format-detection" content="telephone=no">
-    <title>員工排班系統</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, Helvetica, sans-serif;
-            touch-action: manipulation;
-        }
+<meta charset="UTF-8">
+<title>Revenue Data Form</title>
 
-        body {
-            padding: 8px;
-            background-color: #f5f5f5;
-            font-size: 12px;
-            position: relative; /* 为改密入口定位 */
-        }
+<style>
+/* ===========================
+   基本 Layout
+=========================== */
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
 
-        .container {
-            width: 100%;
-            max-width: 100%;
-            margin: 0 auto;
-            background: white;
-            padding: 10px;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-top: 60px; /* 给改密入口留出空间 */
-        }
+.header-left h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: bold;
+}
 
-        /* 更改密码入口样式 */
-        .user-actions {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 11px;
-            color: #666;
-        }
+.header-right {
+  display: flex;
+  gap: 20px;
+}
 
-        .user-actions a {
-            color: #3498db;
-            text-decoration: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
+.header-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
 
-        .user-actions a:hover {
-            background: #e3f2fd;
-            text-decoration: underline;
-        }
+.header-item input {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  min-width: 150px;
+}
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+.table-wrapper {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow-x: auto;
+}
 
-        .header h1 {
-            color: #2c3e50;
-            font-size: 18px;
-            font-weight: 600;
-        }
+table {
+  border-collapse: collapse;
+  width: 300%;
+  min-width: 3000px;
+}
 
-        .header .user-info {
-            color: #666;
-            font-size: 11px;
-            margin-right: 8px;
-        }
+/* ===========================
+   表格基本樣式
+=========================== */
+th, td {
+  border: 1px solid #ccc;
+  padding: 2px;
+  text-align: center;
+  background: #ffffff; /* ⭐ 防止透明穿底 */
+}
 
-        .header button {
-            padding: 6px 10px;
-            font-size: 12px;
-        }
+th {
+  background: #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+}
 
-        .controls {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+table input {
+  width: 100%;
+  border: none;
+  padding: 2px;
+  height: 22px;
+  box-sizing: border-box;
+  text-align: center;
+}
 
-        button {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            background: #3498db;
-            color: white;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background 0.2s;
-            min-height: 32px;
-            min-width: 60px;
-        }
+/* ===========================
+   左兩欄凍結 + 淺藍色底
+=========================== */
+.freeze-col-1 {
+  position: sticky;
+  left: 0;
+  background: #e8f4ff !important; /* ⭐ 淺藍色 */
+  z-index: 30 !important;
+}
 
-        button:hover {
-            background: #2980b9;
-        }
+.freeze-col-2 {
+  position: sticky;
+  left: 36px; /* ⭐ Date 欄寬度 */
+  background: #e8f4ff !important;
+  z-index: 30 !important;
+}
 
-        select, input[type="text"] {
-            padding: 6px 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 12px;
-            min-height: 32px;
-            flex: 1;
-            min-width: 80px;
-        }
+/* ===========================
+   X / Z Reading 顏色
+=========================== */
+.x-header {
+  background: #ffe08a !important;
+}
 
-        .controls label {
-            white-space: nowrap;
-            font-size: 12px;
-        }
+.z-header {
+  background: #d8f5d0 !important;
+}
 
-        /* 重构面板布局：横向排列 */
-        .panels {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-            flex-direction: row;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
+/* ===========================
+   自動計算欄位
+=========================== */
+.auto-calc {
+  background: #f2f2f2 !important;
+}
 
-        .panel {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #eee;
-            flex: 1;
-            min-width: 280px;
-        }
+/* ===========================
+   日期 / 星期
+=========================== */
+.date-cell {
+  font-weight: bold;
+  background: #fafafa;
+}
 
-        /* 劳工目标面板自适应宽度 */
-        .labour-target-panel {
-            min-width: 180px;
-            flex: none;
-            width: auto;
-        }
+.weekday-cell {
+  font-weight: bold;
+  color: #444;
+}
 
-        .panel h3 {
-            margin-bottom: 6px;
-            color: #34495e;
-            font-size: 14px;
-        }
+.red-day {
+  color: red;
+  font-weight: bold;
+}
 
-        .editor {
-            width: 100%;
-            min-height: 120px;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            font-family: monospace;
-            white-space: pre-wrap;
-            margin-bottom: 6px;
-            font-size: 12px;
-            line-height: 1.4;
-        }
+/* ===========================
+   textarea 自動增高
+=========================== */
+.auto-textarea {
+  width: 100%;
+  min-height: 22px;
+  max-height: 60px;
+  resize: none;
+  overflow: hidden;
+  border: none;
+  padding: 2px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
+}
 
-        /* 劳工目标编辑器缩小高度 */
-        .labour-target-editor {
-            min-height: 80px;
-            max-height: 120px;
-        }
 
-        .help-text {
-            font-size: 10px;
-            color: #666;
-            margin-bottom: 6px;
-            line-height: 1.3;
-        }
+</style>
 
-        .roster-table-wrap {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin-bottom: 10px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 600px;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 4px 2px;
-            text-align: center;
-            min-width: 60px;
-            font-size: 11px;
-        }
-
-        th {
-            background-color: #3498db;
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            font-weight: normal;
-        }
-
-        .name {
-            min-width: 80px;
-            position: sticky;
-            left: 0;
-            z-index: 11;
-            background-color: #3498db;
-            color: white;
-        }
-
-        .staff {
-            min-width: 70px;
-            position: sticky;
-            left: 80px;
-            z-index: 11;
-            background-color: #3498db;
-            color: white;
-        }
-
-        .signature-col {
-            min-width: 120px;
-        }
-
-        .day {
-            vertical-align: top;
-            padding: 2px 0;
-        }
-
-        .cell-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            height: 120px;
-        }
-
-        .shift, .hours, .remark {
-            width: 100%;
-            padding: 2px;
-            border: 1px solid #eee;
-            border-radius: 2px;
-            min-height: 20px;
-            text-align: center;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .shift {
-            background: #e3f2fd;
-            flex: 1;
-        }
-
-        .hours {
-            background: #f1f8e9;
-            flex: 1;
-        }
-
-        .remark {
-            background: #fff8e1;
-            flex: 1;
-            font-size: 10px;
-        }
-
-        .total {
-            background: #ffebee;
-            font-weight: bold;
-            min-width: 60px;
-        }
-
-        .daily-total-label {
-            background: #3498db;
-            color: white;
-            font-weight: bold;
-            position: sticky;
-            left: 150px;
-            z-index: 11;
-            min-width: 80px;
-        }
-
-        .dayTotal {
-            background: #ffecb3;
-            font-weight: bold;
-        }
-
-        .signature-cell {
-            padding: 3px;
-            min-width: 120px;
-        }
-
-        .signature-pad {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: white;
-            cursor: crosshair;
-            width: 100%;
-            height: 80px;
-        }
-
-        .clear-signature {
-            margin-top: 3px;
-            padding: 4px 8px;
-            font-size: 10px;
-            background: #e74c3c;
-            width: 100%;
-        }
-
-        .clear-signature:hover {
-            background: #c0392b;
-        }
-
-        /* 核心优化：打印时全月更表完整显示 + 全网页内容保留 */
-        @media print {
-            /* 设为横向打印，适配宽表，可手动切回纵向 */
-            @page {
-                size: landscape;
-                margin: 10mm;
-            }
-            body {
-                padding: 0;
-                background: white;
-                font-size: 10px;
-            }
-            .container {
-                box-shadow: none;
-                padding: 0;
-                width: 100%;
-                margin-top: 0;
-            }
-            /* 隐藏改密入口 */
-            .user-actions {
-                display: none;
-            }
-            /* 表格取消最大宽度，100%自适应打印页面，全月列完整显示 */
-            table {
-                display: table;
-                width: 100% !important;
-                min-width: 100% !important;
-                border-collapse: collapse !important;
-            }
-            /* 单元格自适应收缩，保证31天全部显示，不截断 */
-            th, td {
-                padding: 2px 1px !important;
-                font-size: 9px !important;
-                min-width: 40px !important;
-                white-space: nowrap;
-            }
-            /* 取消粘性定位，避免打印错位 */
-            th, .name, .staff, .daily-total-label {
-                position: relative !important;
-                left: 0 !important;
-                top: 0 !important;
-                z-index: 1 !important;
-            }
-            /* 签名栏、总工时列适配收缩，不影响主表 */
-            .signature-col, .signature-cell {
-                min-width: 80px !important;
-            }
-            .total, .daily-total-label {
-                min-width: 50px !important;
-            }
-            /* 按钮/编辑器保留样式，不影响打印 */
-            button {
-                border: 1px solid #999;
-                background: white;
-                color: black;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                font-size: 10px;
-            }
-            .editor {
-                background: white;
-                border: 1px solid #ddd;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                font-size: 10px;
-            }
-            /* 面板、控制区正常显示，内容不折叠 */
-            .panels, .controls, .header {
-                display: block !important;
-                width: 100%;
-                margin-bottom: 8px;
-            }
-            /* 取消滚动容器，表格直接平铺 */
-            .roster-table-wrap {
-                overflow: visible !important;
-                width: 100% !important;
-            }
-            /* 保留单元格背景色，更表样式清晰 */
-            .shift, .hours, .remark, .total, .dayTotal {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-        }
-
-        /* 响应式适配：小屏幕下面板恢复纵向排列 */
-        @media (max-width: 768px) {
-            .panels {
-                flex-direction: column;
-            }
-            .panel {
-                min-width: 100%;
-            }
-            .labour-target-panel {
-                min-width: 100%;
-            }
-            /* 小屏幕改密入口换行 */
-            .user-actions {
-                flex-wrap: wrap;
-                top: 5px;
-                right: 5px;
-                gap: 5px;
-            }
-        }
-    </style>
-
-    <!-- 唯一的 Supabase 依赖引入 + 全局初始化 -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // 全局唯一的 Supabase 客户端初始化
-        (function() {
-            const SUPABASE_URL = "https://dqfpxfqfhduzrobupenq.supabase.co";
-            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxZnB4ZnFmaGR1enJvYnVwZW5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTU2MTAsImV4cCI6MjA4NzkzMTYxMH0.Crs6dYz0ddR7YgPCejEHNCCi0apniaeD_AThxFZ259c";
-            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log("Supabase 初始化完成：", window.supabase);
-        })();
-    </script>
 </head>
 <body>
-    <!-- 更改密码/登出入口 -->
-    <div class="user-actions" id="userActions">
-        <span id="actionUserInfo">登錄者：未登錄</span>
-        <a href="change-password.html" id="changePwdLink">更改密碼</a>
-        <a href="javascript:void(0);" id="logoutLink">退出</a>
+
+<!-- ================= HEADER ================= -->
+<div class="header-bar">
+  <div class="header-left">
+    <h1>Revenue Data Form</h1>
+  </div>
+
+  <div class="header-right">
+    <div class="header-item">
+      <label>Coffee House :</label>
+      <input type="text" id="coffee_house" placeholder="例如：HCC" />
     </div>
 
-    <div class="container">
-        <!-- 页头：登录者信息（保留原样式） -->
-        <div class="header">
-            <h1 id="titleRoster">員工排班系統</h1>
-            <div style="display: flex; align-items: center;">
-                <div class="user-info" id="userInfo">登錄者：ID/姓名</div>
-                <button id="langToggle">EN / 中文</button>
-                <!-- 原退出按钮保留，也可删除，统一用右上角入口 -->
-                <button id="logoutBtn">退出</button>
-            </div>
-        </div>
-
-        <!-- 控制区：增加年份选择 -->
-        <div class="controls">
-            <label id="labelCoffee">咖啡室：</label>
-            <input type="text" class="coffee-name" id="coffeeNameInput" placeholder="Coffee House Name" value="HCC">
-            <label id="labelYear">年份：</label>
-            <select id="yearSelect"></select>
-            <label id="labelMonth">月份：</label>
-            <select id="monthSelect"></select>
-            <button id="addRowBtn">＋ 新增員工</button>
-            <button id="exportExcelBtn">⬇ 匯出</button>
-            <button id="printBtn">🖨 列印</button>
-            <button id="saveBtn">💾 保存</button>
-        </div>
-
-        <!-- 面板区：重构为横向排列，劳工目标移到右侧 -->
-        <div class="panels">
-            <div class="panel">
-                <h3 id="shiftPanelTitle">更期代號（可即時修改）</h3>
-                <div class="help-text" id="shiftHelp">
-                    <strong>使用方法：</strong><br>
-                    1）在每日「更期」位置輸入代號（例如：A / B / C）<br>
-                    2）系統會自動填入對應時間<br>
-                    3）修改上方列表，所有班次實時同步
-                </div>
-                <div id="shiftCodeEditor" class="editor" contenteditable="true">
-A = 08:30-18:30
-B = 12:30-22:30
-C = 13:30-22:30
-D = 08:00-18:00
-E = 08:30-22:30
-F = 11:00-21:00
-G = 11:00-18:30
-H = 09:00-18:00
-I = 10:00-19:00
-J = 14:00-23:00
-                </div>
-            </div>
-            <div class="panel labour-target-panel">
-                <h3><strong id="labourTargetTitle">勞工目標</strong></h3>
-                <div class="editor labour-target-editor" contenteditable="true">
-WD = 4
-SAT = 3
-SUN = 3
-PH = 5
-                </div>
-            </div>
-        </div>
-
-        <!-- 排班表格（移动端横向滑动容器） -->
-        <div class="roster-table-wrap">
-            <table id="rosterTable">
-                <thead>
-                    <tr id="weekdayRow">
-                        <th id="thName" class="name">姓名</th>
-                        <th id="thStaff" class="staff">員工編號</th>
-                    </tr>
-                    <tr id="dateRow">
-                        <th class="name"></th>
-                        <th class="staff"></th>
-                    </tr>
-                </thead>
-                <tbody id="rosterBody">
-                    <!-- 员工数据动态生成 -->
-                </tbody>
-                <tfoot>
-                    <tr id="dailyTotalRow">
-                        <td id="dailyTotalLabel" colspan="2" class="daily-total-label">每日總工時</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+    <div class="header-item">
+      <label>Month :</label>
+      <input type="month" id="month_select" value="2026-06" />
     </div>
 
-    <!-- 排班系统核心逻辑 -->
-    <script>
-        /* ============================
-           语言数据库
-        ============================ */
-        let currentLang = "zh";
-        const LANG = {
-            en: {
-                rosterTitle: "ROSTER",
-                shiftPanelTitle: "Shift Codes (editable)",
-                shiftHelp: `<strong>How to use:</strong><br>1) Type shift code (A/B/C…) in shift cell.<br>2) System auto-fills time.<br>3) Edit the list above, all shifts sync in real time.`,
-                coffee: "COFFEE HOUSE：",
-                year: "YEAR：",
-                month: "MONTH：",
-                thName: "Name",
-                thStaff: "Staff No.",
-                addStaff: "＋ Add Staff",
-                exportExcel: "⬇ Export",
-                printPDF: "🖨 Print",
-                dailyTotal: "Daily Total Hrs",
-                weekdays: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
-                months: ["January","February","March","April","May","June","July","August","September","October","November","December"],
-                total: "Total",
-                signature: "Signature",
-                clear: "Clear",
-                labourTarget: "Labour Target",
-                save: "Save",
-                userInfo: "User：",
-                changePwd: "Change Password",
-                logout: "Logout"
-            },
-            zh: {
-                rosterTitle: "員工排班系統",
-                shiftPanelTitle: "更期代號（可即時修改）",
-                shiftHelp: `<strong>使用方法：</strong><br>1）在每日「更期」位置輸入代號（例如：A / B / C）<br>2）系統會自動填入對應時間<br>3）修改上方列表，所有班次實時同步`,
-                coffee: "咖啡室：",
-                year: "年份：",
-                month: "月份：",
-                thName: "姓名",
-                thStaff: "員工編號",
-                addStaff: "＋ 新增員工",
-                exportExcel: "⬇ 匯出",
-                printPDF: "🖨 列印",
-                dailyTotal: "每日總工時",
-                weekdays: ["日","一","二","三","四","五","六"],
-                months: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"],
-                total: "總工時",
-                signature: "簽名",
-                clear: "清除",
-                labourTarget: "勞工目標",
-                save: "保存",
-                userInfo: "登錄者：",
-                changePwd: "更改密碼",
-                logout: "退出"
-            }
-        };
+    <div class="header-item">
+      <label>Area Manager :</label>
+      <input type="text" id="area_manager" placeholder="Manager Name" />
+    </div>
 
-        /* ============================
-           全局变量：年份相关
-        ============================ */
-        let currentYear = new Date().getFullYear(); // 当前年份
+    <div class="header-item">
+      <label>Sales Target :</label>
+      <input type="number" id="sales_target" placeholder="$" />
+    </div>
 
-        /* ============================
-           页面初始化：检查登录状态
-        ============================ */
-        document.addEventListener("DOMContentLoaded", () => {
-            // 检查是否登录
-            const currentUser = localStorage.getItem("currentUser");
-            if (!currentUser) {
-                alert("請先登入系統！");
-                window.location.href = "login.html";
-                return;
-            }
+    <div class="header-item">
+      <label>Net Sales :</label>
+      <input type="number" id="net_sales" placeholder="$" />
+    </div>
+  </div>
+</div>
+<div class="table-wrapper">
+  <table id="month_table">
+    <thead>
+      <tr>
+        <!-- ⭐ 左兩欄凍結 -->
+        <th rowspan="2" class="freeze-col-1">Date</th>
+        <th rowspan="2" class="freeze-col-2">Wk</th>
 
-            // 初始化改密/登出入口显示
-            updateUserActionDisplay();
+        <!-- X-Reading group -->
+        <th colspan="5" class="x-header">X‑Reading</th>
 
-            // 初始化其他功能
-            if (typeof window.supabase !== 'object' || typeof window.supabase.from !== 'function') {
-                alert("系統初始化失敗，請刷新頁面");
-                return;
-            }
-            
-            // 初始化年份选择框
-            initYearSelect();
-            
-            loadShiftCodes(); // 页面加载时立即加载更期代号
-            const monthSelect = document.getElementById("monthSelect");
-            LANG.zh.months.forEach(m => {
-                const opt = document.createElement("option");
-                opt.textContent = m;
-                monthSelect.appendChild(opt);
-            });
-            monthSelect.value = LANG.zh.months[new Date().getMonth()];
-            
-            // 更新登录者信息显示
-            updateUserInfoDisplay();
-            
-            applyLanguage();
-            loadRoster();
+        <!-- Z-Reading group -->
+        <th colspan="8" class="z-header">Z‑Reading</th>
 
-            // 绑定登出事件
-            document.getElementById("logoutLink").addEventListener("click", logout);
-            document.getElementById("logoutBtn").addEventListener("click", logout);
-        });
+        <th rowspan="2">MH</th>
+        <th rowspan="2">MH AL/YOL</th>
+        <th rowspan="2">SPMH</th>
+        <th rowspan="2">Loyalty Sales($)</th>
+        <th rowspan="2">Loyalty Sales %</th>
 
-        /* ============================
-           登出功能
-        ============================ */
-        function logout() {
-            if (confirm("確定要退出系統嗎？")) {
-                localStorage.removeItem("currentUser");
-                window.location.href = "login.html";
-            }
-        }
+        <!-- ⭐ 8 個主標題（每個跨兩欄） -->
+        <th colspan="2">Merchandise</th>
+        <th colspan="2">Coffee Bean</th>
+        <th colspan="2">Delivery</th>
+        <th colspan="2">ODO</th>
+        <th colspan="2">Keeta</th>
+        <th colspan="2">Foodpanda</th>
+        <th colspan="2">Breakfast</th>
+        <th colspan="2">Tea Set</th>
 
-        /* ============================
-           更新改密入口显示
-        ============================ */
-        function updateUserActionDisplay() {
-            const currentUser = localStorage.getItem("currentUser") || "未登錄";
-            const L = LANG[currentLang];
-            
-            // 更新入口处的用户信息
-            document.getElementById("actionUserInfo").textContent = `${L.userInfo}${currentUser}`;
-            // 更新改密链接文字
-            document.getElementById("changePwdLink").textContent = L.changePwd;
-            // 更新登出链接文字
-            document.getElementById("logoutLink").textContent = L.logout;
-        }
+        <!-- ⭐ Qty only 欄位（可改名） -->
+        <th rowspan="2">
+          <input id="promo1_name" value="Nutribite" 
+            style="width:90px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
 
-        /* ============================
-           语言切换
-        ============================ */
-        function applyLanguage() {
-            const L = LANG[currentLang];
-            document.getElementById("titleRoster").innerHTML = L.rosterTitle;
-            document.getElementById("shiftPanelTitle").innerHTML = L.shiftPanelTitle;
-            document.getElementById("shiftHelp").innerHTML = L.shiftHelp;
-            document.getElementById("labelCoffee").innerHTML = L.coffee;
-            document.getElementById("labelYear").innerHTML = L.year;
-            document.getElementById("labelMonth").innerHTML = L.month;
-            document.getElementById("thName").innerHTML = L.thName;
-            document.getElementById("thStaff").innerHTML = L.thStaff;
-            document.getElementById("dailyTotalLabel").innerHTML = L.dailyTotal;
-            document.getElementById("addRowBtn").innerHTML = L.addStaff;
-            document.getElementById("exportExcelBtn").innerHTML = L.exportExcel;
-            document.getElementById("printBtn").innerHTML = L.printPDF;
-            document.getElementById("saveBtn").innerHTML = `💾 ${L.save}`;
-            document.getElementById("labourTargetTitle").innerHTML = L.labourTarget;
-            document.querySelectorAll(".signature-col").forEach(el => el.innerHTML = L.signature);
-            document.querySelectorAll(".clear-signature").forEach(btn => btn.innerHTML = L.clear);
-            
-            // 更新登录者信息文本
-            updateUserInfoDisplay();
-            // 更新改密入口文本
-            updateUserActionDisplay();
-            
-            // 更新月份下拉框
-            const monthSelect = document.getElementById("monthSelect");
-            let monthIndex = LANG.en.months.indexOf(monthSelect.value);
-            if (monthIndex === -1) monthIndex = LANG.zh.months.indexOf(monthSelect.value);
-            monthSelect.innerHTML = "";
-            LANG[currentLang].months.forEach((m, i) => {
-                const opt = document.createElement("option");
-                opt.textContent = m;
-                if (i === monthIndex) opt.selected = true;
-                monthSelect.appendChild(opt);
-            });
-            
-            buildCalendar();
-        }
+        <th rowspan="2">
+          <input id="promo2_name" value="Nutribite $38" 
+            style="width:110px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
 
-        /* ============================
-           更新登录者信息显示
-        ============================ */
-        function updateUserInfoDisplay() {
-            const L = LANG[currentLang];
-            const userId = localStorage.getItem("currentUser") || "未登錄";
-            // 这里可以扩展为从用户信息中获取姓名，暂时用ID代替
-            const userName = userId; 
-            document.getElementById("userInfo").textContent = `${L.userInfo}${userId} / ${userName}`;
-        }
+        <th rowspan="2">
+          <input id="promo3_name" value="Promotion 1" 
+            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
 
-        /* ============================
-           初始化年份选择框
-        ============================ */
-        function initYearSelect() {
-            const yearSelect = document.getElementById("yearSelect");
-            const startYear = 2024;
-            const endYear = 2030;
-            
-            // 清空并添加年份选项
-            yearSelect.innerHTML = "";
-            for (let year = startYear; year <= endYear; year++) {
-                const opt = document.createElement("option");
-                opt.value = year;
-                opt.textContent = year;
-                if (year === currentYear) opt.selected = true;
-                yearSelect.appendChild(opt);
-            }
-            
-            // 年份变更事件
-            yearSelect.addEventListener("change", () => {
-                currentYear = parseInt(yearSelect.value);
-                buildCalendar();
-                loadRoster(); // 重新加载对应年份月份的数据
-            });
-        }
+        <th rowspan="2">
+          <input id="promo4_name" value="Promotion 2" 
+            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
 
-        document.getElementById("langToggle").addEventListener("click", () => {
-            currentLang = currentLang === "en" ? "zh" : "en";
-            applyLanguage();
-        });
+        <th rowspan="2">
+          <input id="promo5_name" value="Promotion 3" 
+            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
 
-        /* ============================
-           假期/更期代号配置
-        ============================ */
-        const HOLIDAY_CODES = new Set([...Array.from({length:15}, (_,i)=>`SH${i+1}`),...Array.from({length:15}, (_,i)=>`AL${i+1}`),"SL","NPL","ML","PL","MAR","COM","EC","OFF","TY","RC"]);
-        let SHIFT_MAP = {};
-        function loadShiftCodes() {
-            const raw = document.getElementById("shiftCodeEditor").textContent.replace(/\u00A0/g, " ").replace(/\r/g, "").trim();
-            const lines = raw.split("\n").map(l => l.trim()).filter(l => l.includes("="));
-            SHIFT_MAP = {};
-            lines.forEach(line => {
-                const [code, time] = line.split("=").map(s => s.trim());
-                if (code && time) SHIFT_MAP[code.toUpperCase()] = time;
-            });
-            console.log("更期代号加载完成：", SHIFT_MAP); // 调试用
-        }
+        <th rowspan="2">
+          <input id="promo6_name" value="Promotion 4" 
+            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
 
-        /* ============================
-           防抖函数
-        ============================ */
-        function debounce(fn, delay = 300) {
-            let timer;
-            return (...args) => {
-                clearTimeout(timer);
-                timer = setTimeout(() => fn.apply(this, args), delay);
-            };
-        }
-        const debouncedSave = debounce(saveRoster);
+        <th rowspan="2">Other</th>
+        <th rowspan="2">Remarks</th>
+      </tr>
 
-        /* ============================
-           自动填充工时（修复增强版）
-        ============================ */
-        function autoFillShift(cell) {
-            // 严格清理输入内容：去空格 + 转大写
-            const code = cell.textContent.trim().toUpperCase();
-            const hoursCell = cell.parentElement.querySelector(".hours");
-            
-            // 1. 假期代码直接填0
-            if (HOLIDAY_CODES.has(code)) {
-                cell.textContent = code; // 统一格式
-                hoursCell.textContent = "0";
-                return;
-            }
-            
-            // 2. 匹配更期代号对应的工时
-            const shiftTime = SHIFT_MAP[code];
-            if (shiftTime) {
-                const hours = parseHours(shiftTime);
-                hoursCell.textContent = hours.toFixed(1);
-                console.log(`代号${code}匹配工时：${shiftTime} → ${hours.toFixed(1)}小时`); // 调试用
-            } else {
-                // 3. 无匹配时尝试解析手动输入的时间（兼容直接输时间的场景）
-                const hours = parseHours(code);
-                hoursCell.textContent = hours.toFixed(1);
-            }
-        }
+      <tr>
+        <!-- X‑Reading -->
+        <th class="x-header">NetSales ($)</th>
+        <th class="x-header">R($)</th>
+        <th class="x-header">Food Sales($)</th>
+        <th class="x-header">Trans action (Qty)</th>
+        <th class="x-header">Avg Check($)</th>
 
-        /* ============================
-           工时计算核心函数
-        ============================ */
-        function parseHours(str) {
-            if (!str) return 0;
-            const upper = str.toUpperCase();
-            if (HOLIDAY_CODES.has(upper)) return 0;
-            const m = str.match(/(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/);
-            if (!m) return 0;
-            const s = parseInt(m[1]) * 60 + parseInt(m[2]);
-            const e = parseInt(m[3]) * 60 + parseInt(m[4]);
-            const hours = e > s ? (e - s) / 60 : 0;
-            return hours;
-        }
+        <!-- Z‑Reading -->
+        <th class="z-header">DailySales Target</th>
+        <th class="z-header">Net Sales($)</th>
+        <th class="z-header">Target Achieved(%)</th>
+        <th class="z-header">Trans action (Qty)</th>
+        <th class="z-header">Avg Check($)</th>
+        <th class="z-header">R($)</th>
+        <th class="z-header">Food Sales($)</th>
+        <th class="z-header">Food Sales(%)</th>
 
-        function calcRow(row) {
-            let total = 0;
-            const days = row.querySelectorAll(".day");
-            days.forEach(day => {
-                const hoursCell = day.querySelector(".hours");
-                let h = parseFloat(hoursCell.textContent) || 0;
-                total += h;
-            });
-            row.querySelector(".total").textContent = total.toFixed(1);
-            calcDailyTotals();
-        }
+        <!-- ⭐ 8 個主標題的子欄位 -->
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+      </tr>
+    </thead>
 
-        function calcDailyTotals() {
-            const rows = [...document.getElementById("rosterBody").rows];
-            if (rows.length === 0) return;
-            const firstRowDays = rows[0].querySelectorAll(".day");
-            const dayTotals = Array(firstRowDays.length).fill(0);
-            rows.forEach(row => {
-                row.querySelectorAll(".day").forEach((cell, idx) => {
-                    const h = parseFloat(cell.querySelector(".hours").textContent) || 0;
-                    dayTotals[idx] += h;
-                });
-            });
-            document.querySelectorAll("#dailyTotalRow .dayTotal").forEach((val, idx) => {
-                val.textContent = dayTotals[idx].toFixed(1);
-            });
-        }
+    <tbody></tbody>
+  </table>
+</div>
+<tbody></tbody>
+</table>
+</div>
 
-        /* ============================
-           核心事件监听（增强版）
-        ============================ */
-        document.addEventListener("input", e => {
-            if (!e.target.closest("#rosterTable")) return;
-            
-            const shiftCell = e.target.closest(".shift");
-            if (shiftCell) {
-                // 立即触发自动填充（解决输入后不生效）
-                autoFillShift(shiftCell);
-                const row = shiftCell.closest("tr");
-                if (row) calcRow(row);
-            }
-            
-            // 工时单元格手动修改后重新计算行总和
-            const hoursCell = e.target.closest(".hours");
-            if (hoursCell) {
-                const row = hoursCell.closest("tr");
-                if (row) calcRow(row);
-            }
-            
-            debouncedSave();
-        });
+<script>
+// ⭐ textarea 自動增高
+document.addEventListener("input", function(e) {
+  if (e.target.classList.contains("auto-textarea")) {
+    e.target.style.height = "auto";
+    e.target.style.height = (e.target.scrollHeight) + "px";
+  }
+});
 
-        // 更期代号编辑器修改后，强制刷新所有已输入的代号（解决修改列表后不同步）
-        document.getElementById("shiftCodeEditor").addEventListener("input", () => {
-            loadShiftCodes();
-            // 遍历所有更期单元格，重新触发自动填充
-            document.querySelectorAll(".shift").forEach(shiftCell => {
-                autoFillShift(shiftCell);
-                const row = shiftCell.closest("tr");
-                if (row) calcRow(row);
-            });
-            calcDailyTotals();
-            debouncedSave();
-        });
+// ⭐ 數字 blur → 小數點後一位（Qty 除外）
+function setupNumberFormat(input, isQty = false) {
+  input.addEventListener("blur", () => {
+    if (input.value !== "") {
+      input.value = isQty
+        ? parseInt(input.value)
+        : parseFloat(input.value).toFixed(1);
+    }
+  });
+}
 
-        /* ============================
-           重建员工行
-        ============================ */
-        function rebuildRow(row, days) {
-            while (row.cells.length > 2) row.deleteCell(2);
-            for (let i = 0; i < days; i++) {
-                const td = document.createElement("td");
-                td.className = "day";
-                td.innerHTML = `<div class="cell-wrap"><div class="shift" contenteditable="true"></div><div class="hours" contenteditable="true">0</div><div class="remark" contenteditable="true"></div></div>`;
-                row.appendChild(td);
-            }
-            const total = document.createElement("td");
-            total.className = "total";
-            total.textContent = "0";
-            row.appendChild(total);
-            const sigTd = document.createElement("td");
-            sigTd.className = "signature-cell";
-            sigTd.innerHTML = `<canvas class="signature-pad" width="100" height="80"></canvas><button class="clear-signature">${LANG[currentLang].clear}</button>`;
-            row.appendChild(sigTd);
-        }
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<title>Revenue Data Form</title>
 
-        /* ============================
-           生成日历表头（适配年份选择）
-        ============================ */
-        function buildCalendar() {
-            const L = LANG[currentLang];
-            const monthSelect = document.getElementById("monthSelect");
-            let monthIndex = LANG.en.months.indexOf(monthSelect.value);
-            if (monthIndex === -1) monthIndex = LANG.zh.months.indexOf(monthSelect.value);
-            
-            // 使用当前选择的年份
-            const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
+<style>
+/* ===========================
+   基本 Layout
+=========================== */
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
 
-            const weekdayRow = document.getElementById("weekdayRow");
-            const dateRow = document.getElementById("dateRow");
-            const dailyTotalRow = document.getElementById("dailyTotalRow");
+.header-left h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: bold;
+}
 
-            weekdayRow.innerHTML = `<th id="thName" class="name">${L.thName}</th><th id="thStaff" class="staff">${L.thStaff}</th>`;
-            dateRow.innerHTML = `<th class="name"></th><th class="staff"></th>`;
-            dailyTotalRow.innerHTML = `<td id="dailyTotalLabel" colspan="2" class="daily-total-label">${L.dailyTotal}</td>`;
+.header-right {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+}
 
-            for (let d = 1; d <= daysInMonth; d++) {
-                const date = new Date(currentYear, monthIndex, d);
-                const weekday = L.weekdays[date.getDay()];
-                weekdayRow.innerHTML += `<th>${weekday}</th>`;
-                dateRow.innerHTML += `<th>${d}</th>`;
-                dailyTotalRow.innerHTML += `<td class="dayTotal">0</td>`;
-            }
-            weekdayRow.innerHTML += `<th>${L.total}</th><th class="signature-col">${L.signature}</th>`;
-            dateRow.innerHTML += `<th></th><th></th>`;
-            dailyTotalRow.innerHTML += `<td></td><td></td>`;
-        }
+.header-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
 
-        /* ============================
-           签名功能
-        ============================ */
-        function initSignaturePad(canvas) {
-            const ctx = canvas.getContext("2d");
-            let drawing = false;
-            ctx.lineWidth = 3;
-            ctx.lineCap = "round";
-            ctx.strokeStyle = "#000";
-            function getPos(e) {
-                const rect = canvas.getBoundingClientRect();
-                let x, y;
-                if (e.touches && e.touches[0]) {
-                    x = e.touches[0].clientX - rect.left;
-                    y = e.touches[0].clientY - rect.top;
-                    e.preventDefault();
-                } else {
-                    x = e.offsetX;
-                    y = e.offsetY;
-                }
-                return { x, y };
-            }
-            function start(e) { drawing = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }
-            function move(e) { if (!drawing) return; const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
-            function end(e) { drawing = false; }
-            canvas.addEventListener("mousedown", start);
-            canvas.addEventListener("mousemove", move);
-            canvas.addEventListener("mouseup", end);
-            canvas.addEventListener("mouseleave", end);
-            canvas.addEventListener("touchstart", start, { passive: false });
-            canvas.addEventListener("touchmove", move, { passive: false });
-            canvas.addEventListener("touchend", end);
-        }
-        function initAllSignatures() {
-            document.querySelectorAll(".signature-pad").forEach(canvas => {
-                if (!canvas._inited) { initSignaturePad(canvas); canvas._inited = true; }
-            });
-            document.querySelectorAll(".clear-signature").forEach(btn => {
-                if (!btn._inited) {
-                    btn.addEventListener("click", e => {
-                        const canvas = e.target.previousElementSibling;
-                        canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-                        debouncedSave();
-                    });
-                    btn._inited = true;
-                }
-            });
-        }
+.header-item input {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  min-width: 150px;
+}
 
-        /* ============================
-           Supabase 保存/加载（适配年份）
-        ============================ */
-        async function saveRoster() {
-            try {
-                const userid = localStorage.getItem("currentUser");
-                if (!userid) { alert("請先登入！"); return; }
-                const month = document.getElementById("monthSelect").value;
-                // 保存时包含年份信息
-                const dataKey = `${currentYear}_${month}`;
-                
-                const data = {
-                    shiftCodes: document.getElementById("shiftCodeEditor").textContent.trim(),
-                    labourTarget: document.querySelector(".labour-target-editor").textContent.trim(),
-                    coffee: document.getElementById("coffeeNameInput").value.trim(),
-                    rows: []
-                };
-                document.querySelectorAll("#rosterBody tr").forEach((row) => {
-                    const rowData = {
-                        name: row.querySelector(".name").textContent.trim(),
-                        staff: row.querySelector(".staff").textContent.trim(),
-                        days: [],
-                        signature: null
-                    };
-                    row.querySelectorAll(".day").forEach((dayCell, dayIndex) => {
-                        rowData.days.push({
-                            shift: dayCell.querySelector(".shift").textContent.trim(),
-                            hours: dayCell.querySelector(".hours").textContent.trim(),
-                            remark: dayCell.querySelector(".remark").textContent.trim(),
-                            dayIndex: dayIndex + 1
-                        });
-                    });
-                    const canvas = row.querySelector(".signature-pad");
-                    if (canvas) rowData.signature = canvas.toDataURL("image/png");
-                    data.rows.push(rowData);
-                });
-                
-                // 查询条件包含年份和月份
-                const { data: existingRecord, error: selectError } = await window.supabase
-                    .from("roster_records")
-                    .select("id")
-                    .eq("userid", userid)
-                    .eq("year", currentYear)
-                    .eq("month", month)
-                    .maybeSingle();
-                
-                if (selectError) throw selectError;
-                let saveResult;
-                if (existingRecord && existingRecord.id) {
-                    saveResult = await window.supabase
-                        .from("roster_records")
-                        .update({ 
-                            data: data, 
-                            updated_at: new Date().toISOString() 
-                        })
-                        .eq("id", existingRecord.id);
-                } else {
-                    saveResult = await window.supabase
-                        .from("roster_records")
-                        .insert({ 
-                            userid: userid, 
-                            year: currentYear,  // 新增年份字段
-                            month: month, 
-                            data: data, 
-                            created_at: new Date().toISOString(), 
-                            updated_at: new Date().toISOString() 
-                        });
-                }
-                if (saveResult.error) throw saveResult.error;
-                console.log(`數據保存成功！${currentYear}年${month} - 咖啡室名稱：`, data.coffee);
-            } catch (error) {
-                console.error("保存數據失敗：", error);
-                alert(`保存失敗！\n錯誤：${error.message || "未知錯誤"}\n請檢查網絡或刷新頁面`);
-            }
-        }
+#save_btn {
+  padding: 8px 14px;
+  border: none;
+  background: #0078ff;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+#save_btn:hover {
+  background: #005fcc;
+}
 
-        async function loadRoster() {
-            const userid = localStorage.getItem("currentUser");
-            if (!userid) { alert("請先登入！"); return; }
-            const month = document.getElementById("monthSelect").value;
-            const body = document.getElementById("rosterBody");
-            body.innerHTML = "";
-            
-            try {
-                // 查询对应年份和月份的数据
-                const { data: record, error: loadError } = await window.supabase
-                    .from("roster_records")
-                    .select("*")
-                    .eq("userid", userid)
-                    .eq("year", currentYear)
-                    .eq("month", month)
-                    .maybeSingle();
-                
-                if (loadError) throw loadError;
-                if (!record) {
-                    console.log(`${currentYear}年${month} 無歷史數據，加載默認配置`);
-                    calcDailyTotals();
-                    initAllSignatures();
-                    return;
-                }
-                
-                const data = record.data;
-                if (data.shiftCodes) { 
-                    document.getElementById("shiftCodeEditor").textContent = data.shiftCodes; 
-                    loadShiftCodes(); 
-                }
-                if (data.labourTarget) document.querySelector(".labour-target-editor").textContent = data.labourTarget;
-                if (data.coffee) document.getElementById("coffeeNameInput").value = data.coffee;
+.table-wrapper {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow-x: auto;
+}
 
-                const monthSelect = document.getElementById("monthSelect");
-                let monthIndex = LANG.en.months.indexOf(monthSelect.value);
-                if (monthIndex === -1) monthIndex = LANG.zh.months.indexOf(monthSelect.value);
-                const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
-                buildCalendar();
+table {
+  border-collapse: collapse;
+  width: 300%;
+  min-width: 3000px;
+}
 
-                if (data.rows && data.rows.length > 0) {
-                    data.rows.forEach((rowData) => {
-                        const row = document.createElement("tr");
-                        row.innerHTML = `<td class="name" contenteditable="true">${rowData.name || ""}</td><td class="staff" contenteditable="true">${rowData.staff || ""}</td>`;
-                        body.appendChild(row);
-                        rebuildRow(row, daysInMonth);
-                        
-                        if (rowData.days && rowData.days.length > 0) {
-                            rowData.days.forEach((dayData, dayIndex) => {
-                                if (dayIndex >= daysInMonth) return;
-                                const dayCell = row.querySelectorAll(".day")[dayIndex];
-                                if (dayCell) {
-                                    const shiftCell = dayCell.querySelector(".shift");
-                                    if (shiftCell && dayData.shift) {
-                                        shiftCell.textContent = dayData.shift;
-                                        // 加载数据后立即触发自动填充
-                                        autoFillShift(shiftCell);
-                                    }
-                                    if (dayCell.querySelector(".hours") && dayData.hours) dayCell.querySelector(".hours").textContent = dayData.hours;
-                                    if (dayCell.querySelector(".remark") && dayData.remark) dayCell.querySelector(".remark").textContent = dayData.remark;
-                                }
-                            });
-                        }
-                        
-                        if (rowData.signature) {
-                            const canvas = row.querySelector(".signature-pad");
-                            const img = new Image();
-                            img.onload = () => { 
-                                canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height); 
-                                canvas.getContext("2d").drawImage(img, 0, 0); 
-                            };
-                            img.src = rowData.signature;
-                        }
-                        calcRow(row);
-                    });
-                }
-                calcDailyTotals();
-                initAllSignatures();
-                console.log(`${currentYear}年${month} 數據加載完成！咖啡室名稱已還原：`, document.getElementById("coffeeNameInput").value);
-            } catch (error) {
-                console.error("加載數據失敗：", error);
-                alert(`加載失敗！\n錯誤：${error.message || "未知錯誤"}\n請檢查網絡或刷新頁面`);
-            }
-        }
+/* ===========================
+   表格基本樣式
+=========================== */
+th, td {
+  border: 1px solid #ccc;
+  padding: 2px;
+  text-align: center;
+  background: #ffffff;
+}
 
-        /* ============================
-           按钮事件
-        ============================ */
-        document.getElementById("saveBtn").addEventListener("click", async () => { await saveRoster(); });
-        document.getElementById("addRowBtn").addEventListener("click", () => {
-            const body = document.getElementById("rosterBody");
-            const row = document.createElement("tr");
-            row.innerHTML = `<td class="name" contenteditable="true">新員工</td><td class="staff" contenteditable="true">ID</td>`;
-            body.appendChild(row);
-            
-            const monthSelect = document.getElementById("monthSelect");
-            let monthIndex = LANG.en.months.indexOf(monthSelect.value);
-            if (monthIndex === -1) monthIndex = LANG.zh.months.indexOf(monthSelect.value);
-            const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
-            
-            rebuildRow(row, daysInMonth);
-            initAllSignatures();
-            debouncedSave();
-        });
+th {
+  background: #f0f0f0;
+  position: sticky;
+  top: 0;
+  z-index: 15;
+}
 
-        document.getElementById("exportExcelBtn").addEventListener("click", () => {
-            const table = document.getElementById("rosterTable").outerHTML;
-            const blob = new Blob(['\ufeff', table], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            // 导出文件名包含年份
-            a.download = `${document.getElementById("coffeeNameInput").value}_排班表_${currentYear}年${document.getElementById("monthSelect").value}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
+table input {
+  width: 100%;
+  border: none;
+  padding: 2px;
+  height: 22px;
+  box-sizing: border-box;
+  text-align: center;
+}
 
-        document.getElementById("printBtn").addEventListener("click", () => { window.print(); });
-        document.getElementById("monthSelect").addEventListener("change", () => { buildCalendar(); loadRoster(); });
-    </script>
+/* ===========================
+   左兩欄凍結 + 淺藍色底
+=========================== */
+.freeze-col-1 {
+  position: sticky;
+  left: 0;
+  background: #e8f4ff !important;
+  z-index: 30 !important;
+}
+
+.freeze-col-2 {
+  position: sticky;
+  left: 36px;
+  background: #e8f4ff !important;
+  z-index: 30 !important;
+}
+
+/* ===========================
+   X / Z Reading 顏色
+=========================== */
+.x-header {
+  background: #ffe08a !important;
+}
+
+.z-header {
+  background: #d8f5d0 !important;
+}
+
+/* ===========================
+   自動計算欄位
+=========================== */
+.auto-calc {
+  background: #f2f2f2 !important;
+}
+
+/* ===========================
+   日期 / 星期
+=========================== */
+.date-cell {
+  font-weight: bold;
+  background: #fafafa;
+}
+
+.weekday-cell {
+  font-weight: bold;
+  color: #444;
+}
+
+.red-day {
+  color: red;
+  font-weight: bold;
+}
+
+/* ===========================
+   textarea 自動增高
+=========================== */
+.auto-textarea {
+  width: 100%;
+  min-height: 22px;
+  max-height: 60px;
+  resize: none;
+  overflow: hidden;
+  border: none;
+  padding: 2px;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
+}
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<div class="header-bar">
+  <div class="header-left">
+    <h1>Revenue Data Form</h1>
+    <div style="font-size:13px;color:#666;">
+      User: <span id="current_user"></span>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="header-item">
+      <label>Coffee House :</label>
+      <input type="text" id="coffee_house" placeholder="例如：HCC" />
+    </div>
+
+    <div class="header-item">
+      <label>Month :</label>
+      <input type="month" id="month_select" value="2026-06" />
+    </div>
+
+    <div class="header-item">
+      <label>Area Manager :</label>
+      <input type="text" id="area_manager" placeholder="Manager Name" />
+    </div>
+
+    <div class="header-item">
+      <label>Sales Target :</label>
+      <input type="number" id="sales_target" placeholder="$" />
+    </div>
+
+    <div class="header-item">
+      <label>Net Sales :</label>
+      <input type="number" id="net_sales" placeholder="$" />
+    </div>
+
+    <button id="save_btn">💾 Save</button>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <table id="month_table">
+    <thead>
+      <tr>
+        <!-- 左兩欄凍結 -->
+        <th rowspan="2" class="freeze-col-1">Date</th>
+        <th rowspan="2" class="freeze-col-2">Wk</th>
+
+        <!-- X-Reading group -->
+        <th colspan="5" class="x-header">X‑Reading</th>
+
+        <!-- Z-Reading group -->
+        <th colspan="8" class="z-header">Z‑Reading</th>
+
+        <th rowspan="2">MH</th>
+        <th rowspan="2">MH AL/YOL</th>
+        <th rowspan="2">SPMH</th>
+        <th rowspan="2">Loyalty Sales($)</th>
+        <th rowspan="2">Loyalty Sales %</th>
+
+        <!-- 8 個主標題（每個跨兩欄） -->
+        <th colspan="2">Merchandise</th>
+        <th colspan="2">Coffee Bean</th>
+        <th colspan="2">Delivery</th>
+        <th colspan="2">ODO</th>
+        <th colspan="2">Keeta</th>
+        <th colspan="2">Foodpanda</th>
+        <th colspan="2">Breakfast</th>
+        <th colspan="2">Tea Set</th>
+
+        <!-- Qty only 欄位（可改名） -->
+        <th rowspan="2">
+          <input id="promo1_name" value="Nutribite" 
+            style="width:90px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
+
+        <th rowspan="2">
+          <input id="promo2_name" value="Nutribite $38" 
+            style="width:110px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
+
+        <th rowspan="2">
+          <input id="promo3_name" value="Promotion 1" 
+            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
+
+        <th rowspan="2">
+          <input id="promo4_name" value="Promotion 2" 
+            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
+
+        <th rowspan="2">
+          <input id="promo5_name" value="Promotion 3" 
+            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
+
+        <th rowspan="2">
+          <input id="promo6_name" value="Promotion 4" 
+            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
+          (Qty)
+        </th>
+
+        <th rowspan="2">Other</th>
+        <th rowspan="2">Remarks</th>
+      </tr>
+
+      <tr>
+        <!-- X‑Reading -->
+        <th class="x-header">NetSales ($)</th>
+        <th class="x-header">R($)</th>
+        <th class="x-header">Food Sales($)</th>
+        <th class="x-header">Trans action (Qty)</th>
+        <th class="x-header">Avg Check($)</th>
+
+        <!-- Z‑Reading -->
+        <th class="z-header">DailySales Target</th>
+        <th class="z-header">Net Sales($)</th>
+        <th class="z-header">Target Achieved(%)</th>
+        <th class="z-header">Trans action (Qty)</th>
+        <th class="z-header">Avg Check($)</th>
+        <th class="z-header">R($)</th>
+        <th class="z-header">Food Sales($)</th>
+        <th class="z-header">Food Sales(%)</th>
+
+        <!-- 8 個主標題的子欄位 -->
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+      </tr>
+    </thead>
+
+    <tbody></tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===========================
+   Supabase client
+=========================== */
+const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8"; const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+/* ===========================
+   textarea 自動增高
+=========================== */
+document.addEventListener("input", function(e) {
+  if (e.target.classList.contains("auto-textarea")) {
+    e.target.style.height = "auto";
+    e.target.style.height = (e.target.scrollHeight) + "px";
+  }
+});
+
+// 數字 blur → 小數點後一位（Qty 除外）
+function setupNumberFormat(input, isQty = false) {
+  input.addEventListener("blur", () => {
+    if (input.value !== "") {
+      input.value = isQty
+        ? parseInt(input.value)
+        : parseFloat(input.value).toFixed(1);
+    }
+  });
+}
+
+// Avg Check 自動計算
+function setupAutoCalc(day) {
+  const xNet = document.getElementById(`x_net_sales_${day}`);
+  const xQty = document.getElementById(`x_transaction_${day}`);
+  const xAvg = document.getElementById(`x_avg_check_${day}`);
+
+  const zNet = document.getElementById(`z_net_sales_${day}`);
+  const zQty = document.getElementById(`z_transaction_${day}`);
+  const zAvg = document.getElementById(`z_avg_check_${day}`);
+
+  function calcX() {
+    const net = parseFloat(xNet.value) || 0;
+    const qty = parseFloat(xQty.value) || 0;
+    xAvg.value = qty > 0 ? (net / qty).toFixed(1) : "";
+  }
+
+  function calcZ() {
+    const net = parseFloat(zNet.value) || 0;
+    const qty = parseFloat(zQty.value) || 0;
+    zAvg.value = qty > 0 ? (net / qty).toFixed(1) : "";
+  }
+
+  xNet.addEventListener("input", calcX);
+  xQty.addEventListener("input", calcX);
+
+  zNet.addEventListener("input", calcZ);
+  zQty.addEventListener("input", calcZ);
+}
+
+// Z‑Reading：Target Achieved(%) + Food Sales(%) + SPMH + Loyalty Sales%
+function setupZExtraCalc(day) {
+  const target = document.getElementById(`daily_sales_target_${day}`);
+  const zNet = document.getElementById(`z_net_sales_${day}`);
+  const zFood = document.getElementById(`z_food_sales_${day}`);
+  const zTargetAch = document.getElementById(`z_target_achieved_${day}`);
+  const zFoodPct = document.getElementById(`z_food_sales_pct_${day}`);
+
+  const mh = document.getElementById(`mh_${day}`);
+  const spmh = document.getElementById(`spmh_${day}`);
+
+  const loyaltySales = document.getElementById(`loyalty_Sales_${day}`);
+  const loyaltyPct = document.getElementById(`loyalty_sales_pct_${day}`);
+
+  function calcTargetAchieved() {
+    const t = parseFloat(target.value) || 0;
+    const n = parseFloat(zNet.value) || 0;
+    zTargetAch.value = t > 0 ? ((n / t) * 100).toFixed(1) + "%" : "";
+  }
+
+  function calcFoodPct() {
+    const n = parseFloat(zNet.value) || 0;
+    const f = parseFloat(zFood.value) || 0;
+    zFoodPct.value = n > 0 ? ((f / n) * 100).toFixed(1) + "%" : "";
+  }
+
+  function calcSPMH() {
+    const n = parseFloat(zNet.value) || 0;
+    const m = parseFloat(mh.value) || 0;
+    spmh.value = m > 0 ? (n / m).toFixed(1) : "";
+  }
+
+  function calcLoyaltyPct() {
+    const ls = parseFloat(loyaltySales.value) || 0;
+    const n = parseFloat(zNet.value) || 0;
+    loyaltyPct.value = n > 0 ? ((ls / n) * 100).toFixed(1) + "%" : "";
+  }
+
+  target.addEventListener("input", calcTargetAchieved);
+  zNet.addEventListener("input", () => {
+    calcTargetAchieved();
+    calcFoodPct();
+    calcSPMH();
+    calcLoyaltyPct();
+  });
+
+  zFood.addEventListener("input", calcFoodPct);
+  mh.addEventListener("input", calcSPMH);
+  loyaltySales.addEventListener("input", calcLoyaltyPct);
+}
+
+function generateMonthRows() {
+  const monthInput = document.getElementById("month_select").value;
+  const tbody = document.querySelector("#month_table tbody");
+
+  if (!monthInput) return;
+
+  const [year, month] = monthInput.split("-").map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  const weekdayCode = ["S", "M", "T", "W", "T", "F", "S"];
+
+  const hkHolidays = [
+    `${year}-01-01`,
+    `${year}-05-01`,
+    `${year}-10-01`,
+    `${year}-12-25`,
+  ];
+
+  tbody.innerHTML = "";
+
+  for (let day = 1; day <= daysInMonth; day++) {
+
+    const dateObj = new Date(year, month - 1, day);
+    const weekday = weekdayCode[dateObj.getDay()];
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+    const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+    const isHoliday = hkHolidays.includes(dateStr);
+    const redClass = (isWeekend || isHoliday) ? "red-day" : "";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="freeze-col-1 date-cell ${redClass}">${day}</td>
+      <td class="freeze-col-2 weekday-cell ${redClass}">${weekday}</td>
+
+      <!-- X-Reading -->
+      <td><input type="number" id="x_net_sales_${day}"></td>
+      <td><input type="number" id="x_r_${day}"></td>
+      <td><input type="number" id="x_food_sales_${day}"></td>
+      <td><input type="number" id="x_transaction_${day}"></td>
+      <td><input type="number" id="x_avg_check_${day}" class="auto-calc" readonly></td>
+
+      <!-- Z-Reading -->
+      <td><input type="number" id="daily_sales_target_${day}"></td>
+      <td><input type="number" id="z_net_sales_${day}"></td>
+      <td><input type="text" id="z_target_achieved_${day}" class="auto-calc" readonly></td>
+      <td><input type="number" id="z_transaction_${day}"></td>
+      <td><input type="number" id="z_avg_check_${day}" class="auto-calc" readonly></td>
+      <td><input type="number" id="z_r_${day}"></td>
+      <td><input type="number" id="z_food_sales_${day}"></td>
+      <td><input type="text" id="z_food_sales_pct_${day}" class="auto-calc" readonly></td>
+
+      <!-- MH / SPMH / Loyalty -->
+      <td><input type="number" id="mh_${day}"></td>
+      <td><input type="number" id="mh_al_yol_${day}"></td>
+      <td><input type="number" id="spmh_${day}" class="auto-calc" readonly></td>
+      <td><input type="number" id="loyalty_Sales_${day}"></td>
+      <td><input type="text" id="loyalty_sales_pct_${day}" class="auto-calc" readonly></td>
+
+      <!-- Merchandise -->
+      <td><input type="number" id="merchandise_qty_${day}"></td>
+      <td><input type="number" id="merchandise_amt_${day}"></td>
+
+      <!-- Coffee Bean -->
+      <td><input type="number" id="coffee_qty_${day}"></td>
+      <td><input type="number" id="coffee_amt_${day}"></td>
+
+      <!-- Delivery -->
+      <td><input type="number" id="delivery_qty_${day}"></td>
+      <td><input type="number" id="delivery_amt_${day}"></td>
+
+      <!-- ODO -->
+      <td><input type="number" id="odo_qty_${day}"></td>
+      <td><input type="number" id="odo_amt_${day}"></td>
+
+      <!-- Keeta -->
+      <td><input type="number" id="keeta_qty_${day}"></td>
+      <td><input type="number" id="keeta_amt_${day}"></td>
+
+      <!-- Foodpanda -->
+      <td><input type="number" id="foodpanda_qty_${day}"></td>
+      <td><input type="number" id="foodpanda_amt_${day}"></td>
+
+      <!-- Breakfast -->
+      <td><input type="number" id="breakfast_qty_${day}"></td>
+      <td><input type="number" id="breakfast_amt_${day}"></td>
+
+      <!-- Tea Set -->
+      <td><input type="number" id="teaset_qty_${day}"></td>
+      <td><input type="number" id="teaset_amt_${day}"></td>
+
+      <!-- Qty only 欄位 -->
+      <td><input type="number" id="nutribite_qty_${day}"></td>
+      <td><input type="number" id="nutribite38_qty_${day}"></td>
+      <td><input type="number" id="promo1_qty_${day}"></td>
+      <td><input type="number" id="promo2_qty_${day}"></td>
+      <td><input type="number" id="promo3_qty_${day}"></td>
+      <td><input type="number" id="promo4_qty_${day}"></td>
+
+      <td><textarea id="other_${day}" class="auto-textarea"></textarea></td>
+      <td><textarea id="remarks_${day}" class="auto-textarea"></textarea></td>
+    `;
+    tbody.appendChild(tr);
+
+    setupAutoCalc(day);
+    setupZExtraCalc(day);
+
+    tr.querySelectorAll('input[type="number"]').forEach(input => {
+      const isQty =
+        input.id.includes("qty") ||
+        input.id.includes("transaction");
+      setupNumberFormat(input, isQty);
+    });
+  }
+}
+
+/* ===========================
+   收集 / 填入資料
+=========================== */
+function collectAllData() {
+  const month = document.getElementById("month_select").value;
+
+  const header = {
+    coffee_house: document.getElementById("coffee_house").value,
+    area_manager: document.getElementById("area_manager").value,
+    sales_target: document.getElementById("sales_target").value,
+    net_sales: document.getElementById("net_sales").value,
+    promo1_name: document.getElementById("promo1_name").value,
+    promo2_name: document.getElementById("promo2_name").value,
+    promo3_name: document.getElementById("promo3_name").value,
+    promo4_name: document.getElementById("promo4_name").value,
+    promo5_name: document.getElementById("promo5_name").value,
+    promo6_name: document.getElementById("promo6_name").value
+  };
+
+  const [year, m] = month.split("-").map(Number);
+  const daysInMonth = new Date(year, m, 0).getDate();
+
+  const days = {};
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = {};
+
+    function val(id) {
+      const el = document.getElementById(id);
+      return el ? el.value : "";
+    }
+
+    d.x_net_sales = val(`x_net_sales_${day}`);
+    d.x_r = val(`x_r_${day}`);
+    d.x_food_sales = val(`x_food_sales_${day}`);
+    d.x_transaction = val(`x_transaction_${day}`);
+    d.x_avg_check = val(`x_avg_check_${day}`);
+
+    d.daily_sales_target = val(`daily_sales_target_${day}`);
+    d.z_net_sales = val(`z_net_sales_${day}`);
+    d.z_target_achieved = val(`z_target_achieved_${day}`);
+    d.z_transaction = val(`z_transaction_${day}`);
+    d.z_avg_check = val(`z_avg_check_${day}`);
+    d.z_r = val(`z_r_${day}`);
+    d.z_food_sales = val(`z_food_sales_${day}`);
+    d.z_food_sales_pct = val(`z_food_sales_pct_${day}`);
+
+    d.mh = val(`mh_${day}`);
+    d.mh_al_yol = val(`mh_al_yol_${day}`);
+    d.spmh = val(`spmh_${day}`);
+    d.loyalty_Sales = val(`loyalty_Sales_${day}`);
+    d.loyalty_sales_pct = val(`loyalty_sales_pct_${day}`);
+
+    d.merchandise_qty = val(`merchandise_qty_${day}`);
+    d.merchandise_amt = val(`merchandise_amt_${day}`);
+
+    d.coffee_qty = val(`coffee_qty_${day}`);
+    d.coffee_amt = val(`coffee_amt_${day}`);
+
+    d.delivery_qty = val(`delivery_qty_${day}`);
+    d.delivery_amt = val(`delivery_amt_${day}`);
+
+    d.odo_qty = val(`odo_qty_${day}`);
+    d.odo_amt = val(`odo_amt_${day}`);
+
+    d.keeta_qty = val(`keeta_qty_${day}`);
+    d.keeta_amt = val(`keeta_amt_${day}`);
+
+    d.foodpanda_qty = val(`foodpanda_qty_${day}`);
+    d.foodpanda_amt = val(`foodpanda_amt_${day}`);
+
+    d.breakfast_qty = val(`breakfast_qty_${day}`);
+    d.breakfast_amt = val(`breakfast_amt_${day}`);
+
+    d.teaset_qty = val(`teaset_qty_${day}`);
+    d.teaset_amt = val(`teaset_amt_${day}`);
+
+    d.nutribite_qty = val(`nutribite_qty_${day}`);
+    d.nutribite38_qty = val(`nutribite38_qty_${day}`);
+    d.promo1_qty = val(`promo1_qty_${day}`);
+    d.promo2_qty = val(`promo2_qty_${day}`);
+    d.promo3_qty = val(`promo3_qty_${day}`);
+    d.promo4_qty = val(`promo4_qty_${day}`);
+
+    d.other = val(`other_${day}`);
+    d.remarks = val(`remarks_${day}`);
+
+    days[day] = d;
+  }
+
+  return { header, days };
+}
+
+function fillAllData(allData) {
+  if (!allData) return;
+
+  const header = allData.header || {};
+  const days = allData.days || {};
+
+  document.getElementById("coffee_house").value = header.coffee_house || "";
+  document.getElementById("area_manager").value = header.area_manager || "";
+  document.getElementById("sales_target").value = header.sales_target || "";
+  document.getElementById("net_sales").value = header.net_sales || "";
+
+  document.getElementById("promo1_name").value = header.promo1_name || "Nutribite";
+  document.getElementById("promo2_name").value = header.promo2_name || "Nutribite $38";
+  document.getElementById("promo3_name").value = header.promo3_name || "Promotion 1";
+  document.getElementById("promo4_name").value = header.promo4_name || "Promotion 2";
+  document.getElementById("promo5_name").value = header.promo5_name || "Promotion 3";
+  document.getElementById("promo6_name").value = header.promo6_name || "Promotion 4";
+
+  Object.keys(days).forEach(key => {
+    const day = parseInt(key, 10);
+    const d = days[key];
+
+    function set(id, v) {
+      const el = document.getElementById(id);
+      if (el) el.value = v;
+    }
+
+    set(`x_net_sales_${day}`, d.x_net_sales);
+    set(`x_r_${day}`, d.x_r);
+    set(`x_food_sales_${day}`, d.x_food_sales);
+    set(`x_transaction_${day}`, d.x_transaction);
+    set(`x_avg_check_${day}`, d.x_avg_check);
+
+    set(`daily_sales_target_${day}`, d.daily_sales_target);
+    set(`z_net_sales_${day}`, d.z_net_sales);
+    set(`z_target_achieved_${day}`, d.z_target_achieved);
+    set(`z_transaction_${day}`, d.z_transaction);
+    set(`z_avg_check_${day}`, d.z_avg_check);
+    set(`z_r_${day}`, d.z_r);
+    set(`z_food_sales_${day}`, d.z_food_sales);
+    set(`z_food_sales_pct_${day}`, d.z_food_sales_pct);
+
+    set(`mh_${day}`, d.mh);
+    set(`mh_al_yol_${day}`, d.mh_al_yol);
+    set(`spmh_${day}`, d.spmh);
+    set(`loyalty_Sales_${day}`, d.loyalty_Sales);
+    set(`loyalty_sales_pct_${day}`, d.loyalty_sales_pct);
+
+    set(`merchandise_qty_${day}`, d.merchandise_qty);
+    set(`merchandise_amt_${day}`, d.merchandise_amt);
+
+    set(`coffee_qty_${day}`, d.coffee_qty);
+    set(`coffee_amt_${day}`, d.coffee_amt);
+
+    set(`delivery_qty_${day}`, d.delivery_qty);
+    set(`delivery_amt_${day}`, d.delivery_amt);
+
+    set(`odo_qty_${day}`, d.odo_qty);
+    set(`odo_amt_${day}`, d.odo_amt);
+
+    set(`keeta_qty_${day}`, d.keeta_qty);
+    set(`keeta_amt_${day}`, d.keeta_amt);
+
+    set(`foodpanda_qty_${day}`, d.foodpanda_qty);
+    set(`foodpanda_amt_${day}`, d.foodpanda_amt);
+
+    set(`breakfast_qty_${day}`, d.breakfast_qty);
+    set(`breakfast_amt_${day}`, d.breakfast_amt);
+
+    set(`teaset_qty_${day}`, d.teaset_qty);
+    set(`teaset_amt_${day}`, d.teaset_amt);
+
+    set(`nutribite_qty_${day}`, d.nutribite_qty);
+    set(`nutribite38_qty_${day}`, d.nutribite38_qty);
+    set(`promo1_qty_${day}`, d.promo1_qty);
+    set(`promo2_qty_${day}`, d.promo2_qty);
+    set(`promo3_qty_${day}`, d.promo3_qty);
+    set(`promo4_qty_${day}`, d.promo4_qty);
+
+    set(`other_${day}`, d.other);
+    set(`remarks_${day}`, d.remarks);
+  });
+}
+
+/* ===========================
+   Save / Load
+=========================== */
+async function saveData() {
+  const user = localStorage.getItem("friendName");
+  const month = document.getElementById("month_select").value;
+
+  if (!user) {
+    alert("未登入，請先登入。");
+    return;
+  }
+  if (!month) {
+    alert("請選擇月份。");
+    return;
+  }
+
+  const allData = collectAllData();
+
+  const { error } = await db
+    .from("user_revenue_data")
+    .upsert({
+      user_name: user,
+      month: month,
+      data: allData,
+      updated_at: new Date()
+    });
+
+  if (error) {
+    console.log("Save error:", error);
+    alert("儲存失敗");
+  } else {
+    alert("已儲存！");
+  }
+}
+
+async function loadData() {
+  const user = localStorage.getItem("friendName");
+  const month = document.getElementById("month_select").value;
+
+  if (!user || !month) return;
+
+  const { data, error } = await db
+    .from("user_revenue_data")
+    .select("*")
+    .eq("user_name", user)
+    .eq("month", month)
+    .single();
+
+  if (error) {
+    console.log("Load error:", error);
+    return;
+  }
+
+  if (data && data.data) {
+    fillAllData(data.data);
+  }
+}
+
+/* ===========================
+   初始化
+=========================== */
+document.getElementById("month_select").addEventListener("change", async () => {
+  generateMonthRows();
+  await loadData();
+});
+
+document.getElementById("save_btn").addEventListener("click", saveData);
+
+window.addEventListener("DOMContentLoaded", async () => {
+  const user = localStorage.getItem("friendName");
+  if (!user) {
+    alert("未登入，返回登入頁。");
+    window.location.href = "login.html";
+    return;
+  }
+  document.getElementById("current_user").textContent = user;
+
+  generateMonthRows();
+  await loadData();
+});
+</script>
+
 </body>
 </html>
