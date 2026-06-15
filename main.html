@@ -60,336 +60,6 @@ th, td {
   border: 1px solid #ccc;
   padding: 2px;
   text-align: center;
-  background: #ffffff; /* ⭐ 防止透明穿底 */
-}
-
-th {
-  background: #f0f0f0;
-  position: sticky;
-  top: 0;
-  z-index: 15;
-}
-
-table input {
-  width: 100%;
-  border: none;
-  padding: 2px;
-  height: 22px;
-  box-sizing: border-box;
-  text-align: center;
-}
-
-/* ===========================
-   左兩欄凍結 + 淺藍色底
-=========================== */
-.freeze-col-1 {
-  position: sticky;
-  left: 0;
-  background: #e8f4ff !important; /* ⭐ 淺藍色 */
-  z-index: 30 !important;
-}
-
-.freeze-col-2 {
-  position: sticky;
-  left: 36px; /* ⭐ Date 欄寬度 */
-  background: #e8f4ff !important;
-  z-index: 30 !important;
-}
-
-/* ===========================
-   X / Z Reading 顏色
-=========================== */
-.x-header {
-  background: #ffe08a !important;
-}
-
-.z-header {
-  background: #d8f5d0 !important;
-}
-
-/* ===========================
-   自動計算欄位
-=========================== */
-.auto-calc {
-  background: #f2f2f2 !important;
-}
-
-/* ===========================
-   日期 / 星期
-=========================== */
-.date-cell {
-  font-weight: bold;
-  background: #fafafa;
-}
-
-.weekday-cell {
-  font-weight: bold;
-  color: #444;
-}
-
-.red-day {
-  color: red;
-  font-weight: bold;
-}
-
-/* ===========================
-   textarea 自動增高
-=========================== */
-.auto-textarea {
-  width: 100%;
-  min-height: 22px;
-  max-height: 60px;
-  resize: none;
-  overflow: hidden;
-  border: none;
-  padding: 2px;
-  box-sizing: border-box;
-  font-family: inherit;
-  font-size: 14px;
-}
-
-
-</style>
-
-</head>
-<body>
-
-<!-- ================= HEADER ================= -->
-<div class="header-bar">
-  <div class="header-left">
-    <h1>Revenue Data Form</h1>
-  </div>
-
-  <div class="header-right">
-    <div class="header-item">
-      <label>Coffee House :</label>
-      <input type="text" id="coffee_house" placeholder="例如：HCC" />
-    </div>
-
-    <div class="header-item">
-      <label>Month :</label>
-      <input type="month" id="month_select" value="2026-06" />
-    </div>
-
-    <div class="header-item">
-      <label>Area Manager :</label>
-      <input type="text" id="area_manager" placeholder="Manager Name" />
-    </div>
-
-    <div class="header-item">
-      <label>Sales Target :</label>
-      <input type="number" id="sales_target" placeholder="$" />
-    </div>
-
-    <div class="header-item">
-      <label>Net Sales :</label>
-      <input type="number" id="net_sales" placeholder="$" />
-    </div>
-  </div>
-</div>
-<div class="table-wrapper">
-  <table id="month_table">
-    <thead>
-      <tr>
-        <!-- ⭐ 左兩欄凍結 -->
-        <th rowspan="2" class="freeze-col-1">Date</th>
-        <th rowspan="2" class="freeze-col-2">Wk</th>
-
-        <!-- X-Reading group -->
-        <th colspan="5" class="x-header">X‑Reading</th>
-
-        <!-- Z-Reading group -->
-        <th colspan="8" class="z-header">Z‑Reading</th>
-
-        <th rowspan="2">MH</th>
-        <th rowspan="2">MH AL/YOL</th>
-        <th rowspan="2">SPMH</th>
-        <th rowspan="2">Loyalty Sales($)</th>
-        <th rowspan="2">Loyalty Sales %</th>
-
-        <!-- ⭐ 8 個主標題（每個跨兩欄） -->
-        <th colspan="2">Merchandise</th>
-        <th colspan="2">Coffee Bean</th>
-        <th colspan="2">Delivery</th>
-        <th colspan="2">ODO</th>
-        <th colspan="2">Keeta</th>
-        <th colspan="2">Foodpanda</th>
-        <th colspan="2">Breakfast</th>
-        <th colspan="2">Tea Set</th>
-
-        <!-- ⭐ Qty only 欄位（可改名） -->
-        <th rowspan="2">
-          <input id="promo1_name" value="Nutribite" 
-            style="width:90px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo2_name" value="Nutribite $38" 
-            style="width:110px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo3_name" value="Promotion 1" 
-            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo4_name" value="Promotion 2" 
-            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo5_name" value="Promotion 3" 
-            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo6_name" value="Promotion 4" 
-            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">Other</th>
-        <th rowspan="2">Remarks</th>
-      </tr>
-
-      <tr>
-        <!-- X‑Reading -->
-        <th class="x-header">NetSales ($)</th>
-        <th class="x-header">R($)</th>
-        <th class="x-header">Food Sales($)</th>
-        <th class="x-header">Trans action (Qty)</th>
-        <th class="x-header">Avg Check($)</th>
-
-        <!-- Z‑Reading -->
-        <th class="z-header">DailySales Target</th>
-        <th class="z-header">Net Sales($)</th>
-        <th class="z-header">Target Achieved(%)</th>
-        <th class="z-header">Trans action (Qty)</th>
-        <th class="z-header">Avg Check($)</th>
-        <th class="z-header">R($)</th>
-        <th class="z-header">Food Sales($)</th>
-        <th class="z-header">Food Sales(%)</th>
-
-        <!-- ⭐ 8 個主標題的子欄位 -->
-        <th>(Qty)</th><th>($)</th>
-        <th>(Qty)</th><th>($)</th>
-        <th>(Qty)</th><th>($)</th>
-        <th>(Qty)</th><th>($)</th>
-        <th>(Qty)</th><th>($)</th>
-        <th>(Qty)</th><th>($)</th>
-        <th>(Qty)</th><th>($)</th>
-        <th>(Qty)</th><th>($)</th>
-      </tr>
-    </thead>
-
-    <tbody></tbody>
-  </table>
-</div>
-<tbody></tbody>
-</table>
-</div>
-
-<script>
-// ⭐ textarea 自動增高
-document.addEventListener("input", function(e) {
-  if (e.target.classList.contains("auto-textarea")) {
-    e.target.style.height = "auto";
-    e.target.style.height = (e.target.scrollHeight) + "px";
-  }
-});
-
-// ⭐ 數字 blur → 小數點後一位（Qty 除外）
-function setupNumberFormat(input, isQty = false) {
-  input.addEventListener("blur", () => {
-    if (input.value !== "") {
-      input.value = isQty
-        ? parseInt(input.value)
-        : parseFloat(input.value).toFixed(1);
-    }
-  });
-}
-
-<!DOCTYPE html>
-<html lang="zh-HK">
-<head>
-<meta charset="UTF-8">
-<title>Revenue Data Form</title>
-
-<style>
-/* ===========================
-   基本 Layout
-=========================== */
-.header-bar {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.header-left h1 {
-  margin: 0;
-  font-size: 26px;
-  font-weight: bold;
-}
-
-.header-right {
-  display: flex;
-  gap: 20px;
-  align-items: flex-end;
-}
-
-.header-item {
-  display: flex;
-  flex-direction: column;
-  font-size: 14px;
-}
-
-.header-item input {
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  min-width: 150px;
-}
-
-#save_btn {
-  padding: 8px 14px;
-  border: none;
-  background: #0078ff;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-}
-#save_btn:hover {
-  background: #005fcc;
-}
-
-.table-wrapper {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow-x: auto;
-}
-
-table {
-  border-collapse: collapse;
-  width: 300%;
-  min-width: 3000px;
-}
-
-/* ===========================
-   表格基本樣式
-=========================== */
-th, td {
-  border: 1px solid #ccc;
-  padding: 2px;
-  text-align: center;
   background: #ffffff;
 }
 
@@ -478,6 +148,7 @@ table input {
   font-size: 14px;
 }
 </style>
+
 </head>
 <body>
 
@@ -485,9 +156,6 @@ table input {
 <div class="header-bar">
   <div class="header-left">
     <h1>Revenue Data Form</h1>
-    <div style="font-size:13px;color:#666;">
-      User: <span id="current_user"></span>
-    </div>
   </div>
 
   <div class="header-right">
@@ -515,8 +183,6 @@ table input {
       <label>Net Sales :</label>
       <input type="number" id="net_sales" placeholder="$" />
     </div>
-
-    <button id="save_btn">💾 Save</button>
   </div>
 </div>
 
@@ -524,14 +190,10 @@ table input {
   <table id="month_table">
     <thead>
       <tr>
-        <!-- 左兩欄凍結 -->
         <th rowspan="2" class="freeze-col-1">Date</th>
         <th rowspan="2" class="freeze-col-2">Wk</th>
 
-        <!-- X-Reading group -->
         <th colspan="5" class="x-header">X‑Reading</th>
-
-        <!-- Z-Reading group -->
         <th colspan="8" class="z-header">Z‑Reading</th>
 
         <th rowspan="2">MH</th>
@@ -540,7 +202,6 @@ table input {
         <th rowspan="2">Loyalty Sales($)</th>
         <th rowspan="2">Loyalty Sales %</th>
 
-        <!-- 8 個主標題（每個跨兩欄） -->
         <th colspan="2">Merchandise</th>
         <th colspan="2">Coffee Bean</th>
         <th colspan="2">Delivery</th>
@@ -550,56 +211,24 @@ table input {
         <th colspan="2">Breakfast</th>
         <th colspan="2">Tea Set</th>
 
-        <!-- Qty only 欄位（可改名） -->
-        <th rowspan="2">
-          <input id="promo1_name" value="Nutribite" 
-            style="width:90px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo2_name" value="Nutribite $38" 
-            style="width:110px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo3_name" value="Promotion 1" 
-            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo4_name" value="Promotion 2" 
-            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo5_name" value="Promotion 3" 
-            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
-
-        <th rowspan="2">
-          <input id="promo6_name" value="Promotion 4" 
-            style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">
-          (Qty)
-        </th>
+        <th rowspan="2"><input id="promo1_name" value="Nutribite" style="width:90px; border:none; background:transparent; font-weight:bold; text-align:center;">(Qty)</th>
+        <th rowspan="2"><input id="promo2_name" value="Nutribite $38" style="width:110px; border:none; background:transparent; font-weight:bold; text-align:center;">(Qty)</th>
+        <th rowspan="2"><input id="promo3_name" value="Promotion 1" style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">(Qty)</th>
+        <th rowspan="2"><input id="promo4_name" value="Promotion 2" style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">(Qty)</th>
+        <th rowspan="2"><input id="promo5_name" value="Promotion 3" style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">(Qty)</th>
+        <th rowspan="2"><input id="promo6_name" value="Promotion 4" style="width:100px; border:none; background:transparent; font-weight:bold; text-align:center;">(Qty)</th>
 
         <th rowspan="2">Other</th>
         <th rowspan="2">Remarks</th>
       </tr>
 
       <tr>
-        <!-- X‑Reading -->
         <th class="x-header">NetSales ($)</th>
         <th class="x-header">R($)</th>
         <th class="x-header">Food Sales($)</th>
         <th class="x-header">Trans action (Qty)</th>
         <th class="x-header">Avg Check($)</th>
 
-        <!-- Z‑Reading -->
         <th class="z-header">DailySales Target</th>
         <th class="z-header">Net Sales($)</th>
         <th class="z-header">Target Achieved(%)</th>
@@ -609,7 +238,6 @@ table input {
         <th class="z-header">Food Sales($)</th>
         <th class="z-header">Food Sales(%)</th>
 
-        <!-- 8 個主標題的子欄位 -->
         <th>(Qty)</th><th>($)</th>
         <th>(Qty)</th><th>($)</th>
         <th>(Qty)</th><th>($)</th>
@@ -621,21 +249,9 @@ table input {
       </tr>
     </thead>
 
-    <tbody></tbody>
-  </table>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <tbody></tbody> <!-- ⭐ 正確：只保留一個 tbody -->
 <script>
-/* ===========================
-   Supabase client
-=========================== */
-const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8"; const db = supabase.createClient(supabaseUrl, supabaseKey);
-
-/* ===========================
-   textarea 自動增高
-=========================== */
+// ⭐ textarea 自動增高
 document.addEventListener("input", function(e) {
   if (e.target.classList.contains("auto-textarea")) {
     e.target.style.height = "auto";
@@ -643,7 +259,7 @@ document.addEventListener("input", function(e) {
   }
 });
 
-// 數字 blur → 小數點後一位（Qty 除外）
+// ⭐ 數字 blur → 小數點後一位（Qty 除外）
 function setupNumberFormat(input, isQty = false) {
   input.addEventListener("blur", () => {
     if (input.value !== "") {
@@ -654,7 +270,7 @@ function setupNumberFormat(input, isQty = false) {
   });
 }
 
-// Avg Check 自動計算
+// ⭐ Avg Check 自動計算
 function setupAutoCalc(day) {
   const xNet = document.getElementById(`x_net_sales_${day}`);
   const xQty = document.getElementById(`x_transaction_${day}`);
@@ -683,7 +299,7 @@ function setupAutoCalc(day) {
   zQty.addEventListener("input", calcZ);
 }
 
-// Z‑Reading：Target Achieved(%) + Food Sales(%) + SPMH + Loyalty Sales%
+// ⭐ Z‑Reading：Target Achieved(%) + Food Sales(%) + SPMH + Loyalty Sales%
 function setupZExtraCalc(day) {
   const target = document.getElementById(`daily_sales_target_${day}`);
   const zNet = document.getElementById(`z_net_sales_${day}`);
@@ -734,6 +350,7 @@ function setupZExtraCalc(day) {
   loyaltySales.addEventListener("input", calcLoyaltyPct);
 }
 
+// ⭐ 生成整個月份表格
 function generateMonthRows() {
   const monthInput = document.getElementById("month_select").value;
   const tbody = document.querySelector("#month_table tbody");
@@ -825,7 +442,7 @@ function generateMonthRows() {
       <td><input type="number" id="teaset_qty_${day}"></td>
       <td><input type="number" id="teaset_amt_${day}"></td>
 
-      <!-- Qty only 欄位 -->
+      <!-- Qty only -->
       <td><input type="number" id="nutribite_qty_${day}"></td>
       <td><input type="number" id="nutribite38_qty_${day}"></td>
       <td><input type="number" id="promo1_qty_${day}"></td>
@@ -836,6 +453,7 @@ function generateMonthRows() {
       <td><textarea id="other_${day}" class="auto-textarea"></textarea></td>
       <td><textarea id="remarks_${day}" class="auto-textarea"></textarea></td>
     `;
+
     tbody.appendChild(tr);
 
     setupAutoCalc(day);
@@ -845,13 +463,32 @@ function generateMonthRows() {
       const isQty =
         input.id.includes("qty") ||
         input.id.includes("transaction");
+
       setupNumberFormat(input, isQty);
     });
   }
 }
 
+// ⭐ 初始生成
+generateMonthRows();
+
+// ⭐ 切換月份重新生成
+document.getElementById("month_select").addEventListener("change", generateMonthRows);
+</script>
+<!-- ===========================
+     第 3 段：Supabase + AutoSave + Total Row
+=========================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
 /* ===========================
-   收集 / 填入資料
+   Supabase client
+=========================== */
+  const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";  
+  const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+/* ===========================
+   收集所有資料
 =========================== */
 function collectAllData() {
   const month = document.getElementById("month_select").value;
@@ -876,66 +513,27 @@ function collectAllData() {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const d = {};
-
     function val(id) {
       const el = document.getElementById(id);
       return el ? el.value : "";
     }
 
-    d.x_net_sales = val(`x_net_sales_${day}`);
-    d.x_r = val(`x_r_${day}`);
-    d.x_food_sales = val(`x_food_sales_${day}`);
-    d.x_transaction = val(`x_transaction_${day}`);
-    d.x_avg_check = val(`x_avg_check_${day}`);
+    const ids = [
+      "x_net_sales","x_r","x_food_sales","x_transaction","x_avg_check",
+      "daily_sales_target","z_net_sales","z_target_achieved","z_transaction",
+      "z_avg_check","z_r","z_food_sales","z_food_sales_pct",
+      "mh","mh_al_yol","spmh","loyalty_Sales","loyalty_sales_pct",
+      "merchandise_qty","merchandise_amt","coffee_qty","coffee_amt",
+      "delivery_qty","delivery_amt","odo_qty","odo_amt",
+      "keeta_qty","keeta_amt","foodpanda_qty","foodpanda_amt",
+      "breakfast_qty","breakfast_amt","teaset_qty","teaset_amt",
+      "nutribite_qty","nutribite38_qty","promo1_qty","promo2_qty",
+      "promo3_qty","promo4_qty","other","remarks"
+    ];
 
-    d.daily_sales_target = val(`daily_sales_target_${day}`);
-    d.z_net_sales = val(`z_net_sales_${day}`);
-    d.z_target_achieved = val(`z_target_achieved_${day}`);
-    d.z_transaction = val(`z_transaction_${day}`);
-    d.z_avg_check = val(`z_avg_check_${day}`);
-    d.z_r = val(`z_r_${day}`);
-    d.z_food_sales = val(`z_food_sales_${day}`);
-    d.z_food_sales_pct = val(`z_food_sales_pct_${day}`);
-
-    d.mh = val(`mh_${day}`);
-    d.mh_al_yol = val(`mh_al_yol_${day}`);
-    d.spmh = val(`spmh_${day}`);
-    d.loyalty_Sales = val(`loyalty_Sales_${day}`);
-    d.loyalty_sales_pct = val(`loyalty_sales_pct_${day}`);
-
-    d.merchandise_qty = val(`merchandise_qty_${day}`);
-    d.merchandise_amt = val(`merchandise_amt_${day}`);
-
-    d.coffee_qty = val(`coffee_qty_${day}`);
-    d.coffee_amt = val(`coffee_amt_${day}`);
-
-    d.delivery_qty = val(`delivery_qty_${day}`);
-    d.delivery_amt = val(`delivery_amt_${day}`);
-
-    d.odo_qty = val(`odo_qty_${day}`);
-    d.odo_amt = val(`odo_amt_${day}`);
-
-    d.keeta_qty = val(`keeta_qty_${day}`);
-    d.keeta_amt = val(`keeta_amt_${day}`);
-
-    d.foodpanda_qty = val(`foodpanda_qty_${day}`);
-    d.foodpanda_amt = val(`foodpanda_amt_${day}`);
-
-    d.breakfast_qty = val(`breakfast_qty_${day}`);
-    d.breakfast_amt = val(`breakfast_amt_${day}`);
-
-    d.teaset_qty = val(`teaset_qty_${day}`);
-    d.teaset_amt = val(`teaset_amt_${day}`);
-
-    d.nutribite_qty = val(`nutribite_qty_${day}`);
-    d.nutribite38_qty = val(`nutribite38_qty_${day}`);
-    d.promo1_qty = val(`promo1_qty_${day}`);
-    d.promo2_qty = val(`promo2_qty_${day}`);
-    d.promo3_qty = val(`promo3_qty_${day}`);
-    d.promo4_qty = val(`promo4_qty_${day}`);
-
-    d.other = val(`other_${day}`);
-    d.remarks = val(`remarks_${day}`);
+    ids.forEach(key => {
+      d[key] = val(`${key}_${day}`);
+    });
 
     days[day] = d;
   }
@@ -943,142 +541,69 @@ function collectAllData() {
   return { header, days };
 }
 
+/* ===========================
+   填入資料（Load）
+=========================== */
 function fillAllData(allData) {
   if (!allData) return;
 
   const header = allData.header || {};
   const days = allData.days || {};
 
-  document.getElementById("coffee_house").value = header.coffee_house || "";
-  document.getElementById("area_manager").value = header.area_manager || "";
-  document.getElementById("sales_target").value = header.sales_target || "";
-  document.getElementById("net_sales").value = header.net_sales || "";
+  function set(id, v) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = v ?? "";
+  }
 
-  document.getElementById("promo1_name").value = header.promo1_name || "Nutribite";
-  document.getElementById("promo2_name").value = header.promo2_name || "Nutribite $38";
-  document.getElementById("promo3_name").value = header.promo3_name || "Promotion 1";
-  document.getElementById("promo4_name").value = header.promo4_name || "Promotion 2";
-  document.getElementById("promo5_name").value = header.promo5_name || "Promotion 3";
-  document.getElementById("promo6_name").value = header.promo6_name || "Promotion 4";
-
-  Object.keys(days).forEach(key => {
-    const day = parseInt(key, 10);
-    const d = days[key];
-
-    function set(id, v) {
-      const el = document.getElementById(id);
-      if (el) el.value = v;
-    }
-
-    set(`x_net_sales_${day}`, d.x_net_sales);
-    set(`x_r_${day}`, d.x_r);
-    set(`x_food_sales_${day}`, d.x_food_sales);
-    set(`x_transaction_${day}`, d.x_transaction);
-    set(`x_avg_check_${day}`, d.x_avg_check);
-
-    set(`daily_sales_target_${day}`, d.daily_sales_target);
-    set(`z_net_sales_${day}`, d.z_net_sales);
-    set(`z_target_achieved_${day}`, d.z_target_achieved);
-    set(`z_transaction_${day}`, d.z_transaction);
-    set(`z_avg_check_${day}`, d.z_avg_check);
-    set(`z_r_${day}`, d.z_r);
-    set(`z_food_sales_${day}`, d.z_food_sales);
-    set(`z_food_sales_pct_${day}`, d.z_food_sales_pct);
-
-    set(`mh_${day}`, d.mh);
-    set(`mh_al_yol_${day}`, d.mh_al_yol);
-    set(`spmh_${day}`, d.spmh);
-    set(`loyalty_Sales_${day}`, d.loyalty_Sales);
-    set(`loyalty_sales_pct_${day}`, d.loyalty_sales_pct);
-
-    set(`merchandise_qty_${day}`, d.merchandise_qty);
-    set(`merchandise_amt_${day}`, d.merchandise_amt);
-
-    set(`coffee_qty_${day}`, d.coffee_qty);
-    set(`coffee_amt_${day}`, d.coffee_amt);
-
-    set(`delivery_qty_${day}`, d.delivery_qty);
-    set(`delivery_amt_${day}`, d.delivery_amt);
-
-    set(`odo_qty_${day}`, d.odo_qty);
-    set(`odo_amt_${day}`, d.odo_amt);
-
-    set(`keeta_qty_${day}`, d.keeta_qty);
-    set(`keeta_amt_${day}`, d.keeta_amt);
-
-    set(`foodpanda_qty_${day}`, d.foodpanda_qty);
-    set(`foodpanda_amt_${day}`, d.foodpanda_amt);
-
-    set(`breakfast_qty_${day}`, d.breakfast_qty);
-    set(`breakfast_amt_${day}`, d.breakfast_amt);
-
-    set(`teaset_qty_${day}`, d.teaset_qty);
-    set(`teaset_amt_${day}`, d.teaset_amt);
-
-    set(`nutribite_qty_${day}`, d.nutribite_qty);
-    set(`nutribite38_qty_${day}`, d.nutribite38_qty);
-    set(`promo1_qty_${day}`, d.promo1_qty);
-    set(`promo2_qty_${day}`, d.promo2_qty);
-    set(`promo3_qty_${day}`, d.promo3_qty);
-    set(`promo4_qty_${day}`, d.promo4_qty);
-
-    set(`other_${day}`, d.other);
-    set(`remarks_${day}`, d.remarks);
+  Object.keys(header).forEach(key => {
+    set(key, header[key]);
   });
+
+  Object.keys(days).forEach(day => {
+    const d = days[day];
+    Object.keys(d).forEach(key => {
+      set(`${key}_${day}`, d[key]);
+    });
+  });
+
+  calculateTotalRow();
 }
 
 /* ===========================
-   Save / Load
+   Save（自動 Save 用）
 =========================== */
 async function saveData() {
   const user = localStorage.getItem("friendName");
   const month = document.getElementById("month_select").value;
 
-  if (!user) {
-    alert("未登入，請先登入。");
-    return;
-  }
-  if (!month) {
-    alert("請選擇月份。");
-    return;
-  }
+  if (!user || !month) return;
 
   const allData = collectAllData();
 
-  const { error } = await db
-    .from("user_revenue_data")
-    .upsert({
-      user_name: user,
-      month: month,
-      data: allData,
-      updated_at: new Date()
-    });
-
-  if (error) {
-    console.log("Save error:", error);
-    alert("儲存失敗");
-  } else {
-    alert("已儲存！");
-  }
+  await db.from("user_revenue_data").upsert({
+    user_name: user,
+    month: month,
+    data: allData,
+    updated_at: new Date()
+  });
 }
 
+/* ===========================
+   Load（自動 Load）
+=========================== */
 async function loadData() {
   const user = localStorage.getItem("friendName");
   const month = document.getElementById("month_select").value;
 
   if (!user || !month) return;
 
-  const { data, error } = await db
+  const { data } = await db
     .from("user_revenue_data")
     .select("*")
     .eq("user_name", user)
     .eq("month", month)
     .single();
-
-  if (error) {
-    console.log("Load error:", error);
-    return;
-  }
 
   if (data && data.data) {
     fillAllData(data.data);
@@ -1086,26 +611,64 @@ async function loadData() {
 }
 
 /* ===========================
-   初始化
+   自動 Save（每次輸入）
 =========================== */
-document.getElementById("month_select").addEventListener("change", async () => {
-  generateMonthRows();
-  await loadData();
+document.addEventListener("input", () => {
+  saveData();
 });
 
-document.getElementById("save_btn").addEventListener("click", saveData);
+/* ===========================
+   Total Row（自動總和）
+=========================== */
+function calculateTotalRow() {
+  const tbody = document.querySelector("#month_table tbody");
 
+  let totalRow = document.getElementById("total_row");
+  if (!totalRow) {
+    totalRow = document.createElement("tr");
+    totalRow.id = "total_row";
+    totalRow.style.background = "#e6f7ff";
+    tbody.appendChild(totalRow);
+  }
+
+  const firstRow = tbody.querySelector("tr");
+  if (!firstRow) return;
+
+  const cells = firstRow.children.length;
+  let html = `<td class="freeze-col-1"><b>Total</b></td><td class="freeze-col-2"></td>`;
+
+  for (let i = 2; i < cells; i++) {
+    let sum = 0;
+    const inputs = tbody.querySelectorAll(`tr td:nth-child(${i+1}) input[type="number"]`);
+
+    inputs.forEach(input => {
+      const v = parseFloat(input.value);
+      if (!isNaN(v)) sum += v;
+    });
+
+    html += `<td><b>${sum ? sum.toFixed(1) : ""}</b></td>`;
+  }
+
+  totalRow.innerHTML = html;
+}
+
+/* ===========================
+   初始化
+=========================== */
 window.addEventListener("DOMContentLoaded", async () => {
   const user = localStorage.getItem("friendName");
   if (!user) {
-    alert("未登入，返回登入頁。");
     window.location.href = "login.html";
     return;
   }
-  document.getElementById("current_user").textContent = user;
 
   generateMonthRows();
-  await loadData();
+  setTimeout(loadData, 100);
+});
+
+document.getElementById("month_select").addEventListener("change", () => {
+  generateMonthRows();
+  setTimeout(loadData, 100);
 });
 </script>
 

@@ -136,7 +136,7 @@
 <body>
 
 <div class="login-box">
-  <h2>登入系統</h2>
+  <h2>登入報數系統</h2>
 
   <div class="input-group">
     <label>用戶名稱</label>
@@ -194,8 +194,6 @@
 <script>
   const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
   const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";  
-
-  // ⭐ 改名 db，避免 supabase 變數衝突
   const db = supabase.createClient(supabaseUrl, supabaseKey);
 
   function togglePassword() {
