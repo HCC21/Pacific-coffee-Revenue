@@ -1,11 +1,10 @@
+/* ===========================
+   基本 Layout
+=========================== */
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
   background: #fafafa;
-}
-
-h1, h2 {
-  margin-bottom: 10px;
 }
 
 .header-bar {
@@ -17,8 +16,10 @@ h1, h2 {
   margin-bottom: 20px;
 }
 
-.header-left h2 {
+.header-left h1 {
   margin: 0;
+  font-size: 26px;
+  font-weight: bold;
 }
 
 .header-right {
@@ -58,6 +59,9 @@ h1, h2 {
   background: #0056c7;
 }
 
+/* ===========================
+   表格樣式
+=========================== */
 .table-wrapper {
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -93,6 +97,9 @@ table input {
   text-align: center;
 }
 
+/* ===========================
+   凍結欄位
+=========================== */
 .freeze-col-1 {
   position: sticky;
   left: 0;
@@ -107,10 +114,27 @@ table input {
   z-index: 30 !important;
 }
 
+/* ===========================
+   X / Z Reading 顏色
+=========================== */
+.x-header {
+  background: #ffe08a !important;
+}
+
+.z-header {
+  background: #d8f5d0 !important;
+}
+
+/* ===========================
+   自動計算欄位
+=========================== */
 .auto-calc {
   background: #f2f2f2 !important;
 }
 
+/* ===========================
+   日期 / 星期
+=========================== */
 .date-cell {
   font-weight: bold;
   background: #fafafa;
@@ -121,6 +145,14 @@ table input {
   color: #444;
 }
 
+.red-day {
+  color: red;
+  font-weight: bold;
+}
+
+/* ===========================
+   textarea 自動增高
+=========================== */
 .auto-textarea {
   width: 100%;
   min-height: 22px;
@@ -134,67 +166,10 @@ table input {
   font-size: 14px;
 }
 
+/* ===========================
+   TOTAL Row
+=========================== */
 #total_row {
   background: #e6f7ff !important;
   font-weight: bold;
 }
-
-.month-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 150px);
-  gap: 10px;
-}
-
-.month-grid a {
-  display: block;
-  padding: 10px;
-  background: #007bff;
-  color: white;
-  text-align: center;
-  border-radius: 6px;
-  text-decoration: none;
-}
-
-.month-grid a:hover {
-  background: #0056c7;
-}
-.back-home {
-  display: inline-block;
-  margin-bottom: 15px;
-  padding: 6px 12px;
-  background: #444;
-  color: white;
-  border-radius: 6px;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.back-home:hover {
-  background: #000;
-}
-.admin-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-}
-
-.admin-table th, .admin-table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: center;
-}
-
-.admin-box {
-  display: flex;
-  flex-direction: column;
-  width: 250px;
-  gap: 10px;
-}
-
-.admin-box input, .admin-box select {
-  padding: 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-

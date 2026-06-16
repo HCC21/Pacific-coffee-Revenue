@@ -1,51 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<title>Select Year</title>
-<link rel="stylesheet" href="style.css">
+<title>Main</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+  .box {
+    max-width: 600px; margin: 40px auto; background: #fff;
+    padding: 20px; border-radius: 10px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+  }
+  h2 { margin-top: 0; }
+  button {
+    padding: 8px 14px; border: none; background: #0078ff;
+    color: white; border-radius: 6px; cursor: pointer; margin-right: 10px;
+  }
+  button:hover { background: #005fcc; }
+</style>
 </head>
-
 <body>
-
-<h1>Select Year</h1>
-
-<div style="margin-bottom:20px;">
-  <label>Year :</label>
-  <input type="number" id="year_input" value="2026" style="width:120px;">
-  <button id="saveYearBtn">Save Year</button>
-</div>
-
-<h2>Months</h2>
-
-<div class="month-grid">
-  <a href="jan.html">January</a>
-  <a href="feb.html">February</a>
-  <a href="mar.html">March</a>
-  <a href="apr.html">April</a>
-  <a href="may.html">May</a>
-  <a href="jun.html">June</a>
-  <a href="jul.html">July</a>
-  <a href="aug.html">August</a>
-  <a href="sep.html">September</a>
-  <a href="oct.html">October</a>
-  <a href="nov.html">November</a>
-  <a href="dec.html">December</a>
+<div class="box">
+  <h2 id="welcome"></h2>
+  <p>你可以進入以下頁面：</p>
+  <button onclick="goRevenue()">📊 每月報數表</button>
+  <button onclick="logout()">登出</button>
 </div>
 
 <script>
-document.getElementById("saveYearBtn").addEventListener("click", () => {
-  const year = document.getElementById("year_input").value;
-  localStorage.setItem("global_year", year);
-  alert("Year saved: " + year);
-});
+  const userName = localStorage.getItem("userName");
+  const role = localStorage.getItem("role");
 
-// 頁面載入時自動讀取 global_year
-window.addEventListener("DOMContentLoaded", () => {
-  const y = localStorage.getItem("global_year");
-  if (y) document.getElementById("year_input").value = y;
-});
+  if (!userName) {
+    window.location.href = "login.html";
+  }
+
+  document.getElementById("welcome").textContent =
+    `歡迎，${userName}（${role === "admin" ? "管理員" : "用戶"}）`;
+
+  function goRevenue() {
+    window.location.href = "index.html";
+  }
+
+  function logout() {
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
 </script>
-
 </body>
 </html>

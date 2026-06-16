@@ -108,32 +108,32 @@ function setupZExtraCalc(day) {
    生成整個月份表格（已修正）
 =========================== */
 function generateMonthRows() {
+  const monthInput = document.getElementById("month_select").value;
   const tbody = document.getElementById("table_body");
+
+  if (!monthInput) return;
+
+  // ⭐ 完全清空舊資料
   tbody.innerHTML = "";
 
-  const year = parseInt(localStorage.getItem("current_year_page"));
-  const month = parseInt(localStorage.getItem("current_month_page"));
-
+  const [year, month] = monthInput.split("-").map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
-  const weekdayCode = ["S", "M", "T", "W", "T", "F", "S"];
 
-  // ⭐ 香港公眾假期（你可以再加）
+  const weekdayCode = ["S", "M", "T", "W", "T", "F", "S"];
   const hkHolidays = [
     `${year}-01-01`,
     `${year}-05-01`,
     `${year}-10-01`,
-    `${year}-12-25`
+    `${year}-12-25`,
   ];
 
   for (let day = 1; day <= daysInMonth; day++) {
     const dateObj = new Date(year, month - 1, day);
     const weekday = weekdayCode[dateObj.getDay()];
-
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
     const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
     const isHoliday = hkHolidays.includes(dateStr);
-
     const redClass = (isWeekend || isHoliday) ? "red-day" : "";
 
     const tr = document.createElement("tr");
@@ -213,6 +213,7 @@ function generateMonthRows() {
   createTotalRow();
   calculateTotalRow();
 }
+
 /* ===========================
    建立 TOTAL Row
 =========================== */
@@ -243,87 +244,6 @@ function createTotalRow() {
   totalRow.innerHTML = html;
   tbody.appendChild(totalRow);
 }
-
-/* ===========================
-   Excel 匯出（12 個月版本）
-=========================== */
-document.getElementById("exportExcelBtn").addEventListener("click", () => {
-  const table = document.getElementById("month_table");
-
-  const year = localStorage.getItem("current_year_page");
-  const month = localStorage.getItem("current_month_page");
-
-  const coffeeHouse = document.getElementById("coffee_house").value || "";
-  const areaManager = document.getElementById("area_manager").value || "";
-  const salesTarget = document.getElementById("sales_target").value || "";
-  const netSales = document.getElementById("net_sales").value || "";
-
-  const wb = XLSX.utils.book_new();
-
-  const headerSheet = [
-    ["Year:", year],
-    ["Month:", month],
-    ["Coffee House:", coffeeHouse],
-    ["Area Manager:", areaManager],
-    ["Sales Target:", salesTarget],
-    ["Net Sales:", netSales],
-    [],
-    ["---------------------------------------------"],
-    []
-  ];
-
-  const wsHeader = XLSX.utils.aoa_to_sheet(headerSheet);
-  const wsTable = XLSX.utils.table_to_sheet(table);
-
-  XLSX.utils.sheet_add_json(wsHeader, XLSX.utils.sheet_to_json(wsTable, { header: 1 }), {
-    skipHeader: true,
-    origin: "A9"
-  });
-
-  XLSX.utils.book_append_sheet(wb, wsHeader, "Report");
-  XLSX.writeFile(wb, `report_${year}_${month}.xlsx`);
-});
-
-/* ===========================
-   PDF 匯出（12 個月版本）
-=========================== */
-document.getElementById("exportPdfBtn").addEventListener("click", async () => {
-  const { jsPDF } = window.jspdf;
-
-  const pdf = new jsPDF("landscape", "mm", "a4");
-
-  const year = localStorage.getItem("current_year_page");
-  const month = localStorage.getItem("current_month_page");
-
-  const coffeeHouse = document.getElementById("coffee_house").value || "";
-  const areaManager = document.getElementById("area_manager").value || "";
-  const salesTarget = document.getElementById("sales_target").value || "";
-  const netSales = document.getElementById("net_sales").value || "";
-
-  let y = 10;
-  pdf.setFontSize(14);
-  pdf.text(`Year: ${year}`, 10, y); y += 8;
-  pdf.text(`Month: ${month}`, 10, y); y += 8;
-  pdf.text(`Coffee House: ${coffeeHouse}`, 10, y); y += 8;
-  pdf.text(`Area Manager: ${areaManager}`, 10, y); y += 8;
-  pdf.text(`Sales Target: ${salesTarget}`, 10, y); y += 8;
-  pdf.text(`Net Sales: ${netSales}`, 10, y); y += 10;
-
-  pdf.setLineWidth(0.5);
-  pdf.line(10, y, 287, y);
-  y += 5;
-
-  const table = document.getElementById("month_table");
-  const canvas = await html2canvas(table, { scale: 2 });
-  const imgData = canvas.toDataURL("image/png");
-
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const imgWidth = pageWidth - 20;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-  pdf.addImage(imgData, "PNG", 10, y, imgWidth, imgHeight);
-  pdf.save(`report_${year}_${month}.pdf`);
-});
 
 /* ===========================
    計算 TOTAL Row
@@ -359,3 +279,78 @@ function calculateTotalRow() {
     });
   });
 }
+
+/* ===========================
+   Excel 匯出
+=========================== */
+document.getElementById("exportExcelBtn").addEventListener("click", () => {
+  const table = document.getElementById("month_table");
+
+  const coffeeHouse = document.getElementById("coffee_house").value || "";
+  const month = document.getElementById("month_select").value || "";
+  const areaManager = document.getElementById("area_manager").value || "";
+  const salesTarget = document.getElementById("sales_target").value || "";
+  const netSales = document.getElementById("net_sales").value || "";
+
+  const wb = XLSX.utils.book_new();
+
+  const headerSheet = [
+    ["Coffee House:", coffeeHouse],
+    ["Month:", month],
+    ["Area Manager:", areaManager],
+    ["Sales Target:", salesTarget],
+    ["Net Sales:", netSales],
+    [],
+    ["---------------------------------------------"],
+    []
+  ];
+
+  const wsHeader = XLSX.utils.aoa_to_sheet(headerSheet);
+  const wsTable = XLSX.utils.table_to_sheet(table);
+
+  XLSX.utils.sheet_add_json(wsHeader, XLSX.utils.sheet_to_json(wsTable, { header: 1 }), {
+    skipHeader: true,
+    origin: "A9"
+  });
+
+  XLSX.utils.book_append_sheet(wb, wsHeader, "Report");
+  XLSX.writeFile(wb, "report.xlsx");
+});
+
+/* ===========================
+   PDF 匯出
+=========================== */
+document.getElementById("exportPdfBtn").addEventListener("click", async () => {
+  const { jsPDF } = window.jspdf;
+
+  const pdf = new jsPDF("landscape", "mm", "a4");
+
+  const coffeeHouse = document.getElementById("coffee_house").value || "";
+  const month = document.getElementById("month_select").value || "";
+  const areaManager = document.getElementById("area_manager").value || "";
+  const salesTarget = document.getElementById("sales_target").value || "";
+  const netSales = document.getElementById("net_sales").value || "";
+
+  let y = 10;
+  pdf.setFontSize(14);
+  pdf.text(`Coffee House: ${coffeeHouse}`, 10, y); y += 8;
+  pdf.text(`Month: ${month}`, 10, y); y += 8;
+  pdf.text(`Area Manager: ${areaManager}`, 10, y); y += 8;
+  pdf.text(`Sales Target: ${salesTarget}`, 10, y); y += 8;
+  pdf.text(`Net Sales: ${netSales}`, 10, y); y += 10;
+
+  pdf.setLineWidth(0.5);
+  pdf.line(10, y, 287, y);
+  y += 5;
+
+  const table = document.getElementById("month_table");
+  const canvas = await html2canvas(table, { scale: 2 });
+  const imgData = canvas.toDataURL("image/png");
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const imgWidth = pageWidth - 20;
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+  pdf.addImage(imgData, "PNG", 10, y, imgWidth, imgHeight);
+  pdf.save("report.pdf");
+});
