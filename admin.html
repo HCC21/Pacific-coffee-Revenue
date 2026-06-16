@@ -48,19 +48,39 @@
 
 <script src="user-system.js"></script>
 
+<script src="user-system.js"></script>
+
 <script>
-// ========================
-// Admin Page Load
-// ========================
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
   if (!isAdminLoggedIn()) {
     alert("你沒有權限進入後台");
-    window.location.href = "index.html";
+    window.location.href = "login.html";
     return;
   }
 
   loadUserList();
 });
+
+async function loadUserList() {
+  const tbody = document.getElementById("user_list");
+  tbody.innerHTML = "";
+
+  const users = await getAllUsers();
+
+  users.forEach(u => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${u.username}</td>
+      <td>${u.role}</td>
+      <td>${u.lastLogin || "-"}</td>
+      <td>（Google Sheet 版本暫未支援修改）</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+</script>
 
 // ========================
 // Load User List
