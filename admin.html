@@ -1,280 +1,135 @@
 <!DOCTYPE html>
-<html lang="zh-HK">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>Admin Panel</title>
-
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f4f6f9;
-    margin: 0;
-    padding: 20px;
-  }
-
-  h1 {
-    text-align: center;
-    margin-bottom: 25px;
-  }
-
-  .top-bar {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-
-  button {
-    padding: 8px 14px;
-    border: none;
-    background: #0078ff;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background: #005fcc;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-
-  th, td {
-    border: 1px solid #ddd;
-    padding: 10px;
-    text-align: center;
-  }
-
-  th {
-    background: #f0f0f0;
-  }
-
-  .modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.45);
-    display: none;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .modal-box {
-    width: 320px;
-    background: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: left;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.2);
-  }
-
-  .modal-box input {
-    width: 100%;
-    padding: 8px;
-    margin-top: 6px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-  }
-
-  .close-btn {
-    text-align: right;
-    cursor: pointer;
-    font-size: 14px;
-    color: #666;
-  }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h1>管理員後台</h1>
+<a href="index.html" class="back-home">← 登出</a>
 
-<div class="top-bar">
-  <button onclick="openCreate()">➕ 新增帳號</button>
-  <button onclick="logout()">登出</button>
-</div>
+<h1>Admin Panel</h1>
 
-<table>
+<h2>用戶列表</h2>
+
+<table class="admin-table">
   <thead>
     <tr>
-      <th>用戶名稱</th>
-      <th>角色</th>
-      <th>重設密碼</th>
-      <th>刪除</th>
+      <th>Username</th>
+      <th>Role</th>
+      <th>Last Login</th>
+      <th>Actions</th>
     </tr>
   </thead>
-  <tbody id="user-table"></tbody>
+  <tbody id="user_list"></tbody>
 </table>
 
-<!-- ===== 新增帳號 Modal ===== -->
-<div class="modal" id="create-modal">
-  <div class="modal-box">
-    <div class="close-btn" onclick="closeCreate()">✖</div>
-    <h3>新增帳號</h3>
+<hr>
 
-    <label>用戶名稱</label>
-    <input type="text" id="new-name">
+<h2>新增用戶</h2>
 
-    <label>密碼</label>
-    <input type="password" id="new-pass">
+<div class="admin-box">
+  <label>Username :</label>
+  <input type="text" id="new_user">
 
-    <label>角色</label>
-    <select id="new-role" style="width:100%; padding:8px; margin-top:6px;">
-      <option value="user">普通用戶</option>
-      <option value="admin">管理員</option>
-    </select>
+  <label>Password :</label>
+  <input type="password" id="new_pass">
 
-    <button onclick="createAccount()">建立帳號</button>
-  </div>
+  <label>Role :</label>
+  <select id="new_role">
+    <option value="user">User</option>
+    <option value="admin">Admin</option>
+  </select>
+
+  <button id="addUserBtn">新增用戶</button>
 </div>
 
-<!-- ===== 重設密碼 Modal ===== -->
-<div class="modal" id="reset-modal">
-  <div class="modal-box">
-    <div class="close-btn" onclick="closeReset()">✖</div>
-    <h3>重設密碼</h3>
-
-    <label>新密碼</label>
-    <input type="password" id="reset-pass">
-
-    <button onclick="confirmReset()">重設密碼</button>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="user-system.js"></script>
 
 <script>
-  const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8"; 
-
-  // ⭐ 改名 db，避免 supabase 變數衝突
-  const db = supabase.createClient(supabaseUrl, supabaseKey);
-
-  let resetUserName = "";
-
-  // ===== 只有管理員可以進入 =====
-  const role = localStorage.getItem("role");
-  if (role !== "admin") {
-    alert("你沒有權限進入管理員後台");
-    window.location.href = "login.html";
+// ========================
+// Admin Page Load
+// ========================
+window.addEventListener("DOMContentLoaded", () => {
+  if (!isAdminLoggedIn()) {
+    alert("你沒有權限進入後台");
+    window.location.href = "index.html";
+    return;
   }
 
-  // ===== 讀取所有用戶 =====
-  async function loadUsers() {
-    const { data, error } = await db
-      .from("users")
-      .select("*")
-      .order("name");
+  loadUserList();
+});
 
-    const tbody = document.getElementById("user-table");
-    tbody.innerHTML = "";
+// ========================
+// Load User List
+// ========================
+function loadUserList() {
+  const tbody = document.getElementById("user_list");
+  tbody.innerHTML = "";
 
-    data.forEach(user => {
-      const tr = document.createElement("tr");
+  const users = getAllUsers();
 
-      tr.innerHTML = `
-        <td>${user.name}</td>
-        <td>${user.role}</td>
-        <td><button onclick="openReset('${user.name}')">重設密碼</button></td>
-        <td><button onclick="deleteUser('${user.name}')">刪除</button></td>
-      `;
+  users.forEach(u => {
+    const tr = document.createElement("tr");
 
-      tbody.appendChild(tr);
-    });
+    tr.innerHTML = `
+      <td>${u.username}</td>
+      <td>${u.role}</td>
+      <td>${u.lastLogin || "-"}</td>
+      <td>
+        <button onclick="resetPassword('${u.username}')">重設密碼</button>
+        <button onclick="deleteUser('${u.username}')">刪除</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+// ========================
+// Add User
+// ========================
+document.getElementById("addUserBtn").addEventListener("click", () => {
+  const user = document.getElementById("new_user").value.trim();
+  const pass = document.getElementById("new_pass").value.trim();
+  const role = document.getElementById("new_role").value;
+
+  if (!user || !pass) {
+    alert("請輸入用戶名和密碼");
+    return;
   }
 
-  loadUsers();
-
-  // ===== 新增帳號 =====
-  function openCreate() { document.getElementById("create-modal").style.display = "flex"; }
-  function closeCreate() { document.getElementById("create-modal").style.display = "none"; }
-
-  async function createAccount() {
-    const name = document.getElementById("new-name").value.trim();
-    const pass = document.getElementById("new-pass").value.trim();
-    const role = document.getElementById("new-role").value;
-
-    if (!name || !pass) {
-      alert("請輸入帳號和密碼");
-      return;
-    }
-
-    const { error } = await db
-      .from("users")
-      .insert([{ name, password: pass, role }]);
-
-    if (error) {
-      alert("帳號已存在或建立失敗");
-      return;
-    }
-
-    alert("帳號建立成功！");
-    closeCreate();
-    loadUsers();
+  if (addUser(user, pass, role)) {
+    alert("新增成功");
+    loadUserList();
+  } else {
+    alert("用戶已存在");
   }
+});
 
-  // ===== 重設密碼 =====
-  function openReset(name) {
-    resetUserName = name;
-    document.getElementById("reset-modal").style.display = "flex";
-  }
+// ========================
+// Reset Password
+// ========================
+function resetPassword(username) {
+  const newPass = prompt("輸入新密碼：");
+  if (!newPass) return;
 
-  function closeReset() {
-    document.getElementById("reset-modal").style.display = "none";
-  }
+  updatePassword(username, newPass);
+  alert("密碼已更新");
+}
 
-  async function confirmReset() {
-    const pass = document.getElementById("reset-pass").value.trim();
+// ========================
+// Delete User
+// ========================
+function deleteUser(username) {
+  if (!confirm(`確定刪除用戶 ${username}？`)) return;
 
-    if (!pass) {
-      alert("請輸入新密碼");
-      return;
-    }
-
-    const { error } = await db
-      .from("users")
-      .update({ password: pass })
-      .eq("name", resetUserName);
-
-    if (error) {
-      alert("重設失敗");
-      return;
-    }
-
-    alert("密碼已重設！");
-    closeReset();
-  }
-
-  // ===== 刪除用戶 =====
-  async function deleteUser(name) {
-    if (!confirm(`確定要刪除帳號：${name}？`)) return;
-
-    const { error } = await db
-      .from("users")
-      .delete()
-      .eq("name", name);
-
-    if (error) {
-      alert("刪除失敗");
-      return;
-    }
-
-    alert("帳號已刪除");
-    loadUsers();
-  }
-
-  // ===== 登出 =====
-  function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-  }
+  removeUser(username);
+  alert("已刪除");
+  loadUserList();
+}
 </script>
 
 </body>
