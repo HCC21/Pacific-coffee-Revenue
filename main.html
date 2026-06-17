@@ -2,100 +2,136 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<title>歡迎頁面</title>
+<title>報數系統</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-  body {
-    margin: 0;
-    padding: 0;
-    background: #f2f5f8;
-    font-family: Arial, sans-serif;
-    text-align: center;
-  }
+/* ===== 背景 ===== */
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #f7f2ef 0%, #f0e6e2 100%);
+  font-family: "Segoe UI", Arial, sans-serif;
+  text-align: center;
+}
 
-  /* ===== 用戶列 ===== */
-  .user-bar {
-    width: 100%;
-    background: white;
-    padding: 15px;
-    font-size: 20px;
-    color: #333;
-    border-bottom: 1px solid #ddd;
-    position: sticky;
-    top: 0;
-    z-index: 9999;
-  }
+/* ===== 用戶列 ===== */
+.user-bar {
+  width: 100%;
+  background: #ffffff;
+  padding: 15px;
+  font-size: 20px;
+  color: #333;
+  border-bottom: 2px solid #8B0000;
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+}
 
-  .logout-btn {
-    margin-left: 15px;
-    padding: 6px 12px;
-    background: #ff4d4f;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
+.logout-btn {
+  padding: 6px 12px;
+  background: #8B0000;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-  .logout-btn:hover {
-    background: #d9363e;
-  }
+.logout-btn:hover {
+  background: #a00000;
+}
 
-  /* ===== 標題 ===== */
-  h1 {
-    margin-top: 40px;
-    font-size: 32px;
-    color: #333;
-  }
+/* ===== 標題 ===== */
+h1 {
+  margin-top: 40px;
+  font-size: 32px;
+  color: #8B0000;
+}
 
-  /* ===== 年份選擇 ===== */
-  .year-box {
-    margin-top: 20px;
-  }
+/* ===== 年份選擇 ===== */
+.year-box {
+  margin-top: 20px;
+}
 
-  select {
-    padding: 10px;
-    font-size: 18px;
-    border-radius: 6px;
-  }
+select {
+  padding: 10px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: 1px solid #aaa;
+}
 
-  /* ===== 月份按鈕 ===== */
+/* ===== 月份按鈕 Grid ===== */
+.month-grid {
+  margin: 40px auto;
+  width: 85%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+/* ===== 月份按鈕 ===== */
+.month-btn {
+  padding: 20px;
+  background: #8B0000;
+  color: white;
+  border-radius: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s;
+}
+
+.month-btn:hover {
+  background: #a00000;
+}
+
+/* ===== 手機版優化 ===== */
+@media (max-width: 480px) {
+  h1 { font-size: 26px; }
   .month-grid {
-    margin: 40px auto;
-    width: 80%;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px;
+    grid-template-columns: repeat(2, 1fr);
+    width: 90%;
   }
-
   .month-btn {
-    padding: 20px;
-    background: #0078ff;
-    color: white;
-    border-radius: 8px;
-    font-size: 20px;
-    cursor: pointer;
-    border: none;
+    padding: 18px;
+    font-size: 18px;
   }
+  select {
+    font-size: 16px;
+    padding: 8px;
+  }
+}
 
-  .month-btn:hover {
-    background: #005fcc;
-  }
+/* ===== 語言切換 ===== */
+.lang-switch {
+  margin-top: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  color: #444;
+}
 </style>
 </head>
 
 <body>
 
-<!-- ⭐ 用戶列（顯示登入者 + 更換用戶） -->
+<!-- ⭐ 用戶列 -->
 <div class="user-bar">
   <span id="welcome_user"></span>
-  <button class="logout-btn" onclick="changeUser()">更換用戶</button>
+  <button class="logout-btn" onclick="changeUser()" id="logout-text">更換用戶</button>
 </div>
 
-<h1>📅 歡迎使用報數系統</h1>
+<h1 id="title-text">📅 歡迎使用報數系統</h1>
+
+<!-- ⭐ 語言切換 -->
+<div class="lang-switch" onclick="toggleLang()">🌐 中文 / English</div>
 
 <!-- ⭐ 年份選擇 -->
 <div class="year-box">
-  <label style="font-size:20px;">選擇年份：</label>
+  <label id="year-label" style="font-size:20px;">選擇年份：</label>
   <select id="year_select">
     <option>2024</option>
     <option>2025</option>
@@ -106,40 +142,68 @@
 </div>
 
 <!-- ⭐ 月份按鈕 -->
-<div class="month-grid">
-  <button class="month-btn" onclick="openMonth(1)">JAN</button>
-  <button class="month-btn" onclick="openMonth(2)">FEB</button>
-  <button class="month-btn" onclick="openMonth(3)">MAR</button>
-  <button class="month-btn" onclick="openMonth(4)">APR</button>
-  <button class="month-btn" onclick="openMonth(5)">MAY</button>
-  <button class="month-btn" onclick="openMonth(6)">JUN</button>
-  <button class="month-btn" onclick="openMonth(7)">JUL</button>
-  <button class="month-btn" onclick="openMonth(8)">AUG</button>
-  <button class="month-btn" onclick="openMonth(9)">SEP</button>
-  <button class="month-btn" onclick="openMonth(10)">OCT</button>
-  <button class="month-btn" onclick="openMonth(11)">NOV</button>
-  <button class="month-btn" onclick="openMonth(12)">DEC</button>
+<div class="month-grid" id="month-grid">
+  <!-- JS 會自動生成月份按鈕 -->
 </div>
 
 <script>
-// ⭐ 顯示目前登入用戶
-const user = localStorage.getItem("userName");
-document.getElementById("welcome_user").innerText = `👋 歡迎，${user}`;
+/* ===== 語言資料 ===== */
+const langData = {
+  zh: {
+    welcome: "👋 歡迎，",
+    title: "📅 歡迎使用報數系統",
+    logout: "更換用戶",
+    year: "選擇年份：",
+    months: ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"]
+  },
+  en: {
+    welcome: "👋 Welcome, ",
+    title: "📅 Reporting System",
+    logout: "Logout",
+    year: "Select Year:",
+    months: ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"]
+  }
+};
 
-// ⭐ 更換用戶
+let currentLang = "zh";
+
+/* ===== 初始化語言 ===== */
+function applyLang() {
+  const t = langData[currentLang];
+
+  document.getElementById("welcome_user").innerText = t.welcome + (localStorage.getItem("userName") || "");
+  document.getElementById("title-text").innerText = t.title;
+  document.getElementById("logout-text").innerText = t.logout;
+  document.getElementById("year-label").innerText = t.year;
+
+  // 更新月份按鈕
+  const grid = document.getElementById("month-grid");
+  grid.innerHTML = "";
+  t.months.forEach((m, i) => {
+    grid.innerHTML += `<button class="month-btn" onclick="openMonth(${i+1})">${m}</button>`;
+  });
+}
+
+/* ===== 切換語言 ===== */
+function toggleLang() {
+  currentLang = currentLang === "zh" ? "en" : "zh";
+  applyLang();
+}
+
+/* ===== 顯示登入用戶 ===== */
+applyLang();
+
+/* ===== 更換用戶 ===== */
 function changeUser() {
   localStorage.clear();
   window.location.href = "login.html";
 }
 
-// ⭐ 按月份 → 儲存年份 → 跳去對應 HTML
+/* ===== 打開月份 ===== */
 function openMonth(m) {
   const year = document.getElementById("year_select").value;
-
-  // 儲存年份供 index.html 使用
   localStorage.setItem("global_year", year);
 
-  // 跳去對應月份 HTML
   const monthNames = [
     "", "jan", "feb", "mar", "apr", "may", "jun",
     "jul", "aug", "sep", "oct", "nov", "dec"

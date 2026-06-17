@@ -2,190 +2,393 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<title>Login</title>
+<title>Pacific Coffee Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-  body {
-    margin: 0;
-    padding: 0;
-    background: #f2f5f8;
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
+/* ===== 背景 ===== */
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #f7f2ef 0%, #f0e6e2 100%);
+  font-family: "Segoe UI", Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* ===== Login 卡片 ===== */
+.login-box {
+  width: 340px;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.18);
+  text-align: center;
+  border-top: 6px solid #8B0000;
+}
+
+/* ===== 手機版優化 ===== */
+@media (max-width: 480px) {
   .login-box {
-    width: 330px;
-    padding: 25px;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
-    text-align: center;
+    width: 90%;
+    padding: 24px;
   }
-  h2 { margin-bottom: 20px; font-weight: bold; color: #333; }
-  .input-group { margin-bottom: 15px; text-align: left; }
-  .input-group label { font-size: 14px; color: #444; }
-  .input-group input {
-    width: 100%; padding: 10px; margin-top: 6px;
-    border: 1px solid #ccc; border-radius: 6px;
-    font-size: 15px; box-sizing: border-box;
-  }
-  .password-wrapper { position: relative; }
-  .toggle-password {
-    position: absolute; right: 10px; top: 12px;
-    cursor: pointer; font-size: 13px; color: #666;
+  input {
+    padding: 14px;
+    font-size: 16px;
   }
   #login-btn {
-    width: 100%; padding: 10px; background: #0078ff;
-    color: white; border: none; border-radius: 6px;
-    font-size: 16px; cursor: pointer; margin-top: 10px;
+    padding: 14px;
+    font-size: 17px;
   }
-  #login-btn:hover { background: #005fcc; }
-  .link-btn { margin-top: 12px; font-size: 14px; color: #0078ff; cursor: pointer; }
-  #error-msg { margin-top: 12px; color: red; font-size: 14px; display: none; }
-  .modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.45); display: none;
-    justify-content: center; align-items: center;
+  .lang-switch {
+    font-size: 15px;
   }
-  .modal-box {
-    width: 320px; background: #fff; padding: 20px;
-    border-radius: 10px; text-align: left;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.2);
-  }
-  .modal-box input {
-    width: 100%; padding: 8px; margin-top: 6px;
-    border: 1px solid #ccc; border-radius: 6px;
-  }
-  .close-btn { text-align: right; cursor: pointer; font-size: 14px; color: #666; }
+}
+
+/* ===== Logo ===== */
+.logo {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 10px auto;
+  background: url('pacific-logo.png') center/cover no-repeat;
+  border-radius: 50%;
+}
+
+/* ===== 標題 ===== */
+h2 {
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #8B0000;
+  font-size: 24px;
+}
+
+/* ===== Input Group ===== */
+.input-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.input-group label {
+  font-size: 14px;
+  color: #333;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+/* ===== 密碼顯示按鈕 ===== */
+.password-wrapper {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 38px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #666;
+}
+
+/* ===== Login 按鈕 ===== */
+#login-btn {
+  width: 100%;
+  padding: 12px;
+  background: #8B0000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+#login-btn:hover {
+  background: #a00000;
+}
+
+/* ===== Link ===== */
+.link-btn {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #8B0000;
+  cursor: pointer;
+}
+
+/* ===== 語言切換 ===== */
+.lang-switch {
+  margin-top: 15px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #444;
+}
+
+/* ===== 錯誤訊息 ===== */
+#error-msg {
+  margin-top: 12px;
+  color: red;
+  font-size: 14px;
+  display: none;
+}
+
+/* ===== Modal ===== */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-box {
+  width: 320px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: left;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.close-btn {
+  text-align: right;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+}
 </style>
 </head>
+
 <body>
 
 <div class="login-box">
-  <h2>登入報數系統</h2>
+
+  <div class="logo"></div>
+
+  <h2 id="title-text">Pacific Coffee Login</h2>
 
   <div class="input-group">
-    <label>用戶名稱</label>
+    <label id="label-username">用戶名稱</label>
     <input type="text" id="login-name" placeholder="輸入用戶名稱">
   </div>
 
   <div class="input-group password-wrapper">
-    <label>密碼</label>
+    <label id="label-password">密碼</label>
     <input type="password" id="login-pass" placeholder="輸入密碼">
-    <span class="toggle-password" onclick="togglePassword()">顯示</span>
+    <span class="toggle-password" onclick="togglePassword()" id="toggle-pass-text">顯示</span>
   </div>
 
   <button id="login-btn">登入</button>
 
-  <div class="link-btn" onclick="openCreate()">➕ 新增帳號</div>
+  <div class="link-btn" onclick="openCreate()" id="create-account-text">➕ 新增帳號</div>
+
+  <div class="lang-switch" onclick="toggleLang()">🌐 中文 / English</div>
 
   <div id="error-msg">帳號或密碼錯誤</div>
 </div>
 
-<!-- 新增帳號 Modal（只給 admin 用，實際上 admin 會在 admin.html 建） -->
+<!-- ===== 新增帳號 Modal ===== -->
 <div class="modal" id="create-modal">
   <div class="modal-box">
     <div class="close-btn" onclick="closeCreate()">✖</div>
-    <h3>新增帳號</h3>
+    <h3 id="modal-title">新增帳號</h3>
 
-    <label>用戶名稱</label>
+    <label id="modal-label-username">用戶名稱</label>
     <input type="text" id="new-name">
 
-    <label>密碼</label>
+    <label id="modal-label-password">密碼</label>
     <input type="password" id="new-pass">
 
-    <button onclick="createAccount()">建立帳號</button>
+    <button onclick="createAccount()" id="modal-create-btn">建立帳號</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-  const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
-  const db = supabase.createClient(supabaseUrl, supabaseKey);
+/* ===== 語言資料 ===== */
+const langData = {
+  zh: {
+    title: "太平洋咖啡登入",
+    username: "用戶名稱",
+    password: "密碼",
+    placeholderUser: "輸入用戶名稱",
+    placeholderPass: "輸入密碼",
+    show: "顯示",
+    hide: "隱藏",
+    login: "登入",
+    createAccount: "➕ 新增帳號",
+    error: "帳號或密碼錯誤",
+    modalTitle: "新增帳號",
+    modalUser: "用戶名稱",
+    modalPass: "密碼",
+    modalBtn: "建立帳號"
+  },
+  en: {
+    title: "Pacific Coffee Login",
+    username: "Username",
+    password: "Password",
+    placeholderUser: "Enter username",
+    placeholderPass: "Enter password",
+    show: "Show",
+    hide: "Hide",
+    login: "Login",
+    createAccount: "➕ Create Account",
+    error: "Incorrect username or password",
+    modalTitle: "Create Account",
+    modalUser: "Username",
+    modalPass: "Password",
+    modalBtn: "Create"
+  }
+};
 
-  function togglePassword() {
-    const pass = document.getElementById("login-pass");
-    const toggle = document.querySelector(".toggle-password");
-    if (pass.type === "password") {
-      pass.type = "text";
-      toggle.textContent = "隱藏";
-    } else {
-      pass.type = "password";
-      toggle.textContent = "顯示";
-    }
+let currentLang = "zh";
+
+/* ===== 切換語言 ===== */
+function toggleLang() {
+  currentLang = currentLang === "zh" ? "en" : "zh";
+  const t = langData[currentLang];
+
+  document.getElementById("title-text").textContent = t.title;
+  document.getElementById("label-username").textContent = t.username;
+  document.getElementById("label-password").textContent = t.password;
+  document.getElementById("login-name").placeholder = t.placeholderUser;
+  document.getElementById("login-pass").placeholder = t.placeholderPass;
+  document.getElementById("toggle-pass-text").textContent = t.show;
+  document.getElementById("login-btn").textContent = t.login;
+  document.getElementById("create-account-text").textContent = t.createAccount;
+  document.getElementById("error-msg").textContent = t.error;
+
+  document.getElementById("modal-title").textContent = t.modalTitle;
+  document.getElementById("modal-label-username").textContent = t.modalUser;
+  document.getElementById("modal-label-password").textContent = t.modalPass;
+  document.getElementById("modal-create-btn").textContent = t.modalBtn;
+}
+
+/* ===== Supabase ===== */
+const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
+const supabaseKey =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
+
+const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+/* ===== 顯示 / 隱藏密碼 ===== */
+function togglePassword() {
+  const pass = document.getElementById("login-pass");
+  const toggle = document.getElementById("toggle-pass-text");
+  const t = langData[currentLang];
+
+  if (pass.type === "password") {
+    pass.type = "text";
+    toggle.textContent = t.hide;
+  } else {
+    pass.type = "password";
+    toggle.textContent = t.show;
+  }
+}
+
+/* ===== SHA-256 Hash ===== */
+async function hashPassword(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/* ===== 登入 ===== */
+document.getElementById("login-btn").addEventListener("click", async () => {
+  const name = document.getElementById("login-name").value.trim();
+  const pass = document.getElementById("login-pass").value.trim();
+  const errorMsg = document.getElementById("error-msg");
+  const t = langData[currentLang];
+
+  errorMsg.style.display = "none";
+
+  if (!name || !pass) {
+    errorMsg.textContent = t.error;
+    errorMsg.style.display = "block";
+    return;
   }
 
-  async function hashPassword(text) {
-    const enc = new TextEncoder().encode(text);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  const passHash = await hashPassword(pass);
+
+  const { data, error } = await db
+    .from("users")
+    .select("*")
+    .eq("name", name)
+    .eq("password", passHash)
+    .single();
+
+  if (error || !data) {
+    errorMsg.textContent = t.error;
+    errorMsg.style.display = "block";
+    return;
   }
 
-  document.getElementById("login-btn").addEventListener("click", async () => {
-    const name = document.getElementById("login-name").value.trim();
-    const pass = document.getElementById("login-pass").value.trim();
-    const errorMsg = document.getElementById("error-msg");
-    errorMsg.style.display = "none";
+  localStorage.setItem("userName", data.name);
+  localStorage.setItem("role", data.role);
 
-    if (!name || !pass) {
-      errorMsg.textContent = "請輸入帳號和密碼";
-      errorMsg.style.display = "block";
-      return;
-    }
-
-    const passHash = await hashPassword(pass);
-
-    const { data, error } = await db
-      .from("users")
-      .select("*")
-      .eq("name", name)
-      .eq("password", passHash)
-      .single();
-
-    if (error || !data) {
-      errorMsg.textContent = "帳號或密碼錯誤";
-      errorMsg.style.display = "block";
-      return;
-    }
-
-    localStorage.setItem("userName", data.name);
-    localStorage.setItem("role", data.role);
-
-    if (data.role === "admin") {
-      window.location.href = "admin.html";
-    } else {
-      window.location.href = "main.html";
-    }
-  });
-
-  function openCreate() { document.getElementById("create-modal").style.display = "flex"; }
-  function closeCreate() { document.getElementById("create-modal").style.display = "none"; }
-
-  async function createAccount() {
-    const name = document.getElementById("new-name").value.trim();
-    const pass = document.getElementById("new-pass").value.trim();
-
-    if (!name || !pass) {
-      alert("請輸入帳號和密碼");
-      return;
-    }
-
-    const passHash = await hashPassword(pass);
-
-    const { error } = await db
-      .from("users")
-      .insert([{ name, password: passHash, role: "user" }]);
-
-    if (error) {
-      alert("帳號已存在或建立失敗");
-      return;
-    }
-
-    alert("帳號建立成功！");
-    closeCreate();
+  if (data.role === "admin") {
+    window.location.href = "admin.html";
+  } else {
+    window.location.href = "main.html";
   }
+});
+
+/* ===== Modal ===== */
+function openCreate() {
+  document.getElementById("create-modal").style.display = "flex";
+}
+
+function closeCreate() {
+  document.getElementById("create-modal").style.display = "none";
+}
+
+/* ===== 建立帳號 ===== */
+async function createAccount() {
+  const name = document.getElementById("new-name").value.trim();
+  const pass = document.getElementById("new-pass").value.trim();
+
+  if (!name || !pass) {
+    alert("請輸入帳號和密碼");
+    return;
+  }
+
+  const passHash = await hashPassword(pass);
+
+  const { error } = await db
+    .from("users")
+    .insert([{ name, password: passHash, role: "user" }]);
+
+  if (error) {
+    alert("帳號已存在或建立失敗");
+    return;
+  }
+
+  alert("帳號建立成功！");
+  closeCreate();
+}
 </script>
+
 </body>
 </html>
