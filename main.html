@@ -2,49 +2,152 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<title>Main</title>
+<title>歡迎頁面</title>
+
 <style>
-  body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
-  .box {
-    max-width: 600px; margin: 40px auto; background: #fff;
-    padding: 20px; border-radius: 10px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.1);
+  body {
+    margin: 0;
+    padding: 0;
+    background: #f2f5f8;
+    font-family: Arial, sans-serif;
+    text-align: center;
   }
-  h2 { margin-top: 0; }
-  button {
-    padding: 8px 14px; border: none; background: #0078ff;
-    color: white; border-radius: 6px; cursor: pointer; margin-right: 10px;
+
+  /* ===== 用戶列 ===== */
+  .user-bar {
+    width: 100%;
+    background: white;
+    padding: 15px;
+    font-size: 20px;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
   }
-  button:hover { background: #005fcc; }
+
+  .logout-btn {
+    margin-left: 15px;
+    padding: 6px 12px;
+    background: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .logout-btn:hover {
+    background: #d9363e;
+  }
+
+  /* ===== 標題 ===== */
+  h1 {
+    margin-top: 40px;
+    font-size: 32px;
+    color: #333;
+  }
+
+  /* ===== 年份選擇 ===== */
+  .year-box {
+    margin-top: 20px;
+  }
+
+  select {
+    padding: 10px;
+    font-size: 18px;
+    border-radius: 6px;
+  }
+
+  /* ===== 月份按鈕 ===== */
+  .month-grid {
+    margin: 40px auto;
+    width: 80%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+  }
+
+  .month-btn {
+    padding: 20px;
+    background: #0078ff;
+    color: white;
+    border-radius: 8px;
+    font-size: 20px;
+    cursor: pointer;
+    border: none;
+  }
+
+  .month-btn:hover {
+    background: #005fcc;
+  }
 </style>
 </head>
+
 <body>
-<div class="box">
-  <h2 id="welcome"></h2>
-  <p>你可以進入以下頁面：</p>
-  <button onclick="goRevenue()">📊 每月報數表</button>
-  <button onclick="logout()">登出</button>
+
+<!-- ⭐ 用戶列（顯示登入者 + 更換用戶） -->
+<div class="user-bar">
+  <span id="welcome_user"></span>
+  <button class="logout-btn" onclick="changeUser()">更換用戶</button>
+</div>
+
+<h1>📅 歡迎使用報數系統</h1>
+
+<!-- ⭐ 年份選擇 -->
+<div class="year-box">
+  <label style="font-size:20px;">選擇年份：</label>
+  <select id="year_select">
+    <option>2024</option>
+    <option>2025</option>
+    <option selected>2026</option>
+    <option>2027</option>
+    <option>2028</option>
+  </select>
+</div>
+
+<!-- ⭐ 月份按鈕 -->
+<div class="month-grid">
+  <button class="month-btn" onclick="openMonth(1)">JAN</button>
+  <button class="month-btn" onclick="openMonth(2)">FEB</button>
+  <button class="month-btn" onclick="openMonth(3)">MAR</button>
+  <button class="month-btn" onclick="openMonth(4)">APR</button>
+  <button class="month-btn" onclick="openMonth(5)">MAY</button>
+  <button class="month-btn" onclick="openMonth(6)">JUN</button>
+  <button class="month-btn" onclick="openMonth(7)">JUL</button>
+  <button class="month-btn" onclick="openMonth(8)">AUG</button>
+  <button class="month-btn" onclick="openMonth(9)">SEP</button>
+  <button class="month-btn" onclick="openMonth(10)">OCT</button>
+  <button class="month-btn" onclick="openMonth(11)">NOV</button>
+  <button class="month-btn" onclick="openMonth(12)">DEC</button>
 </div>
 
 <script>
-  const userName = localStorage.getItem("userName");
-  const role = localStorage.getItem("role");
+// ⭐ 顯示目前登入用戶
+const user = localStorage.getItem("userName");
+document.getElementById("welcome_user").innerText = `👋 歡迎，${user}`;
 
-  if (!userName) {
-    window.location.href = "login.html";
-  }
+// ⭐ 更換用戶
+function changeUser() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
 
-  document.getElementById("welcome").textContent =
-    `歡迎，${userName}（${role === "admin" ? "管理員" : "用戶"}）`;
+// ⭐ 按月份 → 儲存年份 → 跳去對應 HTML
+function openMonth(m) {
+  const year = document.getElementById("year_select").value;
 
-  function goRevenue() {
-    window.location.href = "index.html";
-  }
+  // 儲存年份供 index.html 使用
+  localStorage.setItem("global_year", year);
 
-  function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
-  }
+  // 跳去對應月份 HTML
+  const monthNames = [
+    "", "jan", "feb", "mar", "apr", "may", "jun",
+    "jul", "aug", "sep", "oct", "nov", "dec"
+  ];
+
+  window.location.href = monthNames[m] + ".html";
+}
 </script>
+
 </body>
 </html>
