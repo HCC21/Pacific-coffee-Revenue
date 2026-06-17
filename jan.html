@@ -13,6 +13,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+/* ⭐ 固定上方導航 */
 .navbar {
   position: sticky;
   top: 0;
@@ -27,6 +28,31 @@
   color: #0078ff;
   font-weight: bold;
   margin-right: 20px;
+}
+
+/* ⭐ 手機版優化 */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  table {
+    font-size: 12px;
+  }
+  th, td {
+    padding: 4px;
+  }
+  .header-bar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .header-right {
+    width: 100%;
+  }
+  h1, h2 {
+    font-size: 18px;
+  }
 }
 </style>
 
@@ -57,7 +83,6 @@
       <input type="text" id="coffee_house" />
     </div>
 
-    <!-- ⭐ Month input 改為 hidden，自動設定為 global_year-01 -->
     <input type="month" id="month_select" style="display:none;">
 
     <div class="header-item">
@@ -81,7 +106,6 @@
 <div class="table-wrapper">
   <table id="month_table">
     <thead>
-      <!-- ⭐ 完整 thead（原樣保留） -->
       <tr>
         <th rowspan="2" class="freeze-col-1">Date</th>
         <th rowspan="2" class="freeze-col-2">Wk</th>
@@ -150,11 +174,10 @@
 <script src="storage.js"></script>
 
 <script>
-// ===== Supabase 初始化（你要求的版本） =====
+// ===== Supabase 初始化 =====
 const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
 const db = supabase.createClient(supabaseUrl, supabaseKey);
-let resetUserName = "";
 
 // ===== 登入檢查 =====
 const userName = localStorage.getItem("userName");
@@ -166,10 +189,10 @@ if (!userName) {
 // ⭐ 設定月份（January）
 const month = 1;
 
-// ⭐ 使用 main.html 選擇的年份（Y1）
+// ⭐ 使用 main.html 選擇的年份
 const year = localStorage.getItem("global_year") || new Date().getFullYear();
 
-// ⭐ 設定 month_select（storage.js 必須用）
+// ⭐ 設定 month_select
 document.getElementById("month_select").value =
   `${year}-${String(month).padStart(2, "0")}`;
 

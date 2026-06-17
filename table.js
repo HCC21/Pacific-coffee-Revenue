@@ -344,7 +344,7 @@ document.getElementById("exportPdfBtn").addEventListener("click", async () => {
   y += 5;
 
   const table = document.getElementById("month_table");
-  const canvas = await html2canvas(table, { scale: 2 });
+  const canvas = await html2canvas(table, { scale: 1 });
   const imgData = canvas.toDataURL("image/png");
 
   const pageWidth = pdf.internal.pageSize.getWidth();

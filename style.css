@@ -193,4 +193,32 @@ table input {
 .logout-btn:hover {
   background: #d9363e;
 }
+/* ⭐ 手機版：整個表格可左右滑動 */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ⭐ 手機版：縮小字體 */
+@media (max-width: 768px) {
+  table {
+    font-size: 12px;
+  }
+  th, td {
+    padding: 4px;
+  }
+  .navbar a {
+    font-size: 16px;
+  }
+  h1, h2 {
+    font-size: 18px;
+  }
+  .header-bar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .header-right {
+    width: 100%;
+  }
+}
 
