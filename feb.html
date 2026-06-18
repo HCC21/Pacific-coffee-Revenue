@@ -83,7 +83,6 @@
       <input type="text" id="coffee_house" />
     </div>
 
-    <!-- ⭐ Month input 改為 hidden，自動設定為 global_year-02 -->
     <input type="month" id="month_select" style="display:none;">
 
     <div class="header-item">
@@ -107,7 +106,7 @@
 <div class="table-wrapper">
   <table id="month_table">
     <thead>
-      <tr>
+    <tr>
         <th rowspan="2" class="freeze-col-1">Date</th>
         <th rowspan="2" class="freeze-col-2">Wk</th>
 
@@ -165,6 +164,7 @@
         <th>(Qty)</th><th>($)</th>
         <th>(Qty)</th><th>($)</th>
       </tr>
+
     </thead>
 
     <tbody id="table_body"></tbody>
@@ -175,12 +175,6 @@
 <script src="storage.js"></script>
 
 <script>
-// ===== Supabase 初始化（你要求的版本） =====
-const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
-const db = supabase.createClient(supabaseUrl, supabaseKey);
-let resetUserName = "";
-
 // ===== 登入檢查 =====
 const userName = localStorage.getItem("userName");
 if (!userName) {
@@ -191,10 +185,10 @@ if (!userName) {
 // ⭐ 設定月份（February）
 const month = 2;
 
-// ⭐ 使用 main.html 選擇的年份（Y1）
+// ⭐ 使用 main.html 選擇的年份
 const year = localStorage.getItem("global_year") || new Date().getFullYear();
 
-// ⭐ 設定 month_select（storage.js 必須用）
+// ⭐ 設定 month_select
 document.getElementById("month_select").value =
   `${year}-${String(month).padStart(2, "0")}`;
 
