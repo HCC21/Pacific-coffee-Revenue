@@ -1,4 +1,17 @@
 /* ===========================
+   Supabase 初始化
+=========================== */
+const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
+const supabaseKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
+
+const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+function getUserName() {
+  return localStorage.getItem("userName") || "";
+}
+
+/* ===========================
    清空 Header（切換月份時用）
 =========================== */
 function clearHeader() {
@@ -99,37 +112,107 @@ function fillAllData(allData) {
 }
 
 /* ===========================
-   Save（LocalStorage）
+   ⭐ 自動計算 HEADER Sales Target & Net Sales
 =========================== */
-function saveData() {
-  const month = document.getElementById("month_select").value;
-  if (!month) return;
+function updateHeaderTotals() {
+  const tbody = document.getElementById("table_body");
+  const rows = tbody.querySelectorAll("tr:not(#total_row)");
 
-  const allData = collectAllData();
-  localStorage.setItem(`revenue_${month}`, JSON.stringify(allData));
+  let totalSalesTarget = 0;
+  let totalNetSales = 0;
+
+  rows.forEach(row => {
+    const dailyTarget = parseFloat(row.querySelector("input[id^='daily_sales_target_']")?.value) || 0;
+    const zNet = parseFloat(row.querySelector("input[id^='z_net_sales_']")?.value) || 0;
+
+    totalSalesTarget += dailyTarget;
+    totalNetSales += zNet;
+  });
+
+  document.getElementById("sales_target").value = totalSalesTarget.toFixed(1);
+  document.getElementById("net_sales").value = totalNetSales.toFixed(1);
 }
 
 /* ===========================
-   Load（LocalStorage）
+   Save（LocalStorage + Supabase）
 =========================== */
-function loadData() {
+async function saveData() {
   const month = document.getElementById("month_select").value;
   if (!month) return;
 
-  const raw = localStorage.getItem(`revenue_${month}`);
-
-  // ⭐ 新月份冇資料 → 清空表格
-  if (!raw) {
-    clearHeader();
-    generateMonthRows();
+  const userName = getUserName();
+  if (!userName) {
+    console.warn("⚠ 未登入，不能 Save");
     return;
   }
 
-  // ⭐ 有資料 → 先生成表格，再填資料
-  generateMonthRows();
+  const allData = collectAllData();
 
-  const allData = JSON.parse(raw);
-  fillAllData(allData);
+  localStorage.setItem(
+    `revenue_${userName}_${month}`,
+    JSON.stringify(allData)
+  );
+
+  const { error } = await db
+    .from("revenue_data")
+    .upsert(
+      {
+        user_name: userName,
+        month: month,
+        header: allData.header,
+        days: allData.days
+      },
+      { onConflict: "user_name,month" }
+    );
+
+  if (error) {
+    console.error("❌ Supabase Save 失敗：", error);
+  } else {
+    console.log("✅ Supabase Save 成功（已更新）");
+  }
+}
+
+/* ===========================
+   Load（Supabase → LocalStorage）
+=========================== */
+async function loadData() {
+  const month = document.getElementById("month_select").value;
+  if (!month) return;
+
+  const userName = getUserName();
+  if (!userName) {
+    console.warn("⚠ 未登入，不能 Load");
+    return;
+  }
+
+  const { data } = await db
+    .from("revenue_data")
+    .select("*")
+    .eq("user_name", userName)
+    .eq("month", month)
+    .single();
+
+  if (data) {
+    generateMonthRows();
+    fillAllData({ header: data.header, days: data.days });
+
+    localStorage.setItem(
+      `revenue_${userName}_${month}`,
+      JSON.stringify({ header: data.header, days: data.days })
+    );
+    return;
+  }
+
+  const raw = localStorage.getItem(`revenue_${userName}_${month}`);
+
+  if (raw) {
+    generateMonthRows();
+    fillAllData(JSON.parse(raw));
+    return;
+  }
+
+  clearHeader();
+  generateMonthRows();
 }
 
 /* ===========================
@@ -149,7 +232,7 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ===========================
-   月份切換（最重要修正）
+   月份切換
 =========================== */
 document.getElementById("month_select").addEventListener("change", () => {
   clearHeader();
