@@ -245,8 +245,9 @@ function createTotalRow() {
   tbody.appendChild(totalRow);
 }
 
+
 /* ===========================
-   計算 TOTAL Row
+   計算 TOTAL Row（含整月百分比）
 =========================== */
 function calculateTotalRow() {
   const tbody = document.getElementById("table_body");
@@ -257,10 +258,17 @@ function calculateTotalRow() {
 
   const totalCells = totalRow.querySelectorAll("td");
 
-  totalCells.forEach((cell, index) => {
+  // 先清空 TOTAL row
+  totalCells.forEach((cell) => {
     const input = cell.querySelector("input");
     if (input) input.value = "";
   });
+
+  // ⭐ 整月累積數據
+  let totalDailyTarget = 0;
+  let totalNetSales = 0;
+  let totalFoodSales = 0;
+  let totalLoyaltySales = 0;
 
   rows.forEach(row => {
     const cells = row.querySelectorAll("td");
@@ -277,9 +285,50 @@ function calculateTotalRow() {
         totalInput.value = (current + val).toFixed(1);
       }
     });
-  });
-}
 
+    // ⭐ 累積整月計算所需數據
+    totalDailyTarget += parseFloat(row.querySelector("input[id^='daily_sales_target_']")?.value) || 0;
+    totalNetSales += parseFloat(row.querySelector("input[id^='z_net_sales_']")?.value) || 0;
+    totalFoodSales += parseFloat(row.querySelector("input[id^='z_food_sales_']")?.value) || 0;
+    totalLoyaltySales += parseFloat(row.querySelector("input[id^='loyalty_Sales_']")?.value) || 0;
+  });
+
+  // ⭐⭐ TOTAL 百分比欄位 index（根據你嘅欄位順序）
+  const idxTargetAch = 7;   // Z Target Achieved(%)
+  const idxFoodPct   = 12;  // Food Sales(%)
+  const idxLoyaltyPct = 17; // Loyalty Sales(%)
+
+  const totalInputs = totalRow.querySelectorAll("input");
+
+  // ⭐ TOTAL Target Achieved %
+  if (totalInputs[idxTargetAch]) {
+    totalInputs[idxTargetAch].value =
+      totalDailyTarget > 0
+        ? ((totalNetSales / totalDailyTarget) * 100).toFixed(1) + "%"
+        : "";
+  }
+
+  // ⭐ TOTAL Food Sales %
+  if (totalInputs[idxFoodPct]) {
+    totalInputs[idxFoodPct].value =
+      totalNetSales > 0
+        ? ((totalFoodSales / totalNetSales) * 100).toFixed(1) + "%"
+        : "";
+  }
+
+  // ⭐ TOTAL Loyalty Sales %
+  if (totalInputs[idxLoyaltyPct]) {
+    totalInputs[idxLoyaltyPct].value =
+      totalNetSales > 0
+        ? ((totalLoyaltySales / totalNetSales) * 100).toFixed(1) + "%"
+        : "";
+  }
+
+  // ⭐ 更新 HEADER（Sales Target / Net Sales）
+  if (typeof updateHeaderTotals === "function") {
+    updateHeaderTotals();
+  }
+}
 /* ===========================
    Excel 匯出
 =========================== */
@@ -354,3 +403,4 @@ document.getElementById("exportPdfBtn").addEventListener("click", async () => {
   pdf.addImage(imgData, "PNG", 10, y, imgWidth, imgHeight);
   pdf.save("report.pdf");
 });
+
