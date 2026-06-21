@@ -121,17 +121,17 @@ select {
 <!-- ⭐ 用戶列 -->
 <div class="user-bar">
   <span id="welcome_user"></span>
-  <button class="logout-btn" onclick="changeUser()" id="logout-text">更換用戶</button>
+  <button class="logout-btn" onclick="changeUser()" id="logout-text"></button>
 </div>
 
-<h1 id="title-text">📅 歡迎使用報數系統</h1>
+<h1 id="title-text"></h1>
 
 <!-- ⭐ 語言切換 -->
 <div class="lang-switch" onclick="toggleLang()">🌐 中文 / English</div>
 
 <!-- ⭐ 年份選擇 -->
 <div class="year-box">
-  <label id="year-label" style="font-size:20px;">選擇年份：</label>
+  <label id="year-label" style="font-size:20px;"></label>
   <select id="year_select">
     <option>2024</option>
     <option>2025</option>
@@ -141,65 +141,201 @@ select {
   </select>
 </div>
 
-<!-- ⭐ 月份按鈕 -->
-<div class="month-grid" id="month-grid">
-  <!-- JS 會自動生成月份按鈕 -->
+<!-- ⭐ 已選分店顯示 -->
+<div id="selected-stores-box" style="margin-top:20px; font-size:18px; color:#8B0000; font-weight:bold;"></div>
+
+<!-- ⭐ 分店選擇器 -->
+<div id="store-box" style="margin-top:25px; display:none;">
+  <h3 id="store-title"></h3>
+  <div id="store-list" style="margin-top:10px;"></div>
 </div>
 
+<!-- ⭐ Area Dashboard 按鈕 -->
+<div id="dashboard-box" style="margin-top:30px;"></div>
+
+<!-- ⭐ 月份按鈕 -->
+<div class="month-grid" id="month-grid"></div>
+
+<!-- ⭐ Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-/* ===== 語言資料 ===== */
+/* ===== Supabase ===== */
+const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
+const supabaseKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
+
+const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+/* ===========================
+   語言資料（繁中 HK + 英文）
+=========================== */
 const langData = {
   zh: {
     welcome: "👋 歡迎，",
-    title: "📅 歡迎使用報數系統",
+    title: "📅 報數系統",
     logout: "更換用戶",
     year: "選擇年份：",
-    months: ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"]
+    storeTitle: "選擇分店：",
+    selected: "已選分店：",
+    none: "未選擇分店",
+    dashboard: "📊 區域儀表板",
+    months: ["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"]
   },
   en: {
     welcome: "👋 Welcome, ",
     title: "📅 Reporting System",
-    logout: "Logout",
+    logout: "Change User",
     year: "Select Year:",
+    storeTitle: "Select Stores:",
+    selected: "Selected Stores: ",
+    none: "No store selected",
+    dashboard: "📊 Area Dashboard",
     months: ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"]
   }
 };
 
 let currentLang = "zh";
+const role = localStorage.getItem("role");
+const userName = localStorage.getItem("userName");
 
-/* ===== 初始化語言 ===== */
+/* ===========================
+   語言套用
+=========================== */
 function applyLang() {
   const t = langData[currentLang];
 
-  document.getElementById("welcome_user").innerText = t.welcome + (localStorage.getItem("userName") || "");
+  document.getElementById("welcome_user").innerText =
+    t.welcome + (localStorage.getItem("userName") || "");
   document.getElementById("title-text").innerText = t.title;
   document.getElementById("logout-text").innerText = t.logout;
   document.getElementById("year-label").innerText = t.year;
+  document.getElementById("store-title").innerText = t.storeTitle;
 
-  // 更新月份按鈕
+  /* 月份按鈕 */
   const grid = document.getElementById("month-grid");
   grid.innerHTML = "";
   t.months.forEach((m, i) => {
     grid.innerHTML += `<button class="month-btn" onclick="openMonth(${i+1})">${m}</button>`;
   });
+
+  /* Dashboard 按鈕 */
+  if (role === "admin" || role === "area_manager") {
+    document.getElementById("dashboard-box").innerHTML = `
+      <button class="month-btn" onclick="openDashboard()">
+        ${t.dashboard}
+      </button>
+    `;
+  }
+
+  updateSelectedStoresDisplay();
 }
 
-/* ===== 切換語言 ===== */
+/* ===========================
+   語言切換
+=========================== */
 function toggleLang() {
   currentLang = currentLang === "zh" ? "en" : "zh";
   applyLang();
 }
 
-/* ===== 顯示登入用戶 ===== */
-applyLang();
+/* ===========================
+   顯示已選分店
+=========================== */
+function updateSelectedStoresDisplay() {
+  const box = document.getElementById("selected-stores-box");
+  const selected = JSON.parse(localStorage.getItem("selectedStores") || "[]");
 
-/* ===== 更換用戶 ===== */
+  if (!selected || selected.length === 0) {
+    box.innerText = langData[currentLang].none;
+    return;
+  }
+
+  box.innerText = langData[currentLang].selected + selected.join(" + ");
+}
+
+/* ===========================
+   分店選擇器
+=========================== */
+async function initStoreSelector() {
+  const box = document.getElementById("store-box");
+  const list = document.getElementById("store-list");
+
+  if (role === "user") {
+    box.style.display = "block";
+    list.innerHTML = `<b>${userName}</b>`;
+    localStorage.setItem("selectedStores", JSON.stringify([userName]));
+    updateSelectedStoresDisplay();
+    return;
+  }
+
+  let allStores = [];
+
+  if (role === "admin") {
+    const { data } = await db.from("users").select("name").eq("role", "user");
+    allStores = data.map(u => u.name);
+  }
+
+  if (role === "area_manager") {
+    const { data } = await db
+      .from("users")
+      .select("managed_stores")
+      .eq("name", userName)
+      .single();
+
+    allStores = data?.managed_stores || [];
+  }
+
+  box.style.display = "block";
+  list.innerHTML = "";
+
+  allStores.forEach(store => {
+    const id = "store_" + store;
+    list.innerHTML += `
+      <label style="margin-right:15px;">
+        <input type="checkbox" id="${id}" value="${store}">
+        ${store}
+      </label>
+    `;
+  });
+
+  const selected = JSON.parse(localStorage.getItem("selectedStores") || "[]");
+  selected.forEach(s => {
+    const el = document.getElementById("store_" + s);
+    if (el) el.checked = true;
+  });
+
+  list.addEventListener("change", () => {
+    const checked = [...document.querySelectorAll("#store-list input:checked")]
+      .map(i => i.value);
+
+    localStorage.setItem("selectedStores", JSON.stringify(checked));
+    updateSelectedStoresDisplay();
+  });
+
+  updateSelectedStoresDisplay();
+}
+
+/* ===========================
+   打開 Dashboard
+=========================== */
+function openDashboard() {
+  const year = document.getElementById("year_select").value;
+  localStorage.setItem("global_year", year);
+  window.location.href = "area.html";
+}
+
+/* ===========================
+   更換用戶
+=========================== */
 function changeUser() {
   localStorage.clear();
   window.location.href = "login.html";
 }
 
-/* ===== 打開月份 ===== */
+/* ===========================
+   打開月份
+=========================== */
 function openMonth(m) {
   const year = document.getElementById("year_select").value;
   localStorage.setItem("global_year", year);
@@ -211,6 +347,13 @@ function openMonth(m) {
 
   window.location.href = monthNames[m] + ".html";
 }
+
+/* ===========================
+   初始化
+=========================== */
+applyLang();
+initStoreSelector();
+updateSelectedStoresDisplay();
 </script>
 
 </body>

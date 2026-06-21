@@ -100,19 +100,33 @@ table input {
 /* ===========================
    凍結欄位
 =========================== */
+#month_table thead tr:nth-child(1) th {
+  position: sticky;
+  top: 60;
+  background: white;
+  z-index: 3000;
+}
+
+#month_table thead tr:nth-child(2) th {
+  position: sticky;
+  top: 23px;
+  background: white;
+  z-index: 2999;
+}
 .freeze-col-1 {
   position: sticky;
   left: 0;
-  background: #e8f4ff !important;
-  z-index: 30 !important;
+  background:  #e8f4ff !important;
+  z-index: 4000;  
 }
 
 .freeze-col-2 {
   position: sticky;
-  left: 36px;
+  left: 55px;
   background: #e8f4ff !important;
-  z-index: 30 !important;
+  z-index: 3999;  
 }
+
 
 /* ===========================
    X / Z Reading 顏色
@@ -221,4 +235,13 @@ table input {
     width: 100%;
   }
 }
+#table_wrapper {
+  max-height: 80vh;   /* 或者你想要嘅高度 */
+  overflow-y: auto;   /* ⭐ 令 sticky 生效 */
+  overflow-x: auto;
+}
+.col-gray {
+  background: #f2f2f2 !important;
+}
+
 

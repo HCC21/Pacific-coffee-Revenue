@@ -159,6 +159,8 @@ h2 {
   border-radius: 12px;
   text-align: left;
   box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .modal-box input {
@@ -184,7 +186,7 @@ h2 {
 
   <div class="logo"></div>
 
-  <h2 id="title-text">Pacific Coffee Login</h2>
+  <h2 id="title-text">太平洋咖啡登入</h2>
 
   <div class="input-group">
     <label id="label-username">用戶名稱</label>
@@ -199,26 +201,26 @@ h2 {
 
   <button id="login-btn">登入</button>
 
-  <div class="link-btn" onclick="openCreate()" id="create-account-text">➕ 新增帳號</div>
+  <div class="link-btn" onclick="openChangePass()" id="change-pass-text">🔐 更新密碼</div>
 
   <div class="lang-switch" onclick="toggleLang()">🌐 中文 / English</div>
 
   <div id="error-msg">帳號或密碼錯誤</div>
 </div>
 
-<!-- ===== 新增帳號 Modal ===== -->
-<div class="modal" id="create-modal">
+<!-- ===== 更新密碼 Modal ===== -->
+<div class="modal" id="change-pass-modal">
   <div class="modal-box">
-    <div class="close-btn" onclick="closeCreate()">✖</div>
-    <h3 id="modal-title">新增帳號</h3>
+    <div class="close-btn" onclick="closeChangePass()">✖</div>
+    <h3 id="modal-title">更新密碼</h3>
 
-    <label id="modal-label-username">用戶名稱</label>
-    <input type="text" id="new-name">
+    <label id="modal-label-oldpass">舊密碼</label>
+    <input type="password" id="old-pass">
 
-    <label id="modal-label-password">密碼</label>
+    <label id="modal-label-newpass">新密碼</label>
     <input type="password" id="new-pass">
 
-    <button onclick="createAccount()" id="modal-create-btn">建立帳號</button>
+    <button onclick="confirmChangePass()" id="modal-change-btn">更新密碼</button>
   </div>
 </div>
 
@@ -236,12 +238,12 @@ const langData = {
     show: "顯示",
     hide: "隱藏",
     login: "登入",
-    createAccount: "➕ 新增帳號",
+    changePass: "🔐 更新密碼",
     error: "帳號或密碼錯誤",
-    modalTitle: "新增帳號",
-    modalUser: "用戶名稱",
-    modalPass: "密碼",
-    modalBtn: "建立帳號"
+    modalTitle: "更新密碼",
+    oldPass: "舊密碼",
+    newPass: "新密碼",
+    modalBtn: "更新密碼"
   },
   en: {
     title: "Pacific Coffee Login",
@@ -252,12 +254,12 @@ const langData = {
     show: "Show",
     hide: "Hide",
     login: "Login",
-    createAccount: "➕ Create Account",
+    changePass: "🔐 Change Password",
     error: "Incorrect username or password",
-    modalTitle: "Create Account",
-    modalUser: "Username",
-    modalPass: "Password",
-    modalBtn: "Create"
+    modalTitle: "Change Password",
+    oldPass: "Old Password",
+    newPass: "New Password",
+    modalBtn: "Update Password"
   }
 };
 
@@ -275,13 +277,13 @@ function toggleLang() {
   document.getElementById("login-pass").placeholder = t.placeholderPass;
   document.getElementById("toggle-pass-text").textContent = t.show;
   document.getElementById("login-btn").textContent = t.login;
-  document.getElementById("create-account-text").textContent = t.createAccount;
+  document.getElementById("change-pass-text").textContent = t.changePass;
   document.getElementById("error-msg").textContent = t.error;
 
   document.getElementById("modal-title").textContent = t.modalTitle;
-  document.getElementById("modal-label-username").textContent = t.modalUser;
-  document.getElementById("modal-label-password").textContent = t.modalPass;
-  document.getElementById("modal-create-btn").textContent = t.modalBtn;
+  document.getElementById("modal-label-oldpass").textContent = t.oldPass;
+  document.getElementById("modal-label-newpass").textContent = t.newPass;
+  document.getElementById("modal-change-btn").textContent = t.modalBtn;
 }
 
 /* ===== Supabase ===== */
@@ -347,6 +349,7 @@ document.getElementById("login-btn").addEventListener("click", async () => {
 
   localStorage.setItem("userName", data.name);
   localStorage.setItem("role", data.role);
+  localStorage.setItem("stores", JSON.stringify(data.stores));
 
   if (data.role === "admin") {
     window.location.href = "admin.html";
@@ -355,38 +358,55 @@ document.getElementById("login-btn").addEventListener("click", async () => {
   }
 });
 
-/* ===== Modal ===== */
-function openCreate() {
-  document.getElementById("create-modal").style.display = "flex";
+/* ===== 更新密碼 Modal ===== */
+function openChangePass() {
+  document.getElementById("change-pass-modal").style.display = "flex";
 }
 
-function closeCreate() {
-  document.getElementById("create-modal").style.display = "none";
+function closeChangePass() {
+  document.getElementById("change-pass-modal").style.display = "none";
 }
 
-/* ===== 建立帳號 ===== */
-async function createAccount() {
-  const name = document.getElementById("new-name").value.trim();
-  const pass = document.getElementById("new-pass").value.trim();
+async function confirmChangePass() {
+  const name = document.getElementById("login-name").value.trim();
+  const oldPass = document.getElementById("old-pass").value.trim();
+  const newPass = document.getElementById("new-pass").value.trim();
 
-  if (!name || !pass) {
-    alert("請輸入帳號和密碼");
+  if (!name || !oldPass || !newPass) {
+    alert("請輸入用戶名稱、舊密碼、新密碼");
     return;
   }
 
-  const passHash = await hashPassword(pass);
+  const oldHash = await hashPassword(oldPass);
 
-  const { error } = await db
+  // 檢查舊密碼是否正確
+  const { data, error } = await db
     .from("users")
-    .insert([{ name, password: passHash, role: "user" }]);
+    .select("*")
+    .eq("name", name)
+    .eq("password", oldHash)
+    .single();
 
-  if (error) {
-    alert("帳號已存在或建立失敗");
+  if (error || !data) {
+    alert("舊密碼錯誤");
     return;
   }
 
-  alert("帳號建立成功！");
-  closeCreate();
+  const newHash = await hashPassword(newPass);
+
+  // 更新密碼
+  const { error: updateErr } = await db
+    .from("users")
+    .update({ password: newHash })
+    .eq("name", name);
+
+  if (updateErr) {
+    alert("更新失敗");
+    return;
+  }
+
+  alert("密碼已更新！");
+  closeChangePass();
 }
 </script>
 

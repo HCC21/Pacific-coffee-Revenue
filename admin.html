@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin Panel</title>
+
 <style>
   body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
   h1 { text-align: center; margin-bottom: 25px; }
@@ -18,13 +19,14 @@
   }
   th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
   th { background: #f0f0f0; }
+
   .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.45); display: none;
     justify-content: center; align-items: center;
   }
   .modal-box {
-    width: 320px; background: #fff; padding: 20px;
+    width: 350px; background: #fff; padding: 20px;
     border-radius: 10px; text-align: left;
     box-shadow: 0 4px 18px rgba(0,0,0,0.2);
   }
@@ -33,8 +35,20 @@
     border: 1px solid #ccc; border-radius: 6px;
   }
   .close-btn { text-align: right; cursor: pointer; font-size: 14px; color: #666; }
+/* ⭐ 管轄分店清單可捲動 */
+#stores-list {
+  max-height: 250px;      /* 你可以改 200 / 300 / 350 */
+  overflow-y: auto;       /* ⭐ 垂直捲動 */
+  overflow-x: hidden;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+}
+
 </style>
 </head>
+
 <body>
 
 <h1>管理員後台</h1>
@@ -49,6 +63,8 @@
     <tr>
       <th>用戶名稱</th>
       <th>角色</th>
+      <th>編輯角色</th>
+      <th>管轄分店</th>
       <th>重設密碼</th>
       <th>刪除</th>
     </tr>
@@ -69,12 +85,42 @@
     <input type="password" id="new-pass">
 
     <label>角色</label>
-    <select id="new-role">
-      <option value="user">普通用戶</option>
-      <option value="admin">管理員</option>
+    <select id="new_role">
+      <option value="user">User</option>
+      <option value="area_manager">Area Manager</option>
+      <option value="admin">Admin</option>
     </select>
 
     <button onclick="createAccount()">建立帳號</button>
+  </div>
+</div>
+
+<!-- 編輯角色 Modal -->
+<div class="modal" id="role-modal">
+  <div class="modal-box">
+    <div class="close-btn" onclick="closeRole()">✖</div>
+    <h3>編輯角色</h3>
+
+    <label>角色</label>
+    <select id="edit-role">
+      <option value="user">User</option>
+      <option value="area_manager">Area Manager</option>
+      <option value="admin">Admin</option>
+    </select>
+
+    <button onclick="confirmRole()">更新角色</button>
+  </div>
+</div>
+
+<!-- 管轄分店 Modal -->
+<div class="modal" id="stores-modal">
+  <div class="modal-box">
+    <div class="close-btn" onclick="closeStores()">✖</div>
+    <h3>管理分店</h3>
+
+    <div id="stores-list"></div>
+
+    <button onclick="confirmStores()">儲存管轄分店</button>
   </div>
 </div>
 
@@ -93,144 +139,276 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ===========================
+   Supabase 初始化
+=========================== */
 const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
-  const db = supabase.createClient(supabaseUrl, supabaseKey);  let resetUserName = "";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
+const db = supabase.createClient(supabaseUrl, supabaseKey);
 
-  const currentUser = localStorage.getItem("userName");
-  const currentRole = localStorage.getItem("role");
+let resetUserName = "";
+let editUserName = "";
+let storeUserName = "";
 
-  if (!currentUser || currentRole !== "admin") {
-    alert("你沒有權限進入管理員後台");
-    window.location.href = "login.html";
+/* ===========================
+   權限檢查
+=========================== */
+const currentUser = localStorage.getItem("userName");
+const currentRole = localStorage.getItem("role");
+
+if (!currentUser || currentRole !== "admin") {
+  alert("你沒有權限進入管理員後台");
+  window.location.href = "login.html";
+}
+
+/* ===========================
+   密碼 Hash
+=========================== */
+async function hashPassword(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/* ===========================
+   載入用戶列表
+=========================== */
+async function loadUsers() {
+  const { data, error } = await db
+    .from("users")
+    .select("*")
+    .order("name");
+
+  if (error) {
+    alert("讀取用戶失敗");
+    return;
   }
 
-  async function hashPassword(text) {
-    const enc = new TextEncoder().encode(text);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  const tbody = document.getElementById("user-table");
+  tbody.innerHTML = "";
+
+  data.forEach(user => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${user.name}</td>
+      <td>${user.role}</td>
+
+      <td><button onclick="openRole('${user.name}', '${user.role}')">編輯角色</button></td>
+
+      <td><button onclick="openStores('${user.name}', '${user.role}')">管理分店</button></td>
+
+      <td><button onclick="openReset('${user.name}', '${user.role}')">重設密碼</button></td>
+
+      <td><button onclick="deleteUser('${user.name}', '${user.role}')">刪除</button></td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+loadUsers();
+
+/* ===========================
+   新增帳號
+=========================== */
+function openCreate() { document.getElementById("create-modal").style.display = "flex"; }
+function closeCreate() { document.getElementById("create-modal").style.display = "none"; }
+
+async function createAccount() {
+  const name = document.getElementById("new-name").value.trim();
+  const pass = document.getElementById("new-pass").value.trim();
+  const role = document.getElementById("new_role").value;
+
+  if (!name || !pass) {
+    alert("請輸入帳號和密碼");
+    return;
   }
 
-  async function loadUsers() {
-    const { data, error } = await db
-      .from("users")
-      .select("*")
-      .order("name");
+  const passHash = await hashPassword(pass);
 
-    if (error) {
-      alert("讀取用戶失敗");
-      return;
-    }
+  const { error } = await db
+    .from("users")
+    .insert([{ name, password: passHash, role, managed_stores: [] }]);
 
-    const tbody = document.getElementById("user-table");
-    tbody.innerHTML = "";
-
-    data.forEach(user => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${user.name}</td>
-        <td>${user.role}</td>
-        <td><button onclick="openReset('${user.name}', '${user.role}')">重設密碼</button></td>
-        <td><button onclick="deleteUser('${user.name}', '${user.role}')">刪除</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
+  if (error) {
+    alert("帳號已存在或建立失敗");
+    return;
   }
 
+  alert("帳號建立成功！");
+  closeCreate();
   loadUsers();
+}
 
-  function openCreate() { document.getElementById("create-modal").style.display = "flex"; }
-  function closeCreate() { document.getElementById("create-modal").style.display = "none"; }
+/* ===========================
+   編輯角色
+=========================== */
+function openRole(name, role) {
+  editUserName = name;
+  document.getElementById("edit-role").value = role;
+  document.getElementById("role-modal").style.display = "flex";
+}
 
-  async function createAccount() {
-    const name = document.getElementById("new-name").value.trim();
-    const pass = document.getElementById("new-pass").value.trim();
-    const role = document.getElementById("new-role").value;
+function closeRole() {
+  document.getElementById("role-modal").style.display = "none";
+}
 
-    if (!name || !pass) {
-      alert("請輸入帳號和密碼");
-      return;
-    }
+async function confirmRole() {
+  const newRole = document.getElementById("edit-role").value;
 
-    const passHash = await hashPassword(pass);
+  const { error } = await db
+    .from("users")
+    .update({ role: newRole })
+    .eq("name", editUserName);
 
-    const { error } = await db
-      .from("users")
-      .insert([{ name, password: passHash, role }]);
-
-    if (error) {
-      alert("帳號已存在或建立失敗");
-      return;
-    }
-
-    alert("帳號建立成功！");
-    closeCreate();
-    loadUsers();
+  if (error) {
+    alert("更新角色失敗");
+    return;
   }
 
-  function openReset(name, role) {
-    if (role === "admin" && name !== currentUser) {
-      alert("不能重設其他管理員的密碼");
-      return;
-    }
-    resetUserName = name;
-    document.getElementById("reset-modal").style.display = "flex";
+  alert("角色已更新！");
+  closeRole();
+  loadUsers();
+}
+
+/* ===========================
+   管轄分店設定
+=========================== */
+async function openStores(name, role) {
+  storeUserName = name;
+
+  if (role !== "area_manager") {
+    alert("只有 Area Manager才需要設定管轄分店");
+    return;
   }
 
-  function closeReset() { document.getElementById("reset-modal").style.display = "none"; }
+  // 讀取所有 user（分店）
+  const { data: users } = await db
+    .from("users")
+    .select("name, role")
+    .eq("role", "user");
 
-  async function confirmReset() {
-    const pass = document.getElementById("reset-pass").value.trim();
-    if (!pass) {
-      alert("請輸入新密碼");
-      return;
-    }
+  // 讀取該 Area Manager 的管轄分店
+  const { data: manager } = await db
+    .from("users")
+    .select("managed_stores")
+    .eq("name", name)
+    .single();
 
-    const passHash = await hashPassword(pass);
+  const currentStores = manager?.managed_stores || [];
 
-    const { error } = await db
-      .from("users")
-      .update({ password: passHash })
-      .eq("name", resetUserName);
+  const box = document.getElementById("stores-list");
+  box.innerHTML = "";
 
-    if (error) {
-      alert("重設失敗");
-      return;
-    }
+  users.forEach(u => {
+    const checked = currentStores.includes(u.name) ? "checked" : "";
+    box.innerHTML += `
+      <label style="display:block; margin-bottom:6px;">
+        <input type="checkbox" value="${u.name}" ${checked}>
+        ${u.name}
+      </label>
+    `;
+  });
 
-    alert("密碼已重設！");
-    closeReset();
+  document.getElementById("stores-modal").style.display = "flex";
+}
+
+function closeStores() {
+  document.getElementById("stores-modal").style.display = "none";
+}
+
+async function confirmStores() {
+  const checked = [...document.querySelectorAll("#stores-list input:checked")]
+    .map(i => i.value);
+
+  const { error } = await db
+    .from("users")
+    .update({ managed_stores: checked })
+    .eq("name", storeUserName);
+
+  if (error) {
+    alert("更新失敗");
+    return;
   }
 
-  async function deleteUser(name, role) {
-    if (name === currentUser) {
-      alert("不能刪除自己");
-      return;
-    }
-    if (role === "admin") {
-      alert("不能刪除其他管理員");
-      return;
-    }
-    if (!confirm(`確定要刪除帳號：${name}？`)) return;
+  alert("管轄分店已更新！");
+  closeStores();
+}
 
-    const { error } = await db
-      .from("users")
-      .delete()
-      .eq("name", name);
+/* ===========================
+   重設密碼
+=========================== */
+function openReset(name, role) {
+  if (role === "admin" && name !== currentUser) {
+    alert("不能重設其他管理員的密碼");
+    return;
+  }
+  resetUserName = name;
+  document.getElementById("reset-modal").style.display = "flex";
+}
 
-    if (error) {
-      alert("刪除失敗");
-      return;
-    }
+function closeReset() { document.getElementById("reset-modal").style.display = "none"; }
 
-    alert("帳號已刪除");
-    loadUsers();
+async function confirmReset() {
+  const pass = document.getElementById("reset-pass").value.trim();
+  if (!pass) {
+    alert("請輸入新密碼");
+    return;
   }
 
-  function logout() {
-    localStorage.clear();
-    window.location.href = "login.html";
+  const passHash = await hashPassword(pass);
+
+  const { error } = await db
+    .from("users")
+    .update({ password: passHash })
+    .eq("name", resetUserName);
+
+  if (error) {
+    alert("重設失敗");
+    return;
   }
+
+  alert("密碼已重設！");
+  closeReset();
+}
+
+/* ===========================
+   刪除帳號
+=========================== */
+async function deleteUser(name, role) {
+  if (name === currentUser) {
+    alert("不能刪除自己");
+    return;
+  }
+  if (role === "admin") {
+    alert("不能刪除其他管理員");
+    return;
+  }
+  if (!confirm(`確定要刪除帳號：${name}？`)) return;
+
+  const { error } = await db
+    .from("users")
+    .delete()
+    .eq("name", name);
+
+  if (error) {
+    alert("刪除失敗");
+    return;
+  }
+
+  alert("帳號已刪除");
+  loadUsers();
+}
+
+/* ===========================
+   登出
+=========================== */
+function logout() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
 </script>
+
 </body>
 </html>

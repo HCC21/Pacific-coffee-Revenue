@@ -63,6 +63,10 @@ function collectAllData() {
       "x_net_sales","x_r","x_food_sales","x_transaction","x_avg_check",
       "daily_sales_target","z_net_sales","z_target_achieved","z_transaction",
       "z_avg_check","z_r","z_food_sales","z_food_sales_pct",
+
+      // ⭐ 新增 Daily Loyalty Target %
+      "daily_loyalty_target",
+
       "mh","mh_al_yol","spmh","loyalty_Sales","loyalty_sales_pct",
       "merchandise_qty","merchandise_amt","coffee_qty","coffee_amt",
       "delivery_qty","delivery_amt","odo_qty","odo_amt",
@@ -112,28 +116,6 @@ function fillAllData(allData) {
 }
 
 /* ===========================
-   ⭐ 自動計算 HEADER Sales Target & Net Sales
-=========================== */
-function updateHeaderTotals() {
-  const tbody = document.getElementById("table_body");
-  const rows = tbody.querySelectorAll("tr:not(#total_row)");
-
-  let totalSalesTarget = 0;
-  let totalNetSales = 0;
-
-  rows.forEach(row => {
-    const dailyTarget = parseFloat(row.querySelector("input[id^='daily_sales_target_']")?.value) || 0;
-    const zNet = parseFloat(row.querySelector("input[id^='z_net_sales_']")?.value) || 0;
-
-    totalSalesTarget += dailyTarget;
-    totalNetSales += zNet;
-  });
-
-  document.getElementById("sales_target").value = totalSalesTarget.toFixed(1);
-  document.getElementById("net_sales").value = totalNetSales.toFixed(1);
-}
-
-/* ===========================
    Save（LocalStorage + Supabase）
 =========================== */
 async function saveData() {
@@ -141,10 +123,7 @@ async function saveData() {
   if (!month) return;
 
   const userName = getUserName();
-  if (!userName) {
-    console.warn("⚠ 未登入，不能 Save");
-    return;
-  }
+  if (!userName) return;
 
   const allData = collectAllData();
 
@@ -167,44 +146,48 @@ async function saveData() {
 
   if (error) {
     console.error("❌ Supabase Save 失敗：", error);
-  } else {
-    console.log("✅ Supabase Save 成功（已更新）");
   }
 }
 
 /* ===========================
-   Load（Supabase → LocalStorage）
+   Load（支援多分店合併）
 =========================== */
-async function loadData() {
+async function loadData(selectedStores = []) {
   const month = document.getElementById("month_select").value;
   if (!month) return;
 
   const userName = getUserName();
-  if (!userName) {
-    console.warn("⚠ 未登入，不能 Load");
+  if (!userName) return;
+
+  if (!selectedStores || selectedStores.length === 0) {
+    selectedStores = [userName];
+  }
+
+  const { data, error } = await db
+    .from("revenue_data")
+    .select("*")
+    .eq("month", month)
+    .in("user_name", selectedStores);
+
+  if (error) {
+    console.error("Load error:", error);
     return;
   }
 
-  const { data } = await db
-    .from("revenue_data")
-    .select("*")
-    .eq("user_name", userName)
-    .eq("month", month)
-    .single();
+  if (data && data.length > 0) {
+    const merged = mergeDays(data);
 
-  if (data) {
     generateMonthRows();
-    fillAllData({ header: data.header, days: data.days });
+    fillAllData(merged);
 
     localStorage.setItem(
       `revenue_${userName}_${month}`,
-      JSON.stringify({ header: data.header, days: data.days })
+      JSON.stringify(merged)
     );
     return;
   }
 
   const raw = localStorage.getItem(`revenue_${userName}_${month}`);
-
   if (raw) {
     generateMonthRows();
     fillAllData(JSON.parse(raw));
@@ -216,7 +199,75 @@ async function loadData() {
 }
 
 /* ===========================
-   自動 Save（每次輸入）
+   多分店合併（含 Daily Loyalty Target %）
+=========================== */
+function mergeDays(records) {
+  if (!records || records.length === 0) return null;
+
+  const base = JSON.parse(JSON.stringify(records[0]));
+  const days = base.days;
+
+  base.header.coffee_house = records.map(r => r.user_name).join(" + ");
+  base.header.area_manager = "Multiple Stores";
+
+  for (let i = 1; i < records.length; i++) {
+    const d2 = records[i].days;
+
+    Object.keys(days).forEach(day => {
+      const row1 = days[day];
+      const row2 = d2[day];
+
+      Object.keys(row1).forEach(key => {
+
+        // ⭐ Daily Loyalty Target % → 取平均
+        if (key === "daily_loyalty_target") {
+          const v1 = parseFloat(row1[key]) || 0;
+          const v2 = parseFloat(row2[key]) || 0;
+          row1[key] = ((v1 + v2) / 2).toFixed(1);
+          return;
+        }
+
+        // ⭐ 百分比欄位不相加
+        if (key.includes("pct") || key.includes("achieved")) return;
+
+        const v1 = parseFloat(row1[key]) || 0;
+        const v2 = parseFloat(row2[key]) || 0;
+
+        if (!isNaN(v1) && !isNaN(v2)) {
+          row1[key] = (v1 + v2).toFixed(1);
+        }
+      });
+    });
+  }
+
+  // ⭐ 重新計算百分比
+  Object.keys(days).forEach(day => {
+    const d = days[day];
+
+    const net = parseFloat(d.z_net_sales) || 0;
+    const food = parseFloat(d.z_food_sales) || 0;
+    const loyalty = parseFloat(d.loyalty_Sales) || 0;
+    const target = parseFloat(d.daily_sales_target) || 0;
+    const qty = parseFloat(d.z_transaction) || 0;
+
+    d.z_food_sales_pct = net > 0 ? ((food / net) * 100).toFixed(1) + "%" : "";
+    d.loyalty_sales_pct = net > 0 ? ((loyalty / net) * 100).toFixed(1) + "%" : "";
+    d.z_target_achieved = target > 0 ? ((net / target) * 100).toFixed(1) + "%" : "";
+    d.z_avg_check = qty > 0 ? (net / qty).toFixed(1) : "";
+
+    // ⭐ Daily Loyalty Achieved %
+    const loyalty_pct = parseFloat(d.loyalty_sales_pct) || 0;
+    const loyalty_target = parseFloat(d.daily_loyalty_target) || 0;
+
+    d.loyalty_target_achieved =
+      loyalty_target > 0 ? ((loyalty_pct / loyalty_target) * 100).toFixed(1) + "%" : "";
+  });
+
+  return base;
+}
+
+/* ===========================
+   自動 Save
 =========================== */
 document.addEventListener("input", () => {
   saveData();
@@ -224,7 +275,7 @@ document.addEventListener("input", () => {
 });
 
 /* ===========================
-   初始化（頁面載入）
+   初始化
 =========================== */
 window.addEventListener("DOMContentLoaded", () => {
   generateMonthRows();

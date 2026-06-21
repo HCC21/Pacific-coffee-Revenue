@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<title>Area Manager Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #8B0000;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 25px;
+  background: white;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background: #f0f0f0;
+}
+
+.good {
+  background: #d4edda;
+  color: #155724;
+  font-weight: bold;
+}
+
+.bad {
+  background: #f8d7da;
+  color: #721c24;
+  font-weight: bold;
+}
+
+.back-btn {
+  padding: 8px 14px;
+  background: #8B0000;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<button class="back-btn" onclick="location.href='main.html'">← 返回主頁</button>
+
+<h1>📊 Area Manager Dashboard</h1>
+
+<!-- ⭐ 年份 + 月份 + 日期選擇器 -->
+<div style="text-align:center; margin-bottom:20px;">
+
+  <select id="year_select" onchange="updateDays(); loadDashboard();">
+    <option value="2024">2024</option>
+    <option value="2025">2025</option>
+    <option value="2026" selected>2026</option>
+    <option value="2027">2027</option>
+    <option value="2028">2028</option>
+  </select>
+
+  <select id="month_select" onchange="updateDays(); loadDashboard();">
+    <option value="1">JAN</option>
+    <option value="2">FEB</option>
+    <option value="3">MAR</option>
+    <option value="4">APR</option>
+    <option value="5">MAY</option>
+    <option value="6" selected>JUN</option>
+    <option value="7">JUL</option>
+    <option value="8">AUG</option>
+    <option value="9">SEP</option>
+    <option value="10">OCT</option>
+    <option value="11">NOV</option>
+    <option value="12">DEC</option>
+  </select>
+
+  <!-- ⭐ 日期選擇器（會自動變 1–28/29/30/31） -->
+  <select id="day_select" onchange="loadDashboard();"></select>
+
+</div>
+
+<table id="kpi_table">
+  <thead>
+    <tr>
+      <th>Store</th>
+      <th>MTD Target</th>
+      <th>MTD Sales</th>
+      <th>MTD Achieve %</th>
+
+      <th>Daily Target</th>
+      <th>Daily Sales</th>
+      <th>Daily Achieve %</th>
+
+      <th>Daily Loyalty Target %</th>
+      <th>Daily Loyalty %</th>
+      <th>Loyalty Achieve %</th>
+    </tr>
+  </thead>
+  <tbody id="kpi_body"></tbody>
+</table>
+
+<script>
+/* ===========================
+   Supabase 初始化
+=========================== */
+const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
+const supabaseKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
+
+const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+/* ===========================
+   讀取 Area Manager 管轄分店
+=========================== */
+const userName = localStorage.getItem("userName");
+const role = localStorage.getItem("role");
+
+async function getStores() {
+  if (role === "admin") {
+    const { data } = await db.from("users").select("name").eq("role", "user");
+    return data.map(x => x.name);
+  }
+
+  const { data } = await db
+    .from("users")
+    .select("managed_stores")
+    .eq("name", userName)
+    .single();
+
+  return data?.managed_stores || [];
+}
+
+/* ===========================
+   計算 %
+=========================== */
+function calcPct(a, b) {
+  if (!b || b === 0) return "";
+  return ((a / b) * 100).toFixed(1);
+}
+
+/* ===========================
+   更新日期選擇器（1–28/29/30/31）
+=========================== */
+function updateDays() {
+  const year = document.getElementById("year_select").value;
+  const month = document.getElementById("month_select").value;
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  const daySelect = document.getElementById("day_select");
+  daySelect.innerHTML = "";
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const opt = document.createElement("option");
+    opt.value = d;
+    opt.textContent = d;
+    daySelect.appendChild(opt);
+  }
+
+  daySelect.value = daysInMonth; // 預設選最後一日
+}
+
+/* ===========================
+   主流程：讀取所有分店資料（可選月份 + 日期）
+=========================== */
+async function loadDashboard() {
+  const stores = await getStores();
+
+  const year = document.getElementById("year_select").value;
+  const month = document.getElementById("month_select").value;
+  const day = parseInt(document.getElementById("day_select").value);
+
+  const monthStr = `${year}-${String(month).padStart(2, "0")}`;
+
+  const tbody = document.getElementById("kpi_body");
+  tbody.innerHTML = "";
+
+  for (const store of stores) {
+    const { data } = await db
+      .from("revenue_data")
+      .select("*")
+      .eq("user_name", store)
+      .eq("month", monthStr)
+      .single();
+
+    if (!data) continue;
+
+    const days = data.days;
+
+    /* ===== MTD（1 號 → 選擇日期） ===== */
+    let mtdTarget = 0;
+    let mtdSales = 0;
+
+    for (let d = 1; d <= day; d++) {
+      const row = days[d];
+      if (!row) continue;
+
+      const dailyTarget = parseFloat(row.daily_sales_target ?? row.daily_target) || 0;
+      const zNetSales = parseFloat(row.z_net_sales ?? row.z_sales) || 0;
+
+      mtdTarget += dailyTarget;
+      mtdSales += zNetSales;
+    }
+
+    const mtdAch = calcPct(mtdSales, mtdTarget);
+
+    /* ===== Daily（選擇日期） ===== */
+    const todayRow = days[day] || {};
+
+    const dailyTarget = parseFloat(todayRow.daily_sales_target ?? todayRow.daily_target) || 0;
+    const dailySales = parseFloat(todayRow.z_net_sales ?? todayRow.z_sales) || 0;
+    const dailyAch = calcPct(dailySales, dailyTarget);
+
+    const loyaltyTarget = parseFloat(todayRow.daily_loyalty_target ?? todayRow.loyalty_target) || 0;
+    const loyaltyPct = parseFloat(todayRow.loyalty_sales_pct ?? todayRow.loyalty_pct) || 0;
+    const loyaltyAch = calcPct(loyaltyPct, loyaltyTarget);
+
+    /* ===== UI ===== */
+    const tr = document.createElement("tr");
+
+    function color(v) {
+      if (v === "") return "";
+      return parseFloat(v) >= 100 ? "good" : "bad";
+    }
+
+    tr.innerHTML = `
+      <td><b>${store}</b></td>
+
+      <td>${mtdTarget.toFixed(1)}</td>
+      <td>${mtdSales.toFixed(1)}</td>
+      <td class="${color(mtdAch)}">${mtdAch ? mtdAch + "%" : ""}</td>
+
+      <td>${dailyTarget.toFixed(1)}</td>
+      <td>${dailySales.toFixed(1)}</td>
+      <td class="${color(dailyAch)}">${dailyAch ? dailyAch + "%" : ""}</td>
+
+      <td>${loyaltyTarget.toFixed(1)}</td>
+      <td>${loyaltyPct.toFixed(1)}</td>
+      <td class="${color(loyaltyAch)}">${loyaltyAch ? loyaltyAch + "%" : ""}</td>
+    `;
+
+    tbody.appendChild(tr);
+  }
+}
+
+/* ===========================
+   初始化
+=========================== */
+window.addEventListener("DOMContentLoaded", () => {
+  updateDays();
+  loadDashboard();
+});
+</script>
+
+</body>
+</html>
