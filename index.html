@@ -1,6 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<title>Revenue Data Form</title>
+
+<link rel="stylesheet" href="style.css">
+
+<!-- Excel + PDF 套件 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+/* ⭐ 主目錄永遠在最上層 */
+.navbar {
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 12px 15px;
+  z-index: 9999;
+  border-bottom: 1px solid #ddd;
+}
+
+.navbar a {
+  font-size: 18px;
+  text-decoration: none;
+  color: #0078ff;
+  font-weight: bold;
+  margin-right: 20px;
+}
+</style>
+
+</head>
+<body>
+
+<!-- ⭐ 主目錄 -->
+<div class="navbar">
+  <a href="main.html">← 返回主頁</a>
+</div>
+
+<h1 id="page_title">Revenue Data Form</h1>
+
+<!-- ================= HEADER ================= -->
+<div class="header-bar">
+  <div class="header-left">
+    <h2>Monthly Revenue</h2>
+
+    <div class="export-buttons">
+      <button id="exportExcelBtn">Export Excel</button>
+      <button id="exportPdfBtn">Export PDF</button>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="header-item">
+      <label>Coffee House :</label>
+      <input type="text" id="coffee_house" />
+    </div>
+
+    <div class="header-item">
+      <label>Month :</label>
+      <input type="month" id="month_select" value="2026-06" />
+    </div>
+
+    <div class="header-item">
+      <label>Area Manager :</label>
+      <input type="text" id="area_manager" />
+    </div>
+
+    <div class="header-item">
+      <label>Sales Target :</label>
+      <input type="number" id="sales_target" />
+    </div>
+
+    <div class="header-item">
+      <label>Net Sales :</label>
+      <input type="number" id="net_sales" />
+    </div>
+  </div>
+</div>
+
+<!-- ================= TABLE ================= -->
+<div class="table-wrapper">
+  <table id="month_table">
+    <thead>
+      <!-- ⭐ 你原本的 thead 完整保留（不改動） -->
+      <!-- 我已確認與 table.js 完全匹配 -->
+      <tr>
+        <th rowspan="2" class="freeze-col-1">Date</th>
+        <th rowspan="2" class="freeze-col-2">Wk</th>
+
+        <th colspan="5" class="x-header">X‑Reading</th>
+        <th colspan="8" class="z-header">Z‑Reading</th>
+
+        <th rowspan="2">MH</th>
+        <th rowspan="2">MH AL/YOL</th>
+        <th rowspan="2">SPMH</th>
+        <th rowspan="2">Loyalty Sales($)</th>
+        <th rowspan="2">Loyalty Sales %</th>
+
+        <th colspan="2">Merchandise</th>
+        <th colspan="2">Coffee Bean</th>
+        <th colspan="2">Delivery</th>
+        <th colspan="2">ODO</th>
+        <th colspan="2">Keeta</th>
+        <th colspan="2">Foodpanda</th>
+        <th colspan="2">Breakfast</th>
+        <th colspan="2">Tea Set</th>
+
+        <th rowspan="2"><input id="promo1_name"></th>
+        <th rowspan="2"><input id="promo2_name"></th>
+        <th rowspan="2"><input id="promo3_name"></th>
+        <th rowspan="2"><input id="promo4_name"></th>
+        <th rowspan="2"><input id="promo5_name"></th>
+        <th rowspan="2"><input id="promo6_name"></th>
+
+        <th rowspan="2">Other</th>
+        <th rowspan="2">Remarks</th>
+      </tr>
+
+      <tr>
+        <th>NetSales ($)</th>
+        <th>R($)</th>
+        <th>Food Sales($)</th>
+        <th>Trans action (Qty)</th>
+        <th>Avg Check($)</th>
+
+        <th>DailySales Target</th>
+        <th>Net Sales($)</th>
+        <th>Target Achieved(%)</th>
+        <th>Trans action (Qty)</th>
+        <th>Avg Check($)</th>
+        <th>R($)</th>
+        <th>Food Sales($)</th>
+        <th>Food Sales(%)</th>
+
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+        <th>(Qty)</th><th>($)</th>
+      </tr>
+    </thead>
+
+    <tbody id="table_body"></tbody>
+  </table>
+</div>
+
+<script src="table.js"></script>
+
 <script>
-  const userName = localStorage.getItem("userName");
-  if (!userName) {
-    window.location.href = "login.html";
+// ===== Supabase 初始化 =====
+const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
+  const db = supabase.createClient(supabaseUrl, supabaseKey);  let resetUserName = "";
+
+const userName = localStorage.getItem("userName");
+if (!userName) {
+  alert("請先登入");
+  window.location.href = "login.html";
+}
+
+// ===== 清空 Header =====
+function clearHeader() {
+  document.getElementById("coffee_house").value = "";
+  document.getElementById("area_manager").value = "";
+  document.getElementById("sales_target").value = "";
+  document.getElementById("net_sales").value = "";
+
+  document.getElementById("promo1_name").value = "Nutribite";
+  document.getElementById("promo2_name").value = "Nutribite $38";
+  document.getElementById("promo3_name").value = "Promotion 1";
+  document.getElementById("promo4_name").value = "Promotion 2";
+  document.getElementById("promo5_name").value = "Promotion 3";
+  document.getElementById("promo6_name").value = "Promotion 4";
+}
+
+// ===== 收集所有資料 =====
+function collectAllData() {
+  const month = document.getElementById("month_select").value;
+
+  const header = {
+    coffee_house: document.getElementById("coffee_house").value,
+    area_manager: document.getElementById("area_manager").value,
+    sales_target: document.getElementById("sales_target").value,
+    net_sales: document.getElementById("net_sales").value,
+    promo1_name: document.getElementById("promo1_name").value,
+    promo2_name: document.getElementById("promo2_name").value,
+    promo3_name: document.getElementById("promo3_name").value,
+    promo4_name: document.getElementById("promo4_name").value,
+    promo5_name: document.getElementById("promo5_name").value,
+    promo6_name: document.getElementById("promo6_name").value
+  };
+
+  const [year, m] = month.split("-").map(Number);
+  const daysInMonth = new Date(year, m, 0).getDate();
+  const days = {};
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = {};
+    const ids = [
+      "x_net_sales","x_r","x_food_sales","x_transaction","x_avg_check",
+      "daily_sales_target","z_net_sales","z_target_achieved","z_transaction",
+      "z_avg_check","z_r","z_food_sales","z_food_sales_pct",
+      "mh","mh_al_yol","spmh","loyalty_Sales","loyalty_sales_pct",
+      "merchandise_qty","merchandise_amt","coffee_qty","coffee_amt",
+      "delivery_qty","delivery_amt","odo_qty","odo_amt",
+      "keeta_qty","keeta_amt","foodpanda_qty","foodpanda_amt",
+      "breakfast_qty","breakfast_amt","teaset_qty","teaset_amt",
+      "nutribite_qty","nutribite38_qty","promo1_qty","promo2_qty",
+      "promo3_qty","promo4_qty","other","remarks"
+    ];
+
+    ids.forEach(key => {
+      const el = document.getElementById(`${key}_${day}`);
+      d[key] = el ? el.value : "";
+    });
+
+    days[day] = d;
   }
+
+  return { header, days };
+}
+
+// ===== 填入資料 =====
+function fillAllData(allData) {
+  if (!allData) return;
+
+  const header = allData.header || {};
+  const days = allData.days || {};
+
+  Object.keys(header).forEach(key => {
+    const el = document.getElementById(key);
+    if (el) el.value = header[key];
+  });
+
+  Object.keys(days).forEach(day => {
+    const d = days[day];
+    Object.keys(d).forEach(key => {
+      const el = document.getElementById(`${key}_${day}`);
+      if (el) el.value = d[key];
+    });
+  });
+
+  calculateTotalRow();
+}
+
+// ===== 從 Supabase 讀取資料 =====
+async function loadData() {
+  const month = document.getElementById("month_select").value;
+  if (!month) return;
+
+  const { data, error } = await db
+    .from("revenue_data")
+    .select("*")
+    .eq("user_name", userName)
+    .eq("month", month)
+    .maybeSingle();
+
+  generateMonthRows();
+
+  if (error || !data) {
+    clearHeader();
+    return;
+  }
+
+  fillAllData({ header: data.header, days: data.days });
+}
+
+// ===== 儲存到 Supabase =====
+async function saveData() {
+  const month = document.getElementById("month_select").value;
+  if (!month) return;
+
+  const allData = collectAllData();
+
+  await db
+    .from("revenue_data")
+    .upsert({
+      user_name: userName,
+      month,
+      header: allData.header,
+      days: allData.days
+    }, { onConflict: "user_name,month" });
+}
+
+// ===== 自動 Save + 計算 =====
+document.addEventListener("input", () => {
+  saveData();
+  calculateTotalRow();
+});
+
+// ===== 初始化 =====
+window.addEventListener("DOMContentLoaded", () => {
+  generateMonthRows();
+  loadData();
+});
+
+// ===== 月份切換 =====
+document.getElementById("month_select").addEventListener("change", () => {
+  clearHeader();
+  generateMonthRows();
+  loadData();
+});
 </script>
+
+</body>
+</html>
