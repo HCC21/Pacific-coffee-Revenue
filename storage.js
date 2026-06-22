@@ -12,7 +12,7 @@ function getUserName() {
 }
 
 /* ===========================
-   清空 Header（切換月份時用）
+   清空 Header（切換月份用）
 =========================== */
 function clearHeader() {
   document.getElementById("coffee_house").value = "";
@@ -20,18 +20,9 @@ function clearHeader() {
   document.getElementById("sales_target").value = "";
   document.getElementById("net_sales").value = "";
 
-  document.getElementById("promo1_name").value = "";
-  document.getElementById("promo2_name").value = "";
-  document.getElementById("promo3_name").value = "";
-  document.getElementById("promo4_name").value = "";
-  document.getElementById("promo5_name").value = "";
-  document.getElementById("promo6_name").value = "";
-  document.getElementById("promo7_name").value = "";
-  document.getElementById("promo8_name").value = "";
-  document.getElementById("promo9_name").value = "";
-  document.getElementById("promo10_name").value = "";
-  document.getElementById("promo11_name").value = "";
-  document.getElementById("promo12_name").value = "";
+  for (let i = 1; i <= 12; i++) {
+    document.getElementById(`promo${i}_name`).value = "";
+  }
 }
 
 /* ===========================
@@ -44,20 +35,12 @@ function collectAllData() {
     coffee_house: document.getElementById("coffee_house").value,
     area_manager: document.getElementById("area_manager").value,
     sales_target: document.getElementById("sales_target").value,
-    net_sales: document.getElementById("net_sales").value,
-    promo1_name: document.getElementById("promo1_name").value,
-    promo2_name: document.getElementById("promo2_name").value,
-    promo3_name: document.getElementById("promo3_name").value,
-    promo4_name: document.getElementById("promo4_name").value,
-    promo5_name: document.getElementById("promo5_name").value,
-    promo6_name: document.getElementById("promo6_name").value,
-    promo7_name: document.getElementById("promo7_name").value,
-    promo8_name: document.getElementById("promo8_name").value,
-    promo9_name: document.getElementById("promo9_name").value,
-    promo10_name: document.getElementById("promo10_name").value,
-    promo11_name: document.getElementById("promo11_name").value,
-    promo12_name: document.getElementById("promo12_name").value
+    net_sales: document.getElementById("net_sales").value
   };
+
+  for (let i = 1; i <= 12; i++) {
+    header[`promo${i}_name`] = document.getElementById(`promo${i}_name`).value;
+  }
 
   const [year, m] = month.split("-").map(Number);
   const daysInMonth = new Date(year, m, 0).getDate();
@@ -76,18 +59,22 @@ function collectAllData() {
       "daily_sales_target","z_net_sales","z_target_achieved","z_transaction",
       "z_avg_check","z_r","z_food_sales","z_food_sales_pct",
 
-      // ⭐ 新增 Daily Loyalty Target %
       "daily_loyalty_target",
 
       "mh","mh_al_yol","spmh","loyalty_Sales","loyalty_sales_pct",
+
+      "food_waste_amt","food_waste_pct",
+
       "merchandise_qty","merchandise_amt","coffee_qty","coffee_amt",
       "delivery_qty","delivery_amt","odo_qty","odo_amt",
       "keeta_qty","keeta_amt","foodpanda_qty","foodpanda_amt",
       "breakfast_qty","breakfast_amt","teaset_qty","teaset_amt",
-      "nutribite_qty","nutribite38_qty","promo1_qty","promo2_qty",
-      "promo3_qty","promo4_qty","promo5_qty","promo6_qty",
-      "promo7_qty","promo8_qty","promo9_qty","promo10_qty",
-      "promo11_qty","promo12_qty","other","remarks"
+
+      "promo1_qty","promo2_qty","promo3_qty","promo4_qty","promo5_qty",
+      "promo6_qty","promo7_qty","promo8_qty","promo9_qty","promo10_qty",
+      "promo11_qty","promo12_qty",
+
+      "other","remarks"
     ];
 
     ids.forEach(key => {
@@ -115,9 +102,7 @@ function fillAllData(allData) {
     el.value = v ?? "";
   }
 
-  Object.keys(header).forEach(key => {
-    set(key, header[key]);
-  });
+  Object.keys(header).forEach(key => set(key, header[key]));
 
   Object.keys(days).forEach(day => {
     const d = days[day];
@@ -158,9 +143,7 @@ async function saveData() {
       { onConflict: "user_name,month" }
     );
 
-  if (error) {
-    console.error("❌ Supabase Save 失敗：", error);
-  }
+  if (error) console.error("❌ Supabase Save 失敗：", error);
 }
 
 /* ===========================
@@ -213,7 +196,7 @@ async function loadData(selectedStores = []) {
 }
 
 /* ===========================
-   多分店合併（含 Daily Loyalty Target %）
+   多分店合併（含 Food Waste 修正）
 =========================== */
 function mergeDays(records) {
   if (!records || records.length === 0) return null;
@@ -233,7 +216,6 @@ function mergeDays(records) {
 
       Object.keys(row1).forEach(key => {
 
-        // ⭐ Daily Loyalty Target % → 取平均
         if (key === "daily_loyalty_target") {
           const v1 = parseFloat(row1[key]) || 0;
           const v2 = parseFloat(row2[key]) || 0;
@@ -241,7 +223,14 @@ function mergeDays(records) {
           return;
         }
 
-        // ⭐ 百分比欄位不相加
+        if (key === "food_waste_amt") {
+          const v1 = parseFloat(row1[key]) || 0;
+          const v2 = parseFloat(row2[key]) || 0;
+          row1[key] = (v1 + v2).toFixed(1);
+          return;
+        }
+
+        if (key === "food_waste_pct") return;
         if (key.includes("pct") || key.includes("achieved")) return;
 
         const v1 = parseFloat(row1[key]) || 0;
@@ -254,29 +243,45 @@ function mergeDays(records) {
     });
   }
 
-  // ⭐ 重新計算百分比
+  /* ===========================
+     ⭐ 重新計算百分比（包括 Food Waste %）
+  ============================ */
   Object.keys(days).forEach(day => {
     const d = days[day];
 
-    const net = parseFloat(d.z_net_sales) || 0;
-    const food = parseFloat(d.z_food_sales) || 0;
+    const net    = parseFloat(d.z_net_sales) || 0;
+    const food   = parseFloat(d.z_food_sales) || 0;
     const loyalty = parseFloat(d.loyalty_Sales) || 0;
     const target = parseFloat(d.daily_sales_target) || 0;
-    const qty = parseFloat(d.z_transaction) || 0;
+    const qty    = parseFloat(d.z_transaction) || 0;
+    const waste  = parseFloat(d.food_waste_amt) || 0;
 
-    d.z_food_sales_pct = net > 0 ? ((food / net) * 100).toFixed(1) + "%" : "";
-    d.loyalty_sales_pct = net > 0 ? ((loyalty / net) * 100).toFixed(1) + "%" : "";
-    d.z_target_achieved = target > 0 ? ((net / target) * 100).toFixed(1) + "%" : "";
-    d.z_avg_check = qty > 0 ? (net / qty).toFixed(1) : "";
+    d.z_food_sales_pct =
+      net > 0 ? ((food / net) * 100).toFixed(1) + "%" : "";
 
-    // ⭐ Daily Loyalty Achieved %
+    d.loyalty_sales_pct =
+      net > 0 ? ((loyalty / net) * 100).toFixed(1) + "%" : "";
+
+    d.z_target_achieved =
+      target > 0 ? ((net / target) * 100).toFixed(1) + "%" : "";
+
+    d.z_avg_check =
+      qty > 0 ? (net / qty).toFixed(1) : "";
+
+    const baseValue = food + waste;
+    d.food_waste_pct =
+      baseValue > 0 ? ((waste / baseValue) * 100).toFixed(1) + "%" : "";
+
     const loyalty_pct = parseFloat(d.loyalty_sales_pct) || 0;
     const loyalty_target = parseFloat(d.daily_loyalty_target) || 0;
 
     d.loyalty_target_achieved =
-      loyalty_target > 0 ? ((loyalty_pct / loyalty_target) * 100).toFixed(1) + "%" : "";
+      loyalty_target > 0
+        ? ((loyalty_pct / loyalty_target) * 100).toFixed(1) + "%"
+        : "";
   });
 
+  /* ⭐⭐ 最重要：必須 return base ⭐⭐ */
   return base;
 }
 

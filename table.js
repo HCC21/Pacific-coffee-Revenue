@@ -85,11 +85,12 @@ function setupZExtraCalc(day) {
     zFoodPct.value = n > 0 ? ((f / n) * 100).toFixed(1) + "%" : "";
   }
 
-  function calcWastePct() {
-    const f = parseFloat(zFood.value) || 0;
-    const w = parseFloat(wasteAmt.value) || 0;
-    wastePct.value = f > 0 ? ((w / f) * 100).toFixed(1) + "%" : "";
-  }
+function calcWastePct() {
+  const f = parseFloat(zFood.value) || 0;
+  const w = parseFloat(wasteAmt.value) || 0;
+  const base = f + w;
+  wastePct.value = base > 0 ? ((w / base) * 100).toFixed(1) + "%" : "";
+}
 
   function calcSPMH() {
     const n = parseFloat(zNet.value) || 0;
@@ -137,8 +138,9 @@ function setupZExtraCalc(day) {
     calcLoyaltyAchieved();
   });
 }
+
 /* ===========================
-   生成整個月份表格（完整 100% 對齊 HTML）
+   生成整個月份表格（100% 對齊 HTML）
 =========================== */
 function generateMonthRows() {
   const monthInput = document.getElementById("month_select").value;
@@ -235,11 +237,9 @@ function generateMonthRows() {
 
     tbody.appendChild(tr);
 
-    // ⭐ 自動計算
     setupAutoCalc(day);
     setupZExtraCalc(day);
 
-    // ⭐ 數字格式化
     tr.querySelectorAll('input[type="number"]').forEach(input => {
       const isQty =
         input.id.includes("qty") ||
@@ -251,6 +251,7 @@ function generateMonthRows() {
   createTotalRow();
   calculateTotalRow();
 }
+
 /* ===========================
    建立 TOTAL Row
 =========================== */
@@ -283,7 +284,7 @@ function createTotalRow() {
 }
 
 /* ===========================
-   計算 TOTAL Row（已修正 X Avg Check 空白問題）
+   計算 TOTAL Row（完全對齊欄位 index）
 =========================== */
 function calculateTotalRow() {
   const tbody = document.getElementById("table_body");
@@ -294,13 +295,11 @@ function calculateTotalRow() {
 
   const totalCells = totalRow.querySelectorAll("td");
 
-  // 清空 TOTAL 行
   totalCells.forEach((cell) => {
     const input = cell.querySelector("input");
     if (input) input.value = "";
   });
 
-  // ⭐ 累積變數
   let totalDailyTarget = 0;
   let totalZNet = 0;
   let totalFoodSales = 0;
@@ -320,10 +319,7 @@ function calculateTotalRow() {
     const cells = row.querySelectorAll("td");
 
     cells.forEach((cell, index) => {
-
       const input = cell.querySelector("input");
-
-    
       if (!input || input.type !== "number") return;
 
       const val = parseFloat(input.value) || 0;
@@ -335,7 +331,6 @@ function calculateTotalRow() {
       }
     });
 
-    // ⭐ 累積 Z‑Reading 分子 / 分母
     totalDailyTarget += parseFloat(row.querySelector("input[id^='daily_sales_target_']")?.value) || 0;
     totalZNet       += parseFloat(row.querySelector("input[id^='z_net_sales_']")?.value) || 0;
     totalFoodSales  += parseFloat(row.querySelector("input[id^='z_food_sales_']")?.value) || 0;
@@ -357,7 +352,6 @@ function calculateTotalRow() {
 
   const totalInputs = totalRow.querySelectorAll("input");
 
-  // ⭐ index 對齊（根據你最新 thead）
   const idxXAvg        = 4;
   const idxDailyTarget = 5;
   const idxZNet        = 6;
@@ -375,8 +369,10 @@ function calculateTotalRow() {
   const idxSPMH         = 19;
   const idxMH           = 20;
 
+ ;
+
   /* ===========================
-     1) X Avg Check（已修正）
+     1) X Avg Check
   =========================== */
   if (totalInputs[idxXAvg]) {
     totalInputs[idxXAvg].value =
@@ -418,15 +414,17 @@ function calculateTotalRow() {
     totalInputs[idxWasteAmt].value = totalFoodWaste.toFixed(1);
   }
 
-  /* ===========================
-     6) Food Waste(%)
-  =========================== */
-  if (totalInputs[idxWastePct]) {
-    totalInputs[idxWastePct].value =
-      totalFoodSales > 0
-        ? ((totalFoodWaste / totalFoodSales) * 100).toFixed(1) + "%"
-        : "";
-  }
+/* ===========================
+   6) Food Waste(%)
+=========================== */
+if (totalInputs[idxWastePct]) {
+  const base = totalFoodSales + totalFoodWaste;
+  totalInputs[idxWastePct].value =
+    base > 0
+      ? ((totalFoodWaste / base) * 100).toFixed(1) + "%"
+      : "";
+}
+
 
   /* ===========================
      7) Loyalty Sales (%)
@@ -485,4 +483,3 @@ function calculateTotalRow() {
     headerTargetAch.value = totalInputs[idxTargetAch].value.replace("%", "");
   }
 }
-
