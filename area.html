@@ -70,30 +70,10 @@ th {
 <!-- ⭐ 年份 + 月份 + 日期選擇器 -->
 <div style="text-align:center; margin-bottom:20px;">
 
-  <select id="year_select" onchange="updateDays(); loadDashboard();">
-    <option value="2024">2024</option>
-    <option value="2025">2025</option>
-    <option value="2026" selected>2026</option>
-    <option value="2027">2027</option>
-    <option value="2028">2028</option>
-  </select>
+  <select id="year_select" onchange="updateDays(); loadDashboard();"></select>
 
-  <select id="month_select" onchange="updateDays(); loadDashboard();">
-    <option value="1">JAN</option>
-    <option value="2">FEB</option>
-    <option value="3">MAR</option>
-    <option value="4">APR</option>
-    <option value="5">MAY</option>
-    <option value="6" selected>JUN</option>
-    <option value="7">JUL</option>
-    <option value="8">AUG</option>
-    <option value="9">SEP</option>
-    <option value="10">OCT</option>
-    <option value="11">NOV</option>
-    <option value="12">DEC</option>
-  </select>
+  <select id="month_select" onchange="updateDays(); loadDashboard();"></select>
 
-  <!-- ⭐ 日期選擇器（會自動變 1–28/29/30/31） -->
   <select id="day_select" onchange="loadDashboard();"></select>
 
 </div>
@@ -176,11 +156,11 @@ function updateDays() {
     daySelect.appendChild(opt);
   }
 
-  daySelect.value = daysInMonth; // 預設選最後一日
+  daySelect.value = daysInMonth;
 }
 
 /* ===========================
-   主流程：讀取所有分店資料（可選月份 + 日期）
+   主流程：讀取所有分店資料
 =========================== */
 async function loadDashboard() {
   const stores = await getStores();
@@ -206,7 +186,6 @@ async function loadDashboard() {
 
     const days = data.days;
 
-    /* ===== MTD（1 號 → 選擇日期） ===== */
     let mtdTarget = 0;
     let mtdSales = 0;
 
@@ -223,7 +202,6 @@ async function loadDashboard() {
 
     const mtdAch = calcPct(mtdSales, mtdTarget);
 
-    /* ===== Daily（選擇日期） ===== */
     const todayRow = days[day] || {};
 
     const dailyTarget = parseFloat(todayRow.daily_sales_target ?? todayRow.daily_target) || 0;
@@ -234,7 +212,6 @@ async function loadDashboard() {
     const loyaltyPct = parseFloat(todayRow.loyalty_sales_pct ?? todayRow.loyalty_pct) || 0;
     const loyaltyAch = calcPct(loyaltyPct, loyaltyTarget);
 
-    /* ===== UI ===== */
     const tr = document.createElement("tr");
 
     function color(v) {
@@ -263,9 +240,35 @@ async function loadDashboard() {
 }
 
 /* ===========================
-   初始化
+   初始化（讀取 main.html 選擇）
 =========================== */
 window.addEventListener("DOMContentLoaded", () => {
+
+  const yearSelect = document.getElementById("year_select");
+  const monthSelect = document.getElementById("month_select");
+
+  const savedYear = localStorage.getItem("global_year") || new Date().getFullYear();
+  const savedMonth = localStorage.getItem("global_month") || (new Date().getMonth() + 1);
+
+  // ⭐ 填入年份
+  for (let y = 2024; y <= 2028; y++) {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.textContent = y;
+    if (y == savedYear) opt.selected = true;
+    yearSelect.appendChild(opt);
+  }
+
+  // ⭐ 填入月份
+  const monthNames = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  for (let m = 1; m <= 12; m++) {
+    const opt = document.createElement("option");
+    opt.value = m;
+    opt.textContent = monthNames[m-1];
+    if (m == savedMonth) opt.selected = true;
+    monthSelect.appendChild(opt);
+  }
+
   updateDays();
   loadDashboard();
 });

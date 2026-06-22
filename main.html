@@ -338,14 +338,13 @@ function changeUser() {
 =========================== */
 function openMonth(m) {
   const year = document.getElementById("year_select").value;
+
+  // ⭐ 儲存年份 + 月份（供 revenue.html 使用）
   localStorage.setItem("global_year", year);
+  localStorage.setItem("global_month", m);
 
-  const monthNames = [
-    "", "jan", "feb", "mar", "apr", "may", "jun",
-    "jul", "aug", "sep", "oct", "nov", "dec"
-  ];
-
-  window.location.href = monthNames[m] + ".html";
+  // ⭐ 跳去通用 revenue.html
+  window.location.href = "revenue.html";
 }
 
 /* ===========================
