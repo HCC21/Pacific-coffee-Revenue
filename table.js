@@ -223,8 +223,8 @@ function generateMonthRows() {
 
   createTotalRow();
   calculateTotalRow();
-}
 
+}
 
 /* ===========================
    建立 TOTAL Row
@@ -255,6 +255,7 @@ function createTotalRow() {
 
   totalRow.innerHTML = html;
   tbody.appendChild(totalRow);
+
 }
 
 /* ===========================
@@ -426,4 +427,38 @@ const totalLoyaltyPctAccum =
     totalInputs[idxSPMH].value =
       totalMH > 0 ? (totalZNet / totalMH).toFixed(1) : "";
   }
+// ===========================
+// ⭐ 自動計算 HEADER Sales Target & Net Sales
+// ===========================
+function updateHeaderTotals() {
+  const tbody = document.getElementById("table_body");
+  const rows = tbody.querySelectorAll("tr:not(#total_row)");
+
+  let totalSalesTarget = 0;
+  let totalNetSales = 0;
+
+  rows.forEach(row => {
+    const dailyTarget = parseFloat(row.querySelector("input[id^='daily_sales_target_']")?.value) || 0;
+    const zNet = parseFloat(row.querySelector("input[id^='z_net_sales_']")?.value) || 0;
+
+    totalSalesTarget += dailyTarget;
+    totalNetSales += zNet;
+  });
+
+  // ⭐ 更新 HEADER
+  document.getElementById("sales_target").value = totalSalesTarget.toFixed(1);
+  document.getElementById("net_sales").value = totalNetSales.toFixed(1);
 }
+updateHeaderTotals();
+
+ /* ===========================
+     ⭐ Header Target Achieved % = TOTAL Row Target Achieved %
+        （即：累積 Target Achieved %）
+  =========================== */
+  const totalTargetAch = totalInputs[idxTargetAch]?.value || "";
+  const headerTargetAch = document.getElementById("target_achieved");
+
+  if (headerTargetAch) {
+    headerTargetAch.value = totalTargetAch.replace("%", "");
+  }
+}   // ←←← calculateTotalRow() 正式結束（非常重要）

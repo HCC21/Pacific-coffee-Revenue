@@ -26,6 +26,12 @@ function clearHeader() {
   document.getElementById("promo4_name").value = "";
   document.getElementById("promo5_name").value = "";
   document.getElementById("promo6_name").value = "";
+  document.getElementById("promo7_name").value = "";
+  document.getElementById("promo8_name").value = "";
+  document.getElementById("promo9_name").value = "";
+  document.getElementById("promo10_name").value = "";
+  document.getElementById("promo11_name").value = "";
+  document.getElementById("promo12_name").value = "";
 }
 
 /* ===========================
@@ -44,7 +50,13 @@ function collectAllData() {
     promo3_name: document.getElementById("promo3_name").value,
     promo4_name: document.getElementById("promo4_name").value,
     promo5_name: document.getElementById("promo5_name").value,
-    promo6_name: document.getElementById("promo6_name").value
+    promo6_name: document.getElementById("promo6_name").value,
+    promo7_name: document.getElementById("promo7_name").value,
+    promo8_name: document.getElementById("promo8_name").value,
+    promo9_name: document.getElementById("promo9_name").value,
+    promo10_name: document.getElementById("promo10_name").value,
+    promo11_name: document.getElementById("promo11_name").value,
+    promo12_name: document.getElementById("promo12_name").value
   };
 
   const [year, m] = month.split("-").map(Number);
@@ -73,7 +85,9 @@ function collectAllData() {
       "keeta_qty","keeta_amt","foodpanda_qty","foodpanda_amt",
       "breakfast_qty","breakfast_amt","teaset_qty","teaset_amt",
       "nutribite_qty","nutribite38_qty","promo1_qty","promo2_qty",
-      "promo3_qty","promo4_qty","other","remarks"
+      "promo3_qty","promo4_qty","promo5_qty","promo6_qty",
+      "promo7_qty","promo8_qty","promo9_qty","promo10_qty",
+      "promo11_qty","promo12_qty","other","remarks"
     ];
 
     ids.forEach(key => {
