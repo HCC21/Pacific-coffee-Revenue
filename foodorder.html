@@ -5,13 +5,70 @@
   <title>Food Record Chart</title>
   <style>
     body { font-family: Arial, sans-serif; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    th { background: #f0f0f0; }
-    input { text-align: left; }
-    .wide { width: 300px; }
-    .narrow { width: 23px; }
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 20px;
+      position: relative;
+    }
+    table { border-collapse: separate; border-spacing: 0; width: 100%; }
+    th, td { 
+      border-right: 1px solid #ccc; 
+      border-bottom: 1px solid #ccc; 
+      padding: 6px; 
+      text-align: center; 
+      background: #fff;
+      white-space: nowrap;
+    }
+    th { border-top: 1px solid #ccc; background: #f0f0f0 !important; }
+    td:first-child, th:first-child { border-left: 1px solid #ccc; }
+
+    /* 凍結前三欄的關鍵 CSS */
+    #foodTable th:nth-child(1), #foodTable td:nth-child(1) {
+      position: sticky; left: 0; z-index: 10; background: #fff;
+    }
+    #foodTable th:nth-child(2), #foodTable td:nth-child(2) {
+      position: sticky; left: 300px; z-index: 10; background: #fff;
+    }
+    #foodTable th:nth-child(3), #foodTable td:nth-child(3) {
+      position: sticky; left: 350px; z-index: 10; background: #fff;
+    }
+    
+    /* 種類行的背景色需要覆蓋 sticky 背景 */
+    .categoryRow td { background-color: #fff7c2 !important; }
+    
+    /* 讓 header 也在最上面 */
+    #foodTable thead th { position: sticky; top: 0; z-index: 20; }
+    #foodTable thead th:nth-child(1), 
+    #foodTable thead th:nth-child(2), 
+    #foodTable thead th:nth-child(3) { z-index: 30; }
+
+    /* 讓 Footer 的前三格也凍結 */
+    #foodTable tfoot td:nth-child(1) { position: sticky; left: 0; z-index: 10; background: #f9f9f9; }
+    #foodTable tfoot td:nth-child(2) { position: sticky; left: 300px; z-index: 10; background: #f9f9f9; }
+    #foodTable tfoot td:nth-child(3) { position: sticky; left: 350px; z-index: 10; background: #f9f9f9; }
+
+    /* 移除輸入框邊框，讓文字用盡空間 */
+    input, select { 
+      border: none; 
+      outline: none; 
+      background: transparent; 
+      width: 100%; 
+      height: 100%; 
+      font-family: inherit; 
+      font-size: inherit; 
+      font-weight: inherit;
+      text-align: center;
+      padding: 0;
+      margin: 0;
+    }
+    input:focus { background: #e8f0fe; }
+
+    .wide { width: 300px; text-align: left !important; padding-left: 5px; }
+    #foodTable td:first-child input { text-align: left !important; }
+    .narrow { width: 30px; }
     tfoot td { font-weight: bold; background: #f9f9f9; }
+
     #contextMenu {
       display: none;
       position: absolute;
@@ -19,672 +76,969 @@
       border: 1px solid #ccc;
       box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
       z-index: 1000;
+      min-width: 150px;
     }
     #contextMenu button {
       display: block;
       width: 100%;
       border: none;
       background: none;
-      padding: 5px;
+      padding: 10px;
       text-align: left;
       cursor: pointer;
+      font-size: 14px;
     }
-    #foodTable tfoot input {
-     width: 80px;   /* 可以改成 60px 或更細 */
-     text-align: center; /* 數字靠右顯示 */
-     box-sizing: border-box;
-    }
-
     #contextMenu button:hover { background: #eee; }
-.categoryRow {
-  background-color: #fff7c2; /* 柔和黃色底色 */
-}
-#foodTable tbody tr {
-  height: 25px;       /* 食物行高度 */
-}
-#foodTable tbody tr.categoryRow {
-  height: 25px;       /* 種類行更高 */
-  background-color: #fff7c2; /* 保持黃色底 */
-}
-#foodTable input, 
-#foodTable select {
-  height: 25px;       /* 輸入框高度 */
-  line-height: 30px;  /* 文字垂直置中 */
-}
 
+    /* 邊框類別 */
+    .border-left-bold { border-left: 3px solid #000 !important; }
+    .border-right-bold { border-right: 3px solid #000 !important; }
+    
+    /* 表格最左側強制粗線 */
+    #foodTable th:first-child, #foodTable td:first-child {
+      border-left: 3px solid #000 !important;
+    }
 
+    .categoryRow { background-color: #fff7c2; }
+    #foodTable tbody tr { height: 35px; transition: background-color 0.3s; }
+    #foodTable tbody tr.dragging { background-color: #e0e0e0 !important; opacity: 0.8; }
 
-/* Day 標題行：左右加粗 */
-#foodTable thead tr#dateRow th:nth-child(1),
-#foodTable thead tr#dateRow th:nth-child(4),
-#foodTable thead tr#dateRow th:nth-child(5),
-#foodTable thead tr#dateRow th:nth-child(6),
-#foodTable thead tr#dateRow th:nth-child(7),
-#foodTable thead tr#dateRow th:nth-child(8),
-#foodTable thead tr#dateRow th:nth-child(9),
-#foodTable thead tr#dateRow th:nth-child(10),
-#foodTable thead tr#dateRow th:nth-child(11) {
-  border-left: 3px solid #000;
-}
+    #foodTable, #foodTable th, #foodTable td, #foodTable input, #foodTable select {
+      font-weight: bold;
+      font-size: 16px;
+    }
 
-/* R/T/W/E 行：左右加粗 */
-#foodTable thead tr#labelRow th:nth-child(1),
-#foodTable thead tr#labelRow th:nth-child(4),
-#foodTable thead tr#labelRow th:nth-child(8),
-#foodTable thead tr#labelRow th:nth-child(12),
-#foodTable thead tr#labelRow th:nth-child(16),
-#foodTable thead tr#labelRow th:nth-child(20),
-#foodTable thead tr#labelRow th:nth-child(24),
-#foodTable thead tr#labelRow th:nth-child(28),
-#foodTable thead tr#labelRow th:nth-child(32) {
-  border-left: 3px solid #000;
-}
-/* 食品行：Day 區塊左右加粗 */
-#foodTable tbody td:nth-child(1),
-#foodTable tbody td:nth-child(4),
-#foodTable tbody td:nth-child(8),
-#foodTable tbody td:nth-child(12),
-#foodTable tbody td:nth-child(16),
-#foodTable tbody td:nth-child(20),
-#foodTable tbody td:nth-child(24),
-#foodTable tbody td:nth-child(28),
-#foodTable tbody td:nth-child(32) {
+    @media (max-width: 480px) {
+      #contextMenu { width: 90%; left: 5% !important; bottom: 10px; }
+    }
 
-  border-left: 3px solid #000;
-}
+    /* 浮動提示框樣式 - 優化為可縮放 */
+    #floatingReminder {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background: #d32f2f;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      z-index: 1000;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+    }
+    #floatingReminder.expanded {
+      width: 320px;
+      max-height: 80vh;
+      overflow-y: auto;
+      height: auto;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.98);
+      border-color: #333;
+      padding: 15px;
+      cursor: default;
+    }
+    .lang-toggle {
+      background: #eee;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .reminder-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #333;
+      margin-top: 10px;
+      text-align: left;
+    }
+    .reminder-section {
+      margin-bottom: 12px;
+      border-bottom: 1px dashed #eee;
+      padding-bottom: 8px;
+    }
+    .reminder-section:last-child { border-bottom: none; }
+    .reminder-section b { color: #d32f2f; display: block; margin-bottom: 3px; }
+    #reminderIcon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      color: white;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    #floatingReminder.expanded #reminderIcon { display: none; }
+    
+    #reminderContent { display: none; }
+    #floatingReminder.expanded #reminderContent { display: block; }
 
-/* TOTAL 行：逐格顯示 R/T/W/E */
-#foodTable tfoot tr#totalRow td:nth-child(1),
-#foodTable tfoot tr#totalRow td:nth-child(2),
-#foodTable tfoot tr#totalRow td:nth-child(6),
-#foodTable tfoot tr#totalRow td:nth-child(10),
-#foodTable tfoot tr#totalRow td:nth-child(14),
-#foodTable tfoot tr#totalRow td:nth-child(18),
-#foodTable tfoot tr#totalRow td:nth-child(22),
-#foodTable tfoot tr#totalRow td:nth-child(26),
-#foodTable tfoot tr#totalRow td:nth-child(30) {
-  border-left: 3px solid #000;
-}
-
-/* Plan / Actual 行：每日用 colspan=4，所以 Day1 從第 4 格開始 */
-#foodTable tfoot tr#planRow td:nth-child(1),
-#foodTable tfoot tr#planRow td:nth-child(2),
-#foodTable tfoot tr#planRow td:nth-child(3),
-#foodTable tfoot tr#planRow td:nth-child(4),
-#foodTable tfoot tr#planRow td:nth-child(5),
-#foodTable tfoot tr#planRow td:nth-child(6),
-#foodTable tfoot tr#planRow td:nth-child(7),
-#foodTable tfoot tr#planRow td:nth-child(8),
-#foodTable tfoot tr#planRow td:nth-child(9),
-
-#foodTable tfoot tr#actualRow td:nth-child(1),
-#foodTable tfoot tr#actualRow td:nth-child(2),
-#foodTable tfoot tr#actualRow td:nth-child(3),
-#foodTable tfoot tr#actualRow td:nth-child(4),
-#foodTable tfoot tr#actualRow td:nth-child(5),
-#foodTable tfoot tr#actualRow td:nth-child(6),
-#foodTable tfoot tr#actualRow td:nth-child(7),
-#foodTable tfoot tr#actualRow td:nth-child(8),
-#foodTable tfoot tr#actualRow td:nth-child(9) {
-  border-left: 3px solid #000;
-}
-#foodTable, 
-#foodTable th, 
-#foodTable td, 
-#foodTable input, 
-#foodTable select {
-  font-weight: bold;
-}
-#foodTable, 
-#foodTable th, 
-#foodTable td, 
-#foodTable input, 
-#foodTable select {
-  font-weight: bold;
-  font-size: 16px;   /* 字體大小，可以改成 18px 或更大 */
-}
-
-}
+    #floatingReminder h4 {
+      margin: 0 0 10px 0;
+      color: #d32f2f;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .reminder-item { margin-bottom: 8px; }
+    .reminder-item label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 2px;
+    }
+    .reminder-item input {
+      width: 100%;
+      border: 1px solid #ddd !important;
+      background: #fff !important;
+      padding: 6px !important;
+      border-radius: 4px;
+      text-align: left !important;
+      font-size: 14px !important;
+    }
+    .drag-handle {
+      cursor: move;
+      font-size: 20px;
+      color: #999;
+      padding: 0 5px;
+    }
   </style>
-  <!-- jsPDF + html2canvas -->
+  <!-- Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <!-- SheetJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <h2>
     Food Record Chart – 
-    <input type="text" id="storeName" value="HCC" class="wide">
-    日期選擇: <input type="date" id="startDate">
+    <input type="text" id="storeName" value="Store Code" style="width: 200px; border-bottom: 1px solid #ccc; text-align: left;">
+    日期選擇: <input type="date" id="startDate" style="width: 150px; border-bottom: 1px solid #ccc;">
     <button onclick="addCategory()">➕ 新增種類</button>
     <button onclick="addRow()">➕ 新增食品</button>
     <button onclick="exportPDF()">📄 匯出 PDF</button>
     <button onclick="exportExcel()">📊 匯出 Excel</button>
+    <button onclick="saveToSupabase()" style="background:#4CAF50; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">💾 SAVE (Cloud)</button>
+    <button onclick="loadFromSupabase()" style="background:#2196F3; color:white; border:none; padding:5px 10px; border-radius:3px; cursor:pointer;">📂 LOAD (Cloud)</button>
   </h2>
 
+  <div class="table-container">
   <table id="foodTable">
     <thead>
       <tr id="dateRow">
         <th>Food Record Chart</th>
         <th>Price</th>
         <th>Shelf life</th>
-        <th colspan="4">Day 1</th>
-        <th colspan="4">Day 2</th>
-        <th colspan="4">Day 3</th>
-        <th colspan="4">Day 4</th>
-        <th colspan="4">Day 5</th>
-        <th colspan="4">Day 6</th>
-        <th colspan="4">Day 7</th>
+        <th colspan="4" class="border-left-bold border-right-bold">Day 1</th>
+        <th colspan="4" class="border-left-bold border-right-bold">Day 2</th>
+        <th colspan="4" class="border-left-bold border-right-bold">Day 3</th>
+        <th colspan="4" class="border-left-bold border-right-bold">Day 4</th>
+        <th colspan="4" class="border-left-bold border-right-bold">Day 5</th>
+        <th colspan="4" class="border-left-bold border-right-bold">Day 6</th>
+        <th colspan="4" class="border-left-bold border-right-bold">Day 7</th>
       </tr>
       <tr id="labelRow">
-        <th>Store:</th><th></th><th></th>
-        <th>R</th><th>T</th><th>W</th><th>E</th>
-        <th>R</th><th>T</th><th>W</th><th>E</th>
-        <th>R</th><th>T</th><th>W</th><th>E</th>
-        <th>R</th><th>T</th><th>W</th><th>E</th>
-        <th>R</th><th>T</th><th>W</th><th>E</th>
-        <th>R</th><th>T</th><th>W</th><th>E</th>
-        <th>R</th><th>T</th><th>W</th><th>E</th>
+        <th class="border-left-bold">Store:</th><th></th><th></th>
+        <th class="border-left-bold">R</th><th>T</th><th>W</th><th class="border-right-bold">E</th>
+        <th class="border-left-bold">R</th><th>T</th><th>W</th><th class="border-right-bold">E</th>
+        <th class="border-left-bold">R</th><th>T</th><th>W</th><th class="border-right-bold">E</th>
+        <th class="border-left-bold">R</th><th>T</th><th>W</th><th class="border-right-bold">E</th>
+        <th class="border-left-bold">R</th><th>T</th><th>W</th><th class="border-right-bold">E</th>
+        <th class="border-left-bold">R</th><th>T</th><th>W</th><th class="border-right-bold">E</th>
+        <th class="border-left-bold">R</th><th>T</th><th>W</th><th class="border-right-bold">E</th>
       </tr>
     </thead>
- <tbody>
+    <tbody></tbody>
+    <tfoot>
+      <tr id="totalRow">
+        <td class="border-left-bold">總數</td><td></td><td></td>
+        <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
+        <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
+        <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
+        <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
+        <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
+        <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
+        <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
+      </tr>
+      <tr id="planRow">
+        <td class="border-left-bold">Plan Food Sales($)</td><td></td><td></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
+      </tr>
+      <tr id="actualRow">
+        <td class="border-left-bold">Actual Order($)</td><td></td><td></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+      </tr>
+    </tfoot>
+  </table>
+  </div>
 
-    </tbody>
- <tfoot>
-  <tr id="totalRow">
-    <td colspan="3">總數</td>
-   <!-- 每日 R/T/W/E 總數 -->
-  <td>0</td><td>0</td><td>0</td><td>0</td>
-  <td>0</td><td>0</td><td>0</td><td>0</td>
-  <td>0</td><td>0</td><td>0</td><td>0</td>
-  <td>0</td><td>0</td><td>0</td><td>0</td>
-  <td>0</td><td>0</td><td>0</td><td>0</td>
-  <td>0</td><td>0</td><td>0</td><td>0</td>
-  <td>0</td><td>0</td><td>0</td><td>0</td>
-</tr>
-  <!-- Plan Food Sales 每日一格，貫穿四格 -->
-  <tr id="planRow">
-    <td colspan="3">Plan Food Sales($)</td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-  </tr>
-
-  <!-- Actual Order 每日一格，貫穿四格 -->
-  <tr id="actualRow">
-    <td colspan="3">Actual Order($)</td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-    <td colspan="4"><input type="text" class="wide"></td>
-  </tr>
-
-</tfoot>
-
-  <!-- 隱藏的右鍵選單 -->
   <div id="contextMenu">
-    <button onclick="moveUp()">⬆ 上移</button>
-    <button onclick="moveDown()">⬆ 上移</button>
-    <button onclick="deleteRow()">🗑 刪除</button>
-    <button onclick="addRow()">➕ 新增</button>
-     </div>
+    <button id="moveUpBtn" onclick="moveUp()">⬆ 上移</button>
+    <button id="moveDownBtn" onclick="moveDown()">⬇ 下移</button>
+    <button id="deleteBtn" onclick="deleteRow()">🗑 刪除</button>
+    <button id="addCatBtn" onclick="addCategoryAbove()">➕ 新增種類</button>
+    <button id="addRowBtn" onclick="addRowAbove()">➕ 新增食品</button>
+    <button id="addRBtn" onclick="addRColumn()">➕ 增加 R 欄位</button>
+  </div>
 
+  <!-- 浮動提示框 -->
+  <div id="floatingReminder" onclick="expandReminder(event)">
+    <div id="reminderIcon">⏰</div>
+    <div id="reminderContent">
+      <h4 onclick="toggleReminder(event)">
+        <span class="drag-handle" id="dragHandle">⠿</span>
+        <span id="reminderTitle">重要提醒</span>
+        <button class="lang-toggle" onclick="switchLang(event)">EN/中</button>
+        <span style="font-size: 12px; color: #999; margin-left: 5px;">✖</span>
+      </h4>
+      
+      <div id="reminderTextContent" class="reminder-text">
+        <!-- 內容由 JS 動態生成 -->
+      </div>
+    </div>
+  </div>
 
 <script>
+  // Supabase Configuration
+  const supabaseUrl = "https://uqxzcguxmboubhzekkyi.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxeHpjZ3V4bWJvdWJoemVra3lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjE4NTIsImV4cCI6MjA5NzA5Nzg1Mn0.rc_BkdzMpj28bbG5rP9OCsm0Msqvvf5N78URb4d7gO8";
+  const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
   const startDateInput = document.getElementById("startDate");
   const dateRow = document.getElementById("dateRow");
   const weekdays = ["SUN","MON","TUE","WED","THUR","FRI","SAT"];
-  let currentRow = null;
+  const table = document.getElementById("foodTable");
+  const tbody = table.querySelector("tbody");
+  const contextMenu = document.getElementById("contextMenu");
+  let contextRow = null;
 
   function updateDates() {
     const startDate = new Date(startDateInput.value);
     const options = { day: 'numeric', month: 'numeric' };
-    for (let i = 0; i < 7; i++) {
-      let d = new Date(startDate);
-      d.setDate(startDate.getDate() + i);
-      dateRow.cells[3 + i].textContent = d.toLocaleDateString('en-GB', options) + " " + weekdays[d.getDay()];
-    }
+    const dateCells = Array.from(dateRow.cells).slice(3);
+    let d = new Date(startDate);
+    dateCells.forEach(cell => {
+      cell.textContent = d.toLocaleDateString('en-GB', options) + " " + weekdays[d.getDay()];
+      d.setDate(d.getDate() + 1);
+    });
   }
   startDateInput.addEventListener("change", updateDates);
 
+  function createFoodRow() {
+    const tr = document.createElement("tr");
+    const labelRow = document.getElementById("labelRow");
+    const colCount = labelRow.cells.length;
+    
+    let html = `
+      <td class="border-left-bold"><input type="text" value="輸入食物名" class="wide"></td>
+      <td>
+        <select class="priceSelect">
+          ${Array.from({length: 101}, (_, i) => `<option value="${i}">${i}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <select class="shelfSelect">
+          <option value="P+1">P+1</option><option value="P+2">P+2</option><option value="P+3">P+3</option>
+          <option value="P+4">P+4</option><option value="P+5">P+5</option><option value="N/A">N/A</option>
+        </select>
+      </td>
+    `;
+    for(let i=3; i<colCount; i++) {
+      let cls = labelRow.cells[i].className;
+      html += `<td class="${cls}"><input type="text" class="narrow"></td>`;
+    }
+    tr.innerHTML = html;
+    
+    // Add event listeners for recalculation
+    tr.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('input', () => {
+        recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+      });
+    });
+    
+    return tr;
+  }
+
+  function createCategoryRow() {
+    const row = document.createElement("tr");
+    row.classList.add("categoryRow");
+    const labelRow = document.getElementById("labelRow");
+    const colCount = labelRow.cells.length;
+    
+    let html = `<td class="border-left-bold"><input type="text" value="輸入種類" class="wide"></td><td></td><td></td>`;
+    for(let i=3; i<colCount; i++) {
+      let cls = labelRow.cells[i].className;
+      html += `<td class="${cls}"><input type="text" class="narrow" readonly></td>`;
+    }
+    row.innerHTML = html;
+    return row;
+  }
+
   function addRow() {
-  const tbody = document.querySelector("#foodTable tbody");
-  const tr = document.createElement("tr");
+    tbody.appendChild(createFoodRow());
+    recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+  }
 
-  tr.innerHTML = `
-    <td><input type="text" value="輸入食物名" class="wide"></td>
+  function addCategory() {
+    tbody.appendChild(createCategoryRow());
+    recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+  }
+
+  function addRowAbove() {
+    if (contextRow) contextRow.parentNode.insertBefore(createFoodRow(), contextRow);
+    else addRow();
+    recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+  }
+
+  function addCategoryAbove() {
+    if (contextRow) contextRow.parentNode.insertBefore(createCategoryRow(), contextRow);
+    else addCategory();
+    recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+  }
+
+  function updateStoreLabel() {
+    const storeName = document.getElementById("storeName").value;
+    const labelRow = document.getElementById("labelRow");
+    labelRow.cells[0].textContent = "Store: " + storeName;
+  }
+  document.getElementById("storeName").addEventListener("input", updateStoreLabel);
+
+  function recalcTotals() {
+    const labelRow = document.getElementById("labelRow");
+    const totalRow = document.getElementById("totalRow");
+    const colCount = labelRow.cells.length;
+    const rows = Array.from(tbody.querySelectorAll("tr:not(.categoryRow)"));
     
-    <!-- Price 下拉選單 -->
-    <td>
-      <select class="priceSelect">
-        ${Array.from({length: 101}, (_, i) => `<option value="${i}">${i}</option>`).join('')}
-      </select>
-    </td>
+    for (let j = 3; j < colCount; j++) {
+      let sum = 0;
+      rows.forEach(tr => {
+        const input = tr.cells[j].querySelector("input");
+        const val = input ? parseFloat(input.value) || 0 : 0;
+        sum += val;
+      });
+      totalRow.cells[j].textContent = sum > 0 ? sum : "0";
+    }
+  }
+
+  function recalcActualOrder() {
+    const labelRow = document.getElementById("labelRow");
+    const dateRow = document.getElementById("dateRow");
+    const actualRow = document.getElementById("actualRow");
+    const rows = Array.from(tbody.querySelectorAll("tr:not(.categoryRow)"));
     
-    <!-- Shelf life 下拉選單 -->
-    <td>
-      <select class="shelfSelect">
-        <option value="P+1">P+1</option>
-        <option value="P+2">P+2</option>
-        <option value="P+3">P+3</option>
-        <option value="P+4">P+4</option>
-        <option value="P+5">P+5</option>
-      </select>
-    </td>
+    const dateCells = Array.from(dateRow.cells).slice(3);
+    let currentCol = 3;
     
-    <!-- Day1~Day7 每日 R/T/W/E 共 28 格 -->
-    ${Array.from({length: 28}, () => `<td><input type="text" class="narrow"></td>`).join('')}
-  `;
-
-  tbody.appendChild(tr);
-}
-function updateStoreLabel() {
-  const storeName = document.getElementById("storeName").value;
-  const labelRow = document.getElementById("labelRow");
-  labelRow.cells[0].textContent = "Store: " + storeName;
-}
-
-// 當 storeName 輸入框改變時更新
-document.getElementById("storeName").addEventListener("input", updateStoreLabel);
-
-// 初始化時也執行一次
-updateStoreLabel();
-
-function recalcCategoryTotals() {
-  const tbody = document.querySelector("#foodTable tbody");
-  const rows = Array.from(tbody.querySelectorAll("tr"));
-
-  let currentCategoryRow = null;
-  let categoryTotals = new Array(28).fill(0);
-
-  rows.forEach(row => {
-    if (row.classList.contains("categoryRow")) {
-      // 如果之前有種類 → 把累加結果顯示到該種類行
-      if (currentCategoryRow) {
-        const inputs = currentCategoryRow.querySelectorAll("td input");
-        categoryTotals.forEach((val, i) => {
-          inputs[i + 3].value = val; // R=第4格開始
-        });
-      }
-      // 重置
-      currentCategoryRow = row;
-      categoryTotals = new Array(28).fill(0);
-    } else {
-      // 食品行 → 累加
-      const inputs = row.querySelectorAll("td input");
-      if (inputs.length > 0) {
-        for (let day = 0; day < 7; day++) {
-          const baseIndex = 1 + day * 4; // ← 修正：Day1 R=第4格
-          categoryTotals[day * 4 + 0] += parseFloat(inputs[baseIndex]?.value) || 0; // R
-          categoryTotals[day * 4 + 1] += parseFloat(inputs[baseIndex+1]?.value) || 0; // T
-          categoryTotals[day * 4 + 2] += parseFloat(inputs[baseIndex+2]?.value) || 0; // W
-          categoryTotals[day * 4 + 3] += parseFloat(inputs[baseIndex+3]?.value) || 0; // E
+    dateCells.forEach((dateCell, dayIdx) => {
+      let dailyTotal = 0;
+      const span = dateCell.colSpan;
+      for (let j = currentCol; j < currentCol + span; j++) {
+        const label = labelRow.cells[j].textContent.trim();
+        if (label === 'R') {
+          rows.forEach(tr => {
+            const input = tr.cells[j].querySelector("input");
+            const qty = input ? parseFloat(input.value) || 0 : 0;
+            const price = parseFloat(tr.cells[1].querySelector("select").value) || 0;
+            dailyTotal += qty * price;
+          });
         }
       }
-    }
-  });
-
-  // 最尾一個種類 → 顯示累加結果
-  if (currentCategoryRow) {
-    const inputs = currentCategoryRow.querySelectorAll("td input");
-    categoryTotals.forEach((val, i) => {
-      inputs[i + 3].value = val; // R=第4格開始
+      const input = actualRow.cells[dayIdx + 3].querySelector("input");
+      if (input) input.value = dailyTotal > 0 ? Math.round(dailyTotal) : "";
+      currentCol += span;
     });
   }
-}
 
-function recalcTotals() {
-  const tbody = document.querySelector("#foodTable tbody");
-  const totalRow = document.getElementById("totalRow");
-  const totals = new Array(28).fill(0); // 全表 TOTAL
-  let currentCategoryRow = null;
-  let categoryTotals = new Array(28).fill(0);
+  function recalcCategoryTotals() {
+    const labelRow = document.getElementById("labelRow");
+    const colCount = labelRow.cells.length;
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    let currentCatRow = null;
 
-  tbody.querySelectorAll("tr").forEach(row => {
-    if (row.classList.contains("categoryRow")) {
-      // 如果之前有種類 → 把累加結果顯示到該種類行
-      if (currentCategoryRow) {
-        const inputs = currentCategoryRow.querySelectorAll("td input");
-        categoryTotals.forEach((val, i) => {
-          inputs[i + 3].value = val; // R=第4格開始
-        });
-      }
-      // 重置
-      currentCategoryRow = row;
-      categoryTotals = new Array(28).fill(0);
-    } else {
-      // 食品行 → 累加到 TOTAL + 當前種類
-      const inputs = row.querySelectorAll("td input, select");
-      if (inputs.length > 0) {
-        for (let day = 0; day < 7; day++) {
-          const baseIndex = 3 + day * 4; // Day1 R=第4格
-          const r = parseFloat(inputs[baseIndex]?.value) || 0;
-          const t = parseFloat(inputs[baseIndex+1]?.value) || 0;
-          const w = parseFloat(inputs[baseIndex+2]?.value) || 0;
-          const e = parseFloat(inputs[baseIndex+3]?.value) || 0;
-
-          totals[day*4+0] += r;
-          totals[day*4+1] += t;
-          totals[day*4+2] += w;
-          totals[day*4+3] += e;
-
-          categoryTotals[day*4+0] += r;
-          categoryTotals[day*4+1] += t;
-          categoryTotals[day*4+2] += w;
-          categoryTotals[day*4+3] += e;
+    rows.forEach(tr => {
+      if (tr.classList.contains("categoryRow")) {
+        currentCatRow = tr;
+        for (let j = 3; j < colCount; j++) {
+            const input = currentCatRow.cells[j].querySelector("input");
+            if (input) input.value = "";
+        }
+      } else if (currentCatRow) {
+        for (let j = 3; j < colCount; j++) {
+          const input = tr.cells[j].querySelector("input");
+          const val = input ? parseFloat(input.value) || 0 : 0;
+          const catInput = currentCatRow.cells[j].querySelector("input");
+          if (catInput) {
+            const currentSum = parseFloat(catInput.value) || 0;
+            catInput.value = (currentSum + val) || "";
+          }
         }
       }
-    }
-  });
-
-  // 最尾一個種類 → 顯示累加結果
-  if (currentCategoryRow) {
-    const inputs = currentCategoryRow.querySelectorAll("td input");
-    categoryTotals.forEach((val, i) => {
-      inputs[i + 3].value = val;
     });
   }
 
-  // 更新 TOTAL 行：第 2 格開始對應 R、第 3 格 T、第 4 格 W、第 5 格 E
-  const totalCells = totalRow.querySelectorAll("td");
-  for (let i = 0; i < totals.length; i++) {
-    totalCells[i+1].textContent = totals[i];
+  // Context Menu Logic
+  table.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    contextRow = e.target.closest('tr');
+    contextCell = e.target.closest('td') || e.target.closest('th');
+    
+    const isHeader = contextRow && contextRow.parentNode.tagName === 'THEAD';
+    const isBody = contextRow && contextRow.parentNode.tagName === 'TBODY';
+    
+    if (!isHeader && !isBody) return;
+    
+    contextMenu.style.display = 'block';
+    contextMenu.style.left = e.pageX + 'px';
+    contextMenu.style.top = e.pageY + 'px';
+    
+    const addRBtn = document.getElementById('addRBtn');
+    const otherBtns = [
+      document.getElementById('moveUpBtn'),
+      document.getElementById('moveDownBtn'),
+      document.getElementById('deleteBtn'),
+      document.getElementById('addCatBtn'),
+      document.getElementById('addRowBtn')
+    ];
+
+    if (contextCell && contextCell.textContent.trim() === 'R') {
+      // 點擊 R 欄位：僅顯示增加 R，隱藏其他
+      addRBtn.style.display = 'block';
+      otherBtns.forEach(btn => btn.style.display = 'none');
+    } else {
+      // 點擊其他位置：顯示標準選單，隱藏增加 R
+      addRBtn.style.display = 'none';
+      otherBtns.forEach(btn => btn.style.display = 'block');
+    }
+  });
+  document.addEventListener('click', () => contextMenu.style.display = 'none');
+
+  function moveUp() {
+    if (contextRow && contextRow.previousElementSibling) contextRow.parentNode.insertBefore(contextRow, contextRow.previousElementSibling);
   }
-}
-
-// 右鍵選單功能（放在最尾端）
-const contextMenu = document.getElementById("contextMenu");
-const tbody = document.querySelector("#foodTable tbody");
-let contextRow = null;
-
-tbody.addEventListener("contextmenu", function(e) {
-  e.preventDefault();
-  const row = e.target.closest("tr");
-  if (!row) return;   // 允許所有行，包括 categoryRow
-  contextRow = row;
-  contextMenu.style.top = e.pageY + "px";
-  contextMenu.style.left = e.pageX + "px";
-  contextMenu.style.display = "block";
-});
-
-document.addEventListener("click", function() {
-  contextMenu.style.display = "none";
-});
-
-function moveUp() {
-  if (!contextRow) return;
-  const prev = contextRow.previousElementSibling;
-  if (prev) {
-    tbody.insertBefore(contextRow, prev);
+  function moveDown() {
+    if (contextRow && contextRow.nextElementSibling) contextRow.parentNode.insertBefore(contextRow.nextElementSibling, contextRow);
   }
-}
-
-function moveDown() {
-  if (!contextRow) return;
-  const next = contextRow.nextElementSibling;
-  if (next) {
-    tbody.insertBefore(next, contextRow);
+  function deleteRow() {
+    if (contextRow) { contextRow.remove(); recalcTotals(); recalcActualOrder(); recalcCategoryTotals(); }
   }
-}
 
-function deleteRow() {
-  if (!contextRow) return;
-  tbody.removeChild(contextRow);
-  contextRow = null;
-}
+  function addRColumn() {
+    if (!contextCell) return;
+    const cellIdx = contextCell.cellIndex;
+    const labelRow = document.getElementById('labelRow');
+    const dateRow = document.getElementById('dateRow');
+    const totalRow = document.getElementById('totalRow');
+    const planRow = document.getElementById('planRow');
+    const actualRow = document.getElementById('actualRow');
 
-// 匯出 PDF (直向 A4，左右留 5mm)
-async function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF("portrait", "mm", "a4"); // portrait 直向
-  const table = document.getElementById("foodTable");
- 
-// 從日期選擇器抓取日期
-  const dateInput = document.getElementById("startDate").value; // 格式: YYYY-MM-DD
-  let fileDate = "NoDate";
-  if (dateInput) {
-    const parts = dateInput.split("-");
-    // 轉成 26_6_2026 格式
-    fileDate = `${parseInt(parts[2])}_${parseInt(parts[1])}_${parts[0]}`;
-  }
-  const canvas = await html2canvas(table, { scale: 1 });
-  const imgData = canvas.toDataURL("image/jpeg", 0.7);
-
-  // A4 尺寸
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-
-  // 設定左右邊界 5mm
-  const margin = 5;
-  const imgWidth = pageWidth - margin * 2;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-  // 如果高度超過 A4，縮到 A4 高度
-  const finalHeight = imgHeight > pageHeight - margin * 2 ? pageHeight - margin * 2 : imgHeight;
-
-  pdf.addImage(imgData, "PNG", margin, margin, imgWidth, finalHeight);
-  pdf.save(fileDate + "Food order.pdf");
-}
-
-  // 匯出 Excel
-function exportExcel() {
-  const table = document.getElementById("foodTable");
-  const wb = XLSX.utils.table_to_book(table, { sheet: "FoodRecord" });
-  XLSX.writeFile(wb, "FoodRecord.xlsx");
-}
- 
-
-function addCategory() {
-  const tbody = document.querySelector("#foodTable tbody");
-  const row = document.createElement("tr");
-  row.classList.add("categoryRow");
-
-  // 建立種類行 HTML
-  row.innerHTML = `
-    <td><input type="text" value="輸入種類" class="wide"></td>
-    <td><input type="text" class="narrow"></td>
-    <td><input type="text" class="narrow"></td>
-    ${Array.from({length: 28}, () => `<td><input type="text" class="narrow" readonly></td>`).join("")}
-  `;
-
-  tbody.appendChild(row);
-}
-
-
-function recalcActualOrder() {
-  const tbody = document.querySelector("#foodTable tbody");
-  const actualRow = document.getElementById("actualRow");
-  const totals = new Array(7).fill(0);
-
-  tbody.querySelectorAll("tr").forEach(row => {
-    const inputs = row.querySelectorAll("input, select"); // 包括 select
-    if (inputs.length > 0) {
-      const price = parseFloat(inputs[1]?.value) || 0; // 第二格係 Price select
-      for (let day = 0; day < 7; day++) {
-        const rIndex = 3 + day * 4;
-        const rVal = parseFloat(inputs[rIndex]?.value) || 0;
-        totals[day] += rVal * price;
+    // 找到對應的 Day (DateRow 中的 th)
+    let currentIdx = 0;
+    let dayIdx = -1;
+    let targetDayTh = null;
+    for (let i = 0; i < dateRow.cells.length; i++) {
+      const th = dateRow.cells[i];
+      const span = th.colSpan || 1;
+      if (cellIdx >= currentIdx && cellIdx < currentIdx + span) {
+        targetDayTh = th;
+        dayIdx = i;
+        break;
       }
+      currentIdx += span;
     }
-  });
 
-function addCategory() {
-  const tbody = document.querySelector("#foodTable tbody");
-  const row = document.createElement("tr");
-  row.classList.add("categoryRow");
+    if (targetDayTh && dayIdx >= 3) {
+      targetDayTh.colSpan += 1;
+      
+      // 底部 Plan 和 Actual 欄位自動增加 colSpan
+      const planTd = planRow.cells[dayIdx];
+      const actualTd = actualRow.cells[dayIdx];
+      if (planTd) planTd.colSpan += 1;
+      if (actualTd) actualTd.colSpan += 1;
+      
+      // 在 LabelRow 插入新 R 欄位 (新欄位不用粗邊框)
+      const newLabelTh = document.createElement('th');
+      newLabelTh.textContent = 'R';
+      labelRow.insertBefore(newLabelTh, labelRow.cells[cellIdx + 1]);
 
-  // 建立種類行 HTML
-  row.innerHTML = `
-    <td><input type="text" value="輸入種類" class="wide"></td>
-    <td><input type="text" class="narrow"></td>
-    <td><input type="text" class="narrow"></td>
-    ${Array.from({length: 28}, () => `<td><input type="text" class="narrow" readonly></td>`).join("")}
-  `;
+      // 在 TotalRow 插入新單元格
+      const newTotalTd = document.createElement('td');
+      newTotalTd.textContent = '0';
+      totalRow.insertBefore(newTotalTd, totalRow.cells[cellIdx + 1]);
 
-  tbody.appendChild(row);
-}
-
-
-  const actualCells = actualRow.querySelectorAll("td");
-  for (let day = 0; day < 7; day++) {
-    const td = actualCells[day + 1];
-    const input = td.querySelector("input");
-    if (input) {
-      input.value = totals[day] > 0 ? Math.round(totals[day]) : "";
+      // 在每一行數據中插入新單元格
+      Array.from(tbody.rows).forEach(tr => {
+        const newTd = document.createElement('td');
+        if (tr.classList.contains('categoryRow')) {
+          newTd.innerHTML = '<input type="text" class="narrow" readonly>';
+        } else {
+          newTd.innerHTML = '<input type="text" class="narrow">';
+          newTd.querySelector('input').addEventListener('input', () => {
+            recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+          });
+        }
+        tr.insertBefore(newTd, tr.cells[cellIdx + 1]);
+      });
+      
+      recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
     }
   }
-}
 
+  // PDF Export - Optimized for SINGLE PAGE A4 Portrait, 5mm margin
+  async function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const originalTable = document.getElementById('foodTable');
+    
+    // 建立臨時容器以確保渲染不受當前捲動或 sticky 影響
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-10000px';
+    container.style.top = '0';
+    container.style.width = originalTable.scrollWidth + 'px'; // 確保容器寬度足夠容納整個表格
+    document.body.appendChild(container);
+    
+    const clone = originalTable.cloneNode(true);
+    
+    // 移除 sticky 樣式，並優化寬度分配
+    clone.style.width = '100%'; 
+    clone.style.tableLayout = 'fixed'; // 使用固定佈局以便更精確控制
+    
+    // 計算目標高度：A4 高度 297mm，扣除上下 5mm 邊距 = 287mm
+    // 在瀏覽器中大約為 287mm * 3.78 (96dpi) = 1085px
+    // 為了精確，我們在渲染前先計算總行數
+    const totalRows = clone.querySelectorAll('tr').length;
+    const targetHeightPx = 1085; // A4 扣除邊距後的近似像素高度
+    const rowHeight = Math.floor(targetHeightPx / totalRows);
 
-// 事件委派：監聽 input + select
-document.querySelector("#foodTable tbody").addEventListener("input", (e) => {
-  if (["input","select"].includes(e.target.tagName.toLowerCase())) {
-    recalcTotals();
-    recalcActualOrder();
-recalcCategoryTotals();
-  }
-});
-function initTable() {
-  const tbody = document.querySelector("#foodTable tbody");
-
-  const categoryFoods = {
-    "Bakey": [
-      "Black Mochi Muffin","Bluerry Muffin","Butter Croissant","Chocolate Danish",
-      "Chocolate Muffin","Cinnamon Roll","Classic Brownie","Coffee Pound Cake",
-      "Honey Citron Tea Cake","Lemon Pound Cake","Mint Choco Pound Cake",
-      "New Dark Choco Cookie","New Milk Choco Cookie","Plain Bagel",
-      "Plain Cream Cheese","Anchor Butter"
-    ],
-    "Dessert": [
-      "Blueberry Cheesecake","Basque Cheescake","Lemon tart",
-      "Strawberry Red Velvet Cake","Valrhona Dark Choco Cake"
-    ],
-    "Salad": [
-      "Smoked Beef Quinoa Pasta Salad",
-      "Smoked Chicken Salad(Ceasar Dressing)",
-      "Spicy Shrimp Potato Salad With Bacon"
-    ],
-    "Sandwich": [
-      "Avocado Turkey Sandwich","Bacon, Egg & Cheese Bagel","Canadian Bacon Croissant",
-      "Chipotle Chicken Sandwich w/ Chili Sauce (Whole)","Croque Monsieur (Half)",
-      "Egg Mayo Sandwich","Chicken Shawarma Wrap","Guacamole Salad Half",
-      "Ham & Cheese croissant","Satay Chicken Ciabatta","Smoked Beef Brisket Ciabatta",
-      "Smoked Chicken Croissant","Smoked Chicken Bagel","Smoked Salmon Bagel",
-      "Tuna Sandwich(half)","Tuna Salad & Cheese Focaccia","WhiteTruffle&Beef sandwich"
-    ],
-    "Savory": ["Spinach Pie","Apple pie","Chicken Pie"],
-    "Yogurt": [
-      "Coconut Pudding With Banana Chips",
-      "Greek Style Yogurt With Passion Fruit & Honey Nut",
-      "Greek Style Yogurt With Raspberry Granola & Whiite"
-    ]
-  };
-
-  // Shelf life 初始值
-  const shelfLifeDefaults = {
-    "Bakey": ["P+3","P+3","P+2","P+2","P+3","P+2","P+2","P+3",
-              "P+3","P+3","P+3","P+3","P+3","P+2","N/A","N/A"],
-    "Dessert": ["P+3","P+2","P+2","P+3","P+3"],
-    "Salad": ["P+2","P+2","P+2"],
-    "Sandwich": Array(17).fill("P+2"),
-    "Savory": Array(3).fill("P+2"),
-    "Yogurt": Array(3).fill("P+3")
-  };
-
-  // 價錢初始值
-  const priceDefaults = {
-    "Bakey": [26,25,18,22,25,23,18,22,18,22,22,22,22,15,4,0],
-    "Dessert": [36,28,20,39,39],
-    "Salad": [58,56,58],
-    "Sandwich": [36,48,36,40,28,24,58,25,33,48,45,36,46,50,26,45,43],
-    "Savory": [34,23,32],
-    "Yogurt": [39,39,39]
-  };
-
-  Object.keys(categoryFoods).forEach(catName => {
-    // 種類行
-    const categoryRow = document.createElement("tr");
-    categoryRow.classList.add("categoryRow");
-    categoryRow.innerHTML = `
-      <td><input type="text" value="${catName}" class="wide"></td>
-      <td><input type="text" class="narrow"></td>
-      <td><input type="text" class="narrow"></td>
-      ${Array.from({length: 28}, () => `<td><input type="text" class="narrow" readonly></td>`).join("")}
-    `;
-    tbody.appendChild(categoryRow);
-
-    // 食物行
-    categoryFoods[catName].forEach((foodName, idx) => {
-      const foodRow = document.createElement("tr");
-      foodRow.innerHTML = `
-        <td><input type="text" value="${foodName}" class="wide"></td>
-        <td>
-          <select class="priceSelect">
-            ${Array.from({length: 101}, (_, i) => `<option value="${i}">${i}</option>`).join("")}
-          </select>
-        </td>
-        <td>
-          <select class="shelfSelect">
-            <option value="P+1">P+1</option>
-            <option value="P+2">P+2</option>
-            <option value="P+3">P+3</option>
-            <option value="P+4">P+4</option>
-            <option value="P+5">P+5</option>
-            <option value="N/A">N/A</option>
-          </select>
-        </td>
-        ${Array.from({length: 28}, () => `<td><input type="text" class="narrow"></td>`).join("")}
-      `;
-      tbody.appendChild(foodRow);
-
-      // 設定 Shelf life 初始值
-      const shelfSelect = foodRow.querySelector(".shelfSelect");
-      shelfSelect.value = shelfLifeDefaults[catName][idx];
-
-      // 設定 Price 初始值
-      const priceSelect = foodRow.querySelector(".priceSelect");
-      priceSelect.value = priceDefaults[catName][idx];
+    clone.querySelectorAll('tr').forEach(tr => {
+      tr.style.height = rowHeight + 'px';
     });
-  });
-}
 
-window.onload = function() {
-  initTable();
-};
-document.getElementById("addRow").addEventListener("click", function() {
-  if (currentRow) {
-    const newRow = document.createElement("tr");
-    newRow.innerHTML = `
-      <td><input type="text" class="wide"></td>
-      <td><select class="priceSelect">
-        ${Array.from({length:101},(_,i)=>`<option value="${i}">${i}</option>`).join("")}
-      </select></td>
-      <td><select class="shelfSelect">
-        <option value="P+1">P+1</option>
-        <option value="P+2">P+2</option>
-        <option value="P+3">P+3</option>
-        <option value="P+4">P+4</option>
-        <option value="P+5">P+5</option>
-        <option value="N/A">N/A</option>
-      </select></td>
-      <td><input type="text" class="narrow"></td>
-      <td><input type="text" class="narrow"></td>
-      <td><input type="text" class="narrow"></td>
-    `;
-    currentRow.parentNode.insertBefore(newRow, currentRow.nextSibling);
-    hideContextMenu();
+    clone.querySelectorAll('*').forEach(el => {
+      el.style.position = 'static';
+      el.style.left = 'auto';
+      el.style.top = 'auto';
+      
+      // 針對單元格設置寬度比例
+      if (el.tagName === 'TH' || el.tagName === 'TD') {
+        if (el.cellIndex === 0) {
+          el.style.width = '25%'; // 第一欄佔 25%
+          el.style.textAlign = 'left';
+          el.style.paddingLeft = '5px';
+        } else if (el.cellIndex === 1 || el.cellIndex === 2) {
+          el.style.width = '5%';  // Price/Shelf 各 5%
+        } else {
+          // 剩餘 65% 空間由 Day 1-7 的所有子欄位平分
+          el.style.width = 'auto'; 
+        }
+      }
+    });
+
+    // 針對 header 的 colspan 欄位特別處理寬度
+    clone.querySelectorAll('#dateRow th').forEach((th, idx) => {
+      if (idx >= 3) th.style.width = (65 / 7) + '%'; // 每日數據區塊平分 65%
+    });
+
+    // 手動同步 input 和 select 的值，並設置對齊
+    const originalInputs = originalTable.querySelectorAll('input, select');
+    const clonedInputs = clone.querySelectorAll('input, select');
+    
+    clonedInputs.forEach((el, index) => {
+      const originalEl = originalInputs[index];
+      const val = originalEl.value;
+      const span = document.createElement('span');
+      span.textContent = val;
+      span.style.display = 'inline-block';
+      
+      // 判斷是否需要靠左對齊：如果是第一欄（食物名/種類）
+      const td = el.closest('td');
+      const isFirstColumn = td && td.cellIndex === 0;
+      
+      if (isFirstColumn) {
+        span.style.textAlign = 'left';
+        span.style.display = 'block'; // 確保 padding 生效
+        span.style.paddingLeft = '5px';
+        span.style.paddingRight = '10px';
+        span.style.whiteSpace = 'nowrap';
+      } else {
+        span.style.textAlign = 'center';
+        span.style.width = '100%';
+      }
+      
+      el.parentNode.replaceChild(span, el);
+    });
+    
+    container.appendChild(clone);
+
+    try {
+      const canvas = await html2canvas(clone, { 
+        scale: 2, // 提高初始採樣率以保證清晰度
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        width: clone.scrollWidth,
+        height: clone.scrollHeight
+      });
+      
+      // 使用 JPEG 壓縮以控制體積
+      const imgData = canvas.toDataURL("image/jpeg", 0.8);
+      const pdf = new jsPDF({
+        orientation: "p",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const margin = 5; // 嚴格 5mm 邊距
+      const availWidth = pdf.internal.pageSize.getWidth() - (margin * 2);
+      const availHeight = pdf.internal.pageSize.getHeight() - (margin * 2);
+      
+      // 強制填滿 A4 扣除邊距後的整個區域
+      pdf.addImage(imgData, 'JPEG', margin, margin, availWidth, availHeight);
+      
+      // 處理檔名：日_月_年Foodorder
+      const dateVal = document.getElementById('startDate').value;
+      let fileName = "Foodorder.pdf";
+      if (dateVal) {
+        const d = new Date(dateVal);
+        const day = d.getDate();
+        const month = d.getMonth() + 1;
+        const year = d.getFullYear().toString().slice(-2); // 取得年份後兩位
+        fileName = `${day}_${month}_${year}Foodorder.pdf`;
+      } else {
+        const d = new Date();
+        fileName = `${d.getDate()}_${d.getMonth()+1}_${d.getFullYear().toString().slice(-2)}Foodorder.pdf`;
+      }
+      
+      pdf.save(fileName);
+    } catch (err) {
+      console.error("PDF Export Error:", err);
+      alert("PDF 匯出失敗，請重試");
+    } finally {
+      document.body.removeChild(container);
+    }
   }
-});
 
+  // Excel Export - Values instead of formulas/inputs
+  function exportExcel() {
+    const data = [];
+    
+    // Header 1
+    const h1 = Array.from(document.getElementById('dateRow').cells).map(c => c.textContent);
+    data.push(h1);
+    
+    // Header 2
+    const h2 = Array.from(document.getElementById('labelRow').cells).map(c => c.textContent);
+    data.push(h2);
+    
+    // Body
+    Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
+      const rowData = Array.from(tr.cells).map(td => {
+        const input = td.querySelector('input');
+        const select = td.querySelector('select');
+        const val = input ? input.value : (select ? select.value : td.textContent);
+        // Try to convert to number if possible
+        return isNaN(val) || val === "" ? val : Number(val);
+      });
+      data.push(rowData);
+    });
+    
+    // Footer
+    Array.from(table.querySelectorAll('tfoot tr')).forEach(tr => {
+      const rowData = Array.from(tr.cells).map(td => {
+        const input = td.querySelector('input');
+        const val = input ? input.value : td.textContent;
+        return isNaN(val) || val === "" ? val : Number(val);
+      });
+      data.push(rowData);
+    });
 
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Order");
+    XLSX.writeFile(wb, `food_order_${document.getElementById('storeName').value}.xlsx`);
+  }
+
+  // Supabase Integration - Use Store Code + Date to differentiate data
+  async function saveToSupabase() {
+    const storeCode = document.getElementById('storeName').value;
+    const startDate = document.getElementById('startDate').value;
+    
+    if (!storeCode || storeCode === "Store Code") {
+        alert("請輸入有效的 Store Code");
+        return;
+    }
+    if (!startDate) {
+        alert("請選擇日期");
+        return;
+    }
+
+    const data = {
+      storeName: storeCode,
+      startDate: startDate,
+
+      rows: Array.from(tbody.querySelectorAll('tr')).map(tr => ({
+        isCategory: tr.classList.contains('categoryRow'),
+        cells: Array.from(tr.cells).map(td => {
+          const input = td.querySelector('input');
+          const select = td.querySelector('select');
+          return input ? input.value : (select ? select.value : td.textContent);
+        })
+      })),
+      planValues: Array.from(document.querySelectorAll('#planRow input')).map(i => i.value)
+    };
+
+    try {
+      // 結合 store_code 和 start_date 作為唯一識別
+      const { error } = await _supabase
+        .from('food_orders')
+        .upsert({ 
+          store_code: storeCode, 
+          start_date: startDate, 
+          data: data, 
+          updated_at: new Date() 
+        }, { onConflict: 'store_code,start_date' });
+      
+      if (error) throw error;
+      alert(`✅ 資料已儲存！\n店舖: ${storeCode}\n日期: ${startDate}`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ 儲存失敗: " + err.message);
+    }
+  }
+
+  async function loadFromSupabase() {
+    const storeCode = document.getElementById('storeName').value;
+    const startDate = document.getElementById('startDate').value;
+
+    if (!storeCode || storeCode === "Store Code") {
+        alert("請輸入 Store Code");
+        return;
+    }
+    if (!startDate) {
+        alert("請選擇要載入的日期");
+        return;
+    }
+
+    try {
+      const { data, error } = await _supabase
+        .from('food_orders')
+        .select('data')
+        .eq('store_code', storeCode)
+        .eq('start_date', startDate)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+          alert(`找不到資料：\n店舖: ${storeCode}\n日期: ${startDate}`);
+          return;
+      }
+
+      const savedData = data.data;
+      document.getElementById('startDate').value = savedData.startDate || "";
+
+      updateStoreLabel();
+      if (savedData.startDate) updateDates();
+
+      tbody.innerHTML = '';
+      savedData.rows.forEach(rowData => {
+        const tr = rowData.isCategory ? createCategoryRow() : createFoodRow();
+        rowData.cells.forEach((val, idx) => {
+          const input = tr.cells[idx].querySelector('input');
+          const select = tr.cells[idx].querySelector('select');
+          if (input) input.value = val;
+          else if (select) select.value = val;
+          else tr.cells[idx].textContent = val;
+        });
+        tbody.appendChild(tr);
+      });
+
+      const pInputs = document.querySelectorAll('#planRow input');
+      if (savedData.planValues) {
+        savedData.planValues.forEach((v, i) => { if (pInputs[i]) pInputs[i].value = v; });
+      }
+
+      recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+      alert("✅ 資料載入成功！");
+    } catch (err) {
+      console.error(err);
+      alert("❌ 載入失敗: " + err.message);
+    }
+  }
+
+  function initTable() {
+    const categoryFoods = {
+      "Bakey": ["Black Mochi Muffin","Bluerry Muffin","Butter Croissant","Chocolate Danish","Chocolate Muffin","Cinnamon Roll","Classic Brownie","Coffee Pound Cake","Honey Citron Tea Cake","Lemon Pound Cake","Mint Choco Pound Cake","New Dark Choco Cookie","New Milk Choco Cookie","Plain Bagel","Plain Cream Cheese","Anchor Butter"],
+      "Dessert": ["Blueberry Cheesecake","Basque Cheescake","Lemon tart","Strawberry Red Velvet Cake","Valrhona Dark Choco Cake"],
+      "Salad": ["Smoked Beef Quinoa Pasta Salad","Smoked Chicken Salad(Ceasar Dressing)","Spicy Shrimp Potato Salad With Bacon"],
+      "Sandwich": ["Avocado Turkey Sandwich","Bacon, Egg & Cheese Bagel","Canadian Bacon Croissant","Chipotle Chicken Sandwich w/ Chili Sauce (Whole)","Croque Monsieur (Half)","Egg Mayo Sandwich","Chicken Shawarma Wrap","Guacamole Salad Half","Ham & Cheese croissant","Satay Chicken Ciabatta","Smoked Beef Brisket Ciabatta","Smoked Chicken Croissant","Smoked Chicken Bagel","Smoked Salmon Bagel","Tuna Sandwich(half)","Tuna Salad & Cheese Focaccia","WhiteTruffle&Beef sandwich"],
+      "Savory": ["Spinach Pie","Apple pie","Chicken Pie"],
+      "Yogurt": ["Coconut Pudding With Banana Chips","Greek Style Yogurt With Passion Fruit & Honey Nut","Greek Style Yogurt With Raspberry Granola & Whiite"]
+    };
+    const shelfLifeDefaults = {
+      "Bakey": ["P+3","P+3","P+2","P+2","P+3","P+2","P+2","P+3","P+3","P+3","P+3","P+3","P+3","P+2","N/A","N/A"],
+      "Dessert": ["P+3","P+2","P+2","P+3","P+3"], "Salad": ["P+2","P+2","P+2"], "Sandwich": Array(17).fill("P+2"), "Savory": Array(3).fill("P+2"), "Yogurt": Array(3).fill("P+3")
+    };
+    const priceDefaults = {
+      "Bakey": [26,25,18,22,25,23,18,22,18,22,22,22,22,15,4,0], "Dessert": [36,28,20,39,39], "Salad": [58,56,58], "Sandwich": [36,48,36,40,28,24,58,25,33,48,45,36,46,50,26,45,43], "Savory": [34,23,32], "Yogurt": [39,39,39]
+    };
+
+    Object.keys(categoryFoods).forEach(catName => {
+      const catRow = createCategoryRow();
+      catRow.querySelector("input").value = catName;
+      tbody.appendChild(catRow);
+
+      categoryFoods[catName].forEach((foodName, idx) => {
+        const tr = createFoodRow();
+        tr.querySelector("td:first-child input").value = foodName;
+        tr.querySelector(".priceSelect").value = priceDefaults[catName][idx];
+        tr.querySelector(".shelfSelect").value = shelfLifeDefaults[catName][idx];
+        tbody.appendChild(tr);
+      });
+    });
+    recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+  }
+
+  // 浮動提示框邏輯：展開/收起與拖動
+  const reminder = document.getElementById('floatingReminder');
+  
+  function expandReminder(e) {
+    if (!reminder.classList.contains('expanded')) {
+      reminder.classList.add('expanded');
+    }
+  }
+
+  function toggleReminder(e) {
+    e.stopPropagation();
+    reminder.classList.remove('expanded');
+  }
+
+  // 拖動邏輯
+  let isDragging = false;
+  let currentX;
+  let currentY;
+  let initialX;
+  let initialY;
+  let xOffset = 0;
+  let yOffset = 0;
+
+  const dragHandle = document.getElementById('dragHandle');
+  const reminderIcon = document.getElementById('reminderIcon');
+
+  [dragHandle, reminderIcon].forEach(el => {
+    el.addEventListener('mousedown', dragStart);
+    el.addEventListener('touchstart', dragStart);
+  });
+
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('touchmove', drag);
+  document.addEventListener('mouseup', dragEnd);
+  document.addEventListener('touchend', dragEnd);
+
+  function dragStart(e) {
+    if (e.type === "touchstart") {
+      initialX = e.touches[0].clientX - xOffset;
+      initialY = e.touches[0].clientY - yOffset;
+    } else {
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+    }
+    if (e.target === dragHandle || e.target === reminderIcon || e.target.parentNode === reminderIcon) {
+      isDragging = true;
+    }
+  }
+
+  function drag(e) {
+    if (isDragging) {
+      e.preventDefault();
+      if (e.type === "touchmove") {
+        currentX = e.touches[0].clientX - initialX;
+        currentY = e.touches[0].clientY - initialY;
+      } else {
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+      }
+      xOffset = currentX;
+      yOffset = currentY;
+      setTranslate(currentX, currentY, reminder);
+    }
+  }
+
+  function setTranslate(xPos, yPos, el) {
+    el.style.transform = "translate3d(" + xPos + "px, " + yPos + "px, 0)";
+  }
+
+  function dragEnd(e) {
+    initialX = currentX;
+    initialY = currentY;
+    isDragging = false;
+  }
+
+  // 提示框中英文內容
+  let currentLang = 'zh';
+  const reminderData = {
+    zh: {
+      title: "重要提醒",
+      sections: [
+        { b: "Sausage Roll", t: "每逢15號落下個月 1~15號 / 每逢28號落下個月 16~31號" },
+        { b: "Fresh Fruit Box & Sliced Citrus Lemon 230g", t: "車期：星期一、三、五" },
+        { b: "維小飯截單時間", t: "星期四 14:00 訂下星期一及二<br>星期五 14:00 訂下星期三及四<br>星期二 14:00 訂下星期五" },
+        { b: "Pre-order Food", t: "星期一 15:00 前 訂下星期二至下下星期一" },
+        { b: "PCC Kitchen Food", t: "星期一 14:00 前 訂 星期三<br>星期二 14:00 前 訂 星期四<br>星期三 14:00 前 訂 星期五<br>星期四 14:00 前 訂 星期六<br>星期五 14:00 前 訂 星期日、一、二" }
+      ]
+    },
+    en: {
+      title: "Important Reminder",
+      sections: [
+        { b: "Sausage Roll", t: "Order on 15th for next month 1st-15th / Order on 28th for next month 16th-31st" },
+        { b: "Fresh Fruit Box & Sliced Citrus Lemon 230g", t: "Delivery Days: Mon, Wed, Fri" },
+        { b: "V-Meal Cut-off Time", t: "Thu 14:00 for Mon & Tue<br>Fri 14:00 for Wed & Thu<br>Tue 14:00 for Fri" },
+        { b: "Pre-order Food", t: "Before Mon 15:00 for next Tue to following Mon" },
+        { b: "PCC Kitchen Food", t: "Mon 14:00 for Wed<br>Tue 14:00 for Thu<br>Wed 14:00 for Fri<br>Thu 14:00 for Sat<br>Fri 14:00 for Sun, Mon, Tue" }
+      ]
+    }
+  };
+
+  function updateReminderContent() {
+    const d = reminderData[currentLang];
+    document.getElementById('reminderTitle').textContent = d.title;
+    
+    let html = '';
+    d.sections.forEach(s => {
+      html += `<div class="reminder-section"><b>${s.b}</b><span>${s.t}</span></div>`;
+    });
+    document.getElementById('reminderTextContent').innerHTML = html;
+  }
+
+  function switchLang(e) {
+    e.stopPropagation();
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    updateReminderContent();
+  }
+
+  // 初始化時加載內容
+  updateReminderContent();
+
+  window.onload = initTable;
 </script>
-
-
+</body>
+</html>
