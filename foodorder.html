@@ -211,6 +211,29 @@
       color: #999;
       padding: 0 5px;
     }
+    .signature-cell {
+      height: 80px;
+      position: relative;
+      padding: 0 !important;
+      background: #fff !important;
+    }
+    .sig-canvas {
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none; /* 防止手機捲動干擾簽名 */
+    }
+    .clear-sig {
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      font-size: 10px;
+      padding: 2px 4px;
+      cursor: pointer;
+      background: rgba(0,0,0,0.1);
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
   </style>
   <!-- Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -288,6 +311,16 @@
         <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
         <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
         <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+      </tr>
+      <tr id="signatureRow">
+        <td class="border-left-bold">分區經理簽名</td><td></td><td></td>
+        <td colspan="4" class="border-left-bold border-right-bold signature-cell"><canvas class="sig-canvas"></canvas><button class="clear-sig" onclick="clearSignature(0)">清除</button></td>
+        <td colspan="4" class="border-left-bold border-right-bold signature-cell"><canvas class="sig-canvas"></canvas><button class="clear-sig" onclick="clearSignature(1)">清除</button></td>
+        <td colspan="4" class="border-left-bold border-right-bold signature-cell"><canvas class="sig-canvas"></canvas><button class="clear-sig" onclick="clearSignature(2)">清除</button></td>
+        <td colspan="4" class="border-left-bold border-right-bold signature-cell"><canvas class="sig-canvas"></canvas><button class="clear-sig" onclick="clearSignature(3)">清除</button></td>
+        <td colspan="4" class="border-left-bold border-right-bold signature-cell"><canvas class="sig-canvas"></canvas><button class="clear-sig" onclick="clearSignature(4)">清除</button></td>
+        <td colspan="4" class="border-left-bold border-right-bold signature-cell"><canvas class="sig-canvas"></canvas><button class="clear-sig" onclick="clearSignature(5)">清除</button></td>
+        <td colspan="4" class="border-left-bold border-right-bold signature-cell"><canvas class="sig-canvas"></canvas><button class="clear-sig" onclick="clearSignature(6)">清除</button></td>
       </tr>
     </tfoot>
   </table>
@@ -570,11 +603,13 @@
     if (targetDayTh && dayIdx >= 3) {
       targetDayTh.colSpan += 1;
       
-      // 底部 Plan 和 Actual 欄位自動增加 colSpan
+      // 底部 Plan、Actual 和 Signature 欄位自動增加 colSpan
       const planTd = planRow.cells[dayIdx];
       const actualTd = actualRow.cells[dayIdx];
+      const sigTd = document.getElementById('signatureRow').cells[dayIdx];
       if (planTd) planTd.colSpan += 1;
       if (actualTd) actualTd.colSpan += 1;
+      if (sigTd) sigTd.colSpan += 1;
       
       // 在 LabelRow 插入新 R 欄位 (新欄位不用粗邊框)
       const newLabelTh = document.createElement('th');
@@ -686,6 +721,19 @@
       }
       
       el.parentNode.replaceChild(span, el);
+    });
+
+    // 特別處理簽名 Canvas：cloneNode 不會複製畫布內容，需要手動繪製
+    const originalCanvases = originalTable.querySelectorAll('.sig-canvas');
+    const clonedCanvases = clone.querySelectorAll('.sig-canvas');
+    clonedCanvases.forEach((cCanvas, i) => {
+      const oCanvas = originalCanvases[i];
+      cCanvas.width = oCanvas.width;
+      cCanvas.height = oCanvas.height;
+      cCanvas.getContext('2d').drawImage(oCanvas, 0, 0);
+      // 隱藏清除按鈕
+      const btn = cCanvas.parentNode.querySelector('.clear-sig');
+      if (btn) btn.style.display = 'none';
     });
     
     container.appendChild(clone);
@@ -804,7 +852,8 @@
           return input ? input.value : (select ? select.value : td.textContent);
         })
       })),
-      planValues: Array.from(document.querySelectorAll('#planRow input')).map(i => i.value)
+      planValues: Array.from(document.getElementById('planRow').querySelectorAll('input')).map(i => i.value),
+      signatures: sigPads.map(pad => pad.canvas.toDataURL())
     };
 
     try {
@@ -877,6 +926,21 @@
         savedData.planValues.forEach((v, i) => { if (pInputs[i]) pInputs[i].value = v; });
       }
 
+      if (savedData.signatures) {
+        setTimeout(() => {
+          savedData.signatures.forEach((dataUrl, idx) => {
+            if (sigPads[idx] && dataUrl && dataUrl.length > 100) {
+              const img = new Image();
+              img.onload = () => {
+                sigPads[idx].ctx.clearRect(0, 0, sigPads[idx].canvas.width, sigPads[idx].canvas.height);
+                sigPads[idx].ctx.drawImage(img, 0, 0);
+              };
+              img.src = dataUrl;
+            }
+          });
+        }, 600);
+      }
+
       recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
       alert("✅ 資料載入成功！");
     } catch (err) {
@@ -885,12 +949,73 @@
     }
   }
 
+  let sigPads = [];
+  function initSignatures() {
+    const canvases = document.querySelectorAll('.sig-canvas');
+    canvases.forEach((canvas, index) => {
+      const ctx = canvas.getContext('2d');
+      
+      // 設置畫布實際尺寸
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      
+      let drawing = false;
+      
+      function startDrawing(e) {
+        drawing = true;
+        draw(e);
+      }
+      
+      function stopDrawing() {
+        drawing = false;
+        ctx.beginPath();
+      }
+      
+      function draw(e) {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+        
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+      }
+      
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDrawing);
+      canvas.addEventListener('mouseout', stopDrawing);
+      
+      canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e); });
+      canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
+      canvas.addEventListener('touchend', stopDrawing);
+      
+      sigPads[index] = { canvas, ctx };
+    });
+  }
+
+  function clearSignature(index) {
+    const pad = sigPads[index];
+    if (pad) {
+      pad.ctx.clearRect(0, 0, pad.canvas.width, pad.canvas.height);
+    }
+  }
+
   function initTable() {
     const categoryFoods = {
       "Bakey": ["Black Mochi Muffin","Bluerry Muffin","Butter Croissant","Chocolate Danish","Chocolate Muffin","Cinnamon Roll","Classic Brownie","Coffee Pound Cake","Honey Citron Tea Cake","Lemon Pound Cake","Mint Choco Pound Cake","New Dark Choco Cookie","New Milk Choco Cookie","Plain Bagel","Plain Cream Cheese","Anchor Butter"],
       "Dessert": ["Blueberry Cheesecake","Basque Cheescake","Lemon tart","Strawberry Red Velvet Cake","Valrhona Dark Choco Cake"],
       "Salad": ["Smoked Beef Quinoa Pasta Salad","Smoked Chicken Salad(Ceasar Dressing)","Spicy Shrimp Potato Salad With Bacon"],
-      "Sandwich": ["Avocado Turkey Sandwich","Bacon, Egg & Cheese Bagel","Canadian Bacon Croissant","Chipotle Chicken Sandwich w/ Chili Sauce (Whole)","Croque Monsieur (Half)","Egg Mayo Sandwich","Chicken Shawarma Wrap","Guacamole Salad Half","Ham & Cheese croissant","Satay Chicken Ciabatta","Smoked Beef Brisket Ciabatta","Smoked Chicken Croissant","Smoked Chicken Bagel","Smoked Salmon Bagel","Tuna Sandwich(half)","Tuna Salad & Cheese Focaccia","White Truffle & Beef sandwich"],
+      "Sandwich": ["Avocado Turkey Sandwich","Bacon, Egg & Cheese Bagel","Canadian Bacon Croissant","Chipotle Chicken Sandwich w/ Chili Sauce (Whole)","Croque Monsieur (Half)","Egg Mayo Sandwich","Chicken Shawarma Wrap","Guacamole Salad Half","Ham & Cheese croissant","Satay Chicken Ciabatta","Smoked Beef Brisket Ciabatta","Smoked Chicken Croissant","Smoked Chicken Bagel","Smoked Salmon Bagel","Tuna Sandwich(half)","Tuna Salad & Cheese Focaccia","WhiteTruffle&Beef sandwich"],
       "Savory": ["Spinach Pie","Apple pie","Chicken Pie"],
       "Yogurt": ["Coconut Pudding With Banana Chips","Greek Style Yogurt With Passion Fruit & Honey Nut","Greek Style Yogurt With Raspberry Granola & Whiite"]
     };
@@ -916,6 +1041,7 @@
       });
     });
     recalcTotals(); recalcActualOrder(); recalcCategoryTotals();
+    setTimeout(initSignatures, 500);
   }
 
   // 浮動提示框邏輯：展開/收起與拖動
@@ -1011,7 +1137,7 @@
       sections: [
         { b: "Sausage Roll", t: "Order on 15th for next month 1st-15th / Order on 28th for next month 16th-31st" },
         { b: "Fresh Fruit Box & Sliced Citrus Lemon 230g", t: "Delivery Days: Mon, Wed, Fri" },
-        { b: "Rice Cut-off Time", t: "Thu 14:00 for Mon & Tue<br>Fri 14:00 for Wed & Thu<br>Tue 14:00 for Fri" },
+        { b: "V-Meal Cut-off Time", t: "Thu 14:00 for Mon & Tue<br>Fri 14:00 for Wed & Thu<br>Tue 14:00 for Fri" },
         { b: "Pre-order Food", t: "Before Mon 15:00 for next Tue to following Mon" },
         { b: "PCC Kitchen Food", t: "Mon 14:00 for Wed<br>Tue 14:00 for Thu<br>Wed 14:00 for Fri<br>Thu 14:00 for Sat<br>Fri 14:00 for Sun, Mon, Tue" }
       ]
