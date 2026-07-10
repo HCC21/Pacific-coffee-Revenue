@@ -292,15 +292,35 @@
         <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
         <td class="border-left-bold">0</td><td>0</td><td>0</td><td class="border-right-bold">0</td>
       </tr>
+      <tr id="planSalesRow">
+        <td class="border-left-bold">Plan sales ($)</td><td></td><td></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+      </tr>
+      <tr id="foodSalesPercentRow">
+        <td class="border-left-bold">food sales %</td><td></td><td></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" oninput="recalcPlanFoodSales()"></td>
+      </tr>
       <tr id="planRow">
         <td class="border-left-bold">Plan Food Sales($)</td><td></td><td></td>
-        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
-        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
-        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
-        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
-        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
-        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
-        <td colspan="4" class="border-left-bold border-right-bold"><input type="text"></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
+        <td colspan="4" class="border-left-bold border-right-bold"><input type="text" readonly></td>
       </tr>
       <tr id="actualRow">
         <td class="border-left-bold">Actual Order($)</td><td></td><td></td>
@@ -466,11 +486,15 @@
     for (let j = 3; j < colCount; j++) {
       let sum = 0;
       rows.forEach(tr => {
-        const input = tr.cells[j].querySelector("input");
-        const val = input ? parseFloat(input.value) || 0 : 0;
-        sum += val;
+        if (tr.cells[j]) {
+          const input = tr.cells[j].querySelector("input");
+          const val = input ? parseFloat(input.value) || 0 : 0;
+          sum += val;
+        }
       });
-      totalRow.cells[j].textContent = sum > 0 ? sum : "0";
+      if (totalRow.cells[j]) {
+        totalRow.cells[j].textContent = sum > 0 ? sum : "0";
+      }
     }
   }
 
@@ -485,22 +509,58 @@
     
     dateCells.forEach((dateCell, dayIdx) => {
       let dailyTotal = 0;
-      const span = dateCell.colSpan;
-      for (let j = currentCol; j < currentCol + span; j++) {
-        const label = labelRow.cells[j].textContent.trim();
-        if (label === 'R') {
-          rows.forEach(tr => {
-            const input = tr.cells[j].querySelector("input");
-            const qty = input ? parseFloat(input.value) || 0 : 0;
-            const price = parseFloat(tr.cells[1].querySelector("select").value) || 0;
-            dailyTotal += qty * price;
-          });
+      const span = dateCell.colSpan || 1;
+      for (let j = 0; j < span; j++) {
+        const cellIdx = currentCol + j;
+        if (labelRow.cells[cellIdx]) {
+          const label = labelRow.cells[cellIdx].textContent.trim();
+          if (label === 'R') {
+            rows.forEach(tr => {
+              if (tr.cells[cellIdx]) {
+                const input = tr.cells[cellIdx].querySelector("input");
+                const qty = input ? parseFloat(input.value) || 0 : 0;
+                const priceCell = tr.cells[1];
+                const priceSelect = priceCell ? priceCell.querySelector("select") : null;
+                const price = priceSelect ? parseFloat(priceSelect.value) || 0 : 0;
+                dailyTotal += qty * price;
+              }
+            });
+          }
         }
       }
-      const input = actualRow.cells[dayIdx + 3].querySelector("input");
-      if (input) input.value = dailyTotal > 0 ? Math.round(dailyTotal) : "";
+      const targetCell = actualRow.cells[dayIdx + 3];
+      if (targetCell) {
+        const input = targetCell.querySelector("input");
+        if (input) input.value = dailyTotal > 0 ? Math.round(dailyTotal) : "";
+      }
       currentCol += span;
     });
+  }
+
+  function recalcPlanFoodSales() {
+    const planSalesRow = document.getElementById("planSalesRow");
+    const foodSalesPercentRow = document.getElementById("foodSalesPercentRow");
+    const planRow = document.getElementById("planRow");
+    
+    for (let i = 3; i < planSalesRow.cells.length; i++) {
+      const salesInput = planSalesRow.cells[i].querySelector("input");
+      const percentInput = foodSalesPercentRow.cells[i].querySelector("input");
+      const planInput = planRow.cells[i].querySelector("input");
+      
+      if (salesInput && percentInput && planInput) {
+        const sales = parseFloat(salesInput.value) || 0;
+        let percent = percentInput.value.trim();
+        if (percent.endsWith('%')) {
+          percent = parseFloat(percent) / 100;
+        } else {
+          percent = parseFloat(percent) || 0;
+          if (percent > 1) percent = percent / 100; // 如果輸入 30 視為 30%
+        }
+        
+        const result = sales * percent;
+        planInput.value = result > 0 ? Math.round(result) : "";
+      }
+    }
   }
 
   function recalcCategoryTotals() {
@@ -518,12 +578,14 @@
         }
       } else if (currentCatRow) {
         for (let j = 3; j < colCount; j++) {
-          const input = tr.cells[j].querySelector("input");
-          const val = input ? parseFloat(input.value) || 0 : 0;
-          const catInput = currentCatRow.cells[j].querySelector("input");
-          if (catInput) {
-            const currentSum = parseFloat(catInput.value) || 0;
-            catInput.value = (currentSum + val) || "";
+          if (tr.cells[j] && currentCatRow.cells[j]) {
+            const input = tr.cells[j].querySelector("input");
+            const val = input ? parseFloat(input.value) || 0 : 0;
+            const catInput = currentCatRow.cells[j].querySelector("input");
+            if (catInput) {
+              const currentSum = parseFloat(catInput.value) || 0;
+              catInput.value = (currentSum + val) || "";
+            }
           }
         }
       }
@@ -604,9 +666,13 @@
       targetDayTh.colSpan += 1;
       
       // 底部 Plan、Actual 和 Signature 欄位自動增加 colSpan
+      const planSalesTd = document.getElementById('planSalesRow').cells[dayIdx];
+      const foodSalesPercentTd = document.getElementById('foodSalesPercentRow').cells[dayIdx];
       const planTd = planRow.cells[dayIdx];
       const actualTd = actualRow.cells[dayIdx];
       const sigTd = document.getElementById('signatureRow').cells[dayIdx];
+      if (planSalesTd) planSalesTd.colSpan += 1;
+      if (foodSalesPercentTd) foodSalesPercentTd.colSpan += 1;
       if (planTd) planTd.colSpan += 1;
       if (actualTd) actualTd.colSpan += 1;
       if (sigTd) sigTd.colSpan += 1;
@@ -843,6 +909,9 @@
     const data = {
       storeName: storeCode,
       startDate: startDate,
+      // 儲存表格結構：各天的 colSpan 和標題列內容
+      dayColSpans: Array.from(document.getElementById('dateRow').cells).slice(3).map(th => th.colSpan),
+      labels: Array.from(document.getElementById('labelRow').cells).map(th => th.textContent),
 
       rows: Array.from(tbody.querySelectorAll('tr')).map(tr => ({
         isCategory: tr.classList.contains('categoryRow'),
@@ -852,6 +921,8 @@
           return input ? input.value : (select ? select.value : td.textContent);
         })
       })),
+      planSalesValues: Array.from(document.getElementById('planSalesRow').querySelectorAll('input')).map(i => i.value),
+      foodSalesPercentValues: Array.from(document.getElementById('foodSalesPercentRow').querySelectorAll('input')).map(i => i.value),
       planValues: Array.from(document.getElementById('planRow').querySelectorAll('input')).map(i => i.value),
       signatures: sigPads.map(pad => pad.canvas.toDataURL())
     };
@@ -908,18 +979,36 @@
       updateStoreLabel();
       if (savedData.startDate) updateDates();
 
+      // 還原表格結構 (R 欄位)
+      if (savedData.dayColSpans && savedData.labels) {
+        restoreTableStructure(savedData.dayColSpans, savedData.labels);
+      }
+
       tbody.innerHTML = '';
       savedData.rows.forEach(rowData => {
         const tr = rowData.isCategory ? createCategoryRow() : createFoodRow();
         rowData.cells.forEach((val, idx) => {
-          const input = tr.cells[idx].querySelector('input');
-          const select = tr.cells[idx].querySelector('select');
-          if (input) input.value = val;
-          else if (select) select.value = val;
-          else tr.cells[idx].textContent = val;
+          // 安全檢查：確保儲存的資料欄位索引在當前表格行中存在
+          if (tr.cells[idx]) {
+            const input = tr.cells[idx].querySelector('input');
+            const select = tr.cells[idx].querySelector('select');
+            if (input) input.value = val;
+            else if (select) select.value = val;
+            else tr.cells[idx].textContent = val;
+          }
         });
         tbody.appendChild(tr);
       });
+
+      const psInputs = document.querySelectorAll('#planSalesRow input');
+      if (savedData.planSalesValues) {
+        savedData.planSalesValues.forEach((v, i) => { if (psInputs[i]) psInputs[i].value = v; });
+      }
+
+      const fspInputs = document.querySelectorAll('#foodSalesPercentRow input');
+      if (savedData.foodSalesPercentValues) {
+        savedData.foodSalesPercentValues.forEach((v, i) => { if (fspInputs[i]) fspInputs[i].value = v; });
+      }
 
       const pInputs = document.querySelectorAll('#planRow input');
       if (savedData.planValues) {
@@ -1008,6 +1097,65 @@
     if (pad) {
       pad.ctx.clearRect(0, 0, pad.canvas.width, pad.canvas.height);
     }
+  }
+
+  // 還原表格結構的核心函數
+  function restoreTableStructure(dayColSpans, labels) {
+    const dateRow = document.getElementById('dateRow');
+    const labelRow = document.getElementById('labelRow');
+    const totalRow = document.getElementById('totalRow');
+    const planSalesRow = document.getElementById('planSalesRow');
+    const foodSalesPercentRow = document.getElementById('foodSalesPercentRow');
+    const planRow = document.getElementById('planRow');
+    const actualRow = document.getElementById('actualRow');
+    const signatureRow = document.getElementById('signatureRow');
+
+    // 1. 還原 DateRow 的 colSpan
+    dayColSpans.forEach((span, i) => {
+      if (dateRow.cells[i + 3]) dateRow.cells[i + 3].colSpan = span;
+    });
+
+    // 2. 還原 Footer 各行的 colSpan
+    dayColSpans.forEach((span, i) => {
+      if (planSalesRow.cells[i + 3]) planSalesRow.cells[i + 3].colSpan = span;
+      if (foodSalesPercentRow.cells[i + 3]) foodSalesPercentRow.cells[i + 3].colSpan = span;
+      if (planRow.cells[i + 3]) planRow.cells[i + 3].colSpan = span;
+      if (actualRow.cells[i + 3]) actualRow.cells[i + 3].colSpan = span;
+      if (signatureRow.cells[i + 3]) signatureRow.cells[i + 3].colSpan = span;
+    });
+
+    // 3. 重建 LabelRow 和 TotalRow 的單元格
+    // 保留前三欄固定欄位
+    while (labelRow.cells.length > 3) labelRow.deleteCell(3);
+    while (totalRow.cells.length > 3) totalRow.deleteCell(3);
+
+    labels.slice(3).forEach((text) => {
+      const newTh = document.createElement('th');
+      newTh.textContent = text;
+      labelRow.appendChild(newTh);
+
+      const newTd = document.createElement('td');
+      newTd.textContent = '0';
+      totalRow.appendChild(newTd);
+    });
+
+    // 4. 重新套用邊框樣式
+    let currentIdx = 3;
+    dayColSpans.forEach((span) => {
+      for (let j = 0; j < span; j++) {
+        const lCell = labelRow.cells[currentIdx];
+        const tCell = totalRow.cells[currentIdx];
+        if (lCell) {
+          lCell.classList.toggle('border-left-bold', j === 0);
+          lCell.classList.toggle('border-right-bold', j === span - 1);
+        }
+        if (tCell) {
+          tCell.classList.toggle('border-left-bold', j === 0);
+          tCell.classList.toggle('border-right-bold', j === span - 1);
+        }
+        currentIdx++;
+      }
+    });
   }
 
   function initTable() {
