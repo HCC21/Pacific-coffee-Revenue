@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>咖啡店員工排班管理系統 (高階獨立簽名版)</title>
+    <script src="https://cloudflare.com"></script>
+    <style>
+        :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+        body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 13px; }
+        .controls-panel { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .controls-panel select, .controls-panel input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; }
+        .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-primary { background: var(--accent); } .btn-success { background: var(--success); } .btn-gray { background: #64748b; }
+        .roster-report { background: var(--card); border: 2px solid #000; padding: 20px; border-radius: 4px; overflow-x: auto; position: relative; }
+        .report-header { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .report-header td { border: none; padding: 4px; font-weight: bold; }
+        .report-title { font-size: 22px; text-align: center; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 2px double #000; }
+        .legend-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 10px; border-radius: 4px; }
+        .legend-item { display: flex; align-items: center; gap: 4px; background: white; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; }
+        .legend-item input.code-key { font-weight: bold; width: 45px; text-align: center; border: 1px solid #cbd5e1; border-radius: 3px; text-transform: uppercase; color: var(--accent); }
+        .legend-item input.time-range { width: 100px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 11px; padding: 3px; }
+        .legend-item input.hours-num { width: 40px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 11px; padding: 3px; text-align: center; font-weight: bold; background: #fff7ed; color: #c2410c; }
+        .del-code-btn { background: none; border: none; color: var(--danger); font-size: 16px; cursor: pointer; padding: 0 4px; font-weight: bold; }
+        .hk-yearly-ledger { background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 6px; padding: 10px; margin-bottom: 15px; }
+        .hk-ledger-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; margin-top: 6px; }
+        .hk-ledger-item { font-size: 11px; color: #991b1b; background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #fee2e2; }
+        table.roster-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 1750px; margin-top: 10px; table-layout: fixed; }
+        table.roster-table th, table.roster-table td { border: 1px solid #000; padding: 5px; font-size: 12px; overflow: hidden; }
+        table.roster-table th { background: #f1f5f9; font-weight: bold; position: relative; vertical-align: middle; }
+        .hk-sh-hint { display: block; font-size: 9px; color: #dc2626; font-weight: normal; margin-top: 2px; line-height: 1.1; max-width: 45px; margin-left: auto; margin-right: auto; }
+        .col-name { width: 140px; min-width: 140px; background: #f8fafc; font-weight: bold; cursor: context-menu; position: relative; }
+        .col-no { width: 110px; min-width: 110px; } .col-day { width: 38px; min-width: 38px; } .col-hours { width: 85px; min-width: 85px; }
+        .col-sign { width: 110px; min-width: 110px; position: relative; padding: 2px !important; background: #fafafa; cursor: context-menu; }
+        .sig-canvas { width: 100%; height: 32px; display: block; cursor: crosshair; background: transparent; }
+        .cell-input { border: none; text-align: center; width: 100%; font-size: 12px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; }
+        .cell-input:focus { background: #e0e7ff; }
+        .header-input { border: none; border-bottom: 1px solid #000; font-size: 13px; font-weight: bold; outline: none; padding: 2px; }
+        .custom-context-menu { position: absolute; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; display: none; min-width: 160px; padding: 4px 0; }
+        .context-menu-item { padding: 8px 12px; cursor: pointer; font-size: 12px; font-weight: bold; color: #334155; display: flex; align-items: center; gap: 8px; }
+        .context-menu-item:hover { background: #f1f5f9; color: var(--accent); }
+        .context-menu-item.menu-del { color: var(--danger); border-top: 1px solid #f1f5f9; } .context-menu-item.menu-del:hover { background: #fef2f2; }
+        @media print {
+            @page { size: A4 landscape; margin: 4mm; }
+            .no-print-btn { display: none !important; } .no-print { display: block !important; } body { background: white; padding: 0; }
+            .roster-report { border: none; padding: 0; width: 100%; overflow: visible; }
+            table.roster-table { min-width: 100% !important; page-break-inside: avoid; }
+            .cell-input { border: none !important; } .del-code-btn { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 智慧快顯選單 1：員工名字右鍵/長按選單 -->
+<div id="customContextMenu" class="custom-context-menu no-print-btn">
+    <div class="context-menu-item" onclick="moveEmployeeUp()">🔼 向上移動</div>
+    <div class="context-menu-item" onclick="moveEmployeeDown()">🔽 向下移動</div>
+    <div class="context-menu-item" onclick="insertEmployeeBelow()">➕ 在此下方插入新員工</div>
+    <div class="context-menu-item menu-del" onclick="deleteEmployeeViaMenu()">❌ 刪除此員工</div>
+</div>
+
+<!-- 智慧快顯選單 2：簽名格子獨立的右鍵/長按選單 -->
+<div id="signatureContextMenu" class="custom-context-menu no-print-btn">
+    <div class="context-menu-item menu-del" onclick="clearSingleSignatureViaMenu()">🧹 刪除此簽名</div>
+</div>
+
+<!-- 頂部功能按鈕控制列 -->
+<div class="controls-panel no-print-btn">
+    <button class="btn btn-success" style="background:#059669;" onclick="exportSystemTxtFile()">💾 保存獨立檔案 (文字檔備份)</button>
+    <label class="btn btn-primary" style="cursor:pointer; background:#2563eb; display:inline-flex;">
+        📂 讀取歷史檔案 <input type="file" id="importSystemFile" accept=".txt" onchange="importSystemTxtFile(event)" style="display:none;">
+    </label>
+    <div style="width: 2px; height: 20px; background: #cbd5e1; margin: 0 5px;"></div>
+    <button class="btn btn-gray" onclick="window.print()">🖨 列印班表</button>
+</div>
+
+<!-- 官方格式報表紙張 -->
+<div class="roster-report" id="rosterReportArea">
+    <div class="report-title">ROSTER</div>
+    
+    <table class="report-header">
+        <tr>
+            <td style="width: 40px;">To:</td>
+            <td><input type="text" id="metaTo" class="header-input" value="HR Dept./ Area Manager" oninput="autoSave()"></td>
+            <td style="width: 110px; text-align: right;">Coffee House:</td>
+            <td><input type="text" id="metaCoffeeHouse" class="header-input" value="HCC" oninput="autoSave()"></td>
+            <td style="width: 60px; text-align: right;">Month:</td>
+            <td>
+                <input type="number" id="yearSelect" class="header-input" value="2026" style="width: 60px;" onchange="handleYearMonthChange()"> 年 
+                <input type="number" id="monthSelect" class="header-input" value="7" min="1" max="12" style="width: 40px;" onchange="handleYearMonthChange()"> 月
+            </td>
+        </tr>
+    </table>
+
+    <div class="no-print-area">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: 10px 0;" class="no-print-btn">
+            <h2 style="font-size:14px; color:var(--accent); margin:0;">更期及假期代號自訂對照表</h2>
+            <button class="btn btn-primary" onclick="addNewCodeItemAtD()" style="padding:4px 8px; font-size:12px;">＋ 增加代號列</button>
+        </div>
+        <div class="legend-section" id="legendContainer"></div>
+        
+        <div class="hk-yearly-ledger">
+            <strong>📅 <span id="ledgerYearTitle">2026</span> 年香港法定勞工假期對照總覽：</strong>
+            <div class="hk-ledger-grid" id="hkLedgerGrid"></div>
+        </div>
+    </div>
+
+    <table class="roster-table" id="mainRosterTable">
+        <thead>
+            <tr id="trHeaderDays"></tr>
+            <tr id="trHeaderWdays"></tr>
+        </thead>
+        <tbody id="tbodyRows"></tbody>
+        <tfoot>
+            <tr id="trDailyTotalHours" style="font-weight: bold; background: #f8fafc;"></tr>
+        </tfoot>
+    </table>
+
+    <div class="footer-sign-area">
+        <div><div class="sign-line">Prepare & Confirmed by in-charge</div></div>
+        <div><div class="sign-line" style="width: 200px;">Acknowledged By</div></div>
+    </div>
+</div>
+
+<script>
+    const HK_HOLIDAYS = {
+        2024: { "1-1": "元旦", "2-10": "年初一", "2-12": "年初三", "2-13": "年初四", "4-4": "清明節", "5-1": "勞動節", "5-15": "佛誕", "6-10": "端午節", "7-1": "特區成立", "9-18": "中秋翌日", "10-1": "國慶日", "10-11": "重陽節", "12-21": "冬至", "12-25": "聖誕節" },
+        2025: { "1-1": "元旦", "1-29": "年初一", "1-30": "年初二", "1-31": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-5": "佛誕", "6-2": "端午節", "7-1": "特區成立", "10-1": "國慶日", "10-7": "中秋翌日", "10-29": "重陽節", "12-22": "冬至", "12-25": "聖誕節" },
+        2026: { "1-1": "元旦", "2-17": "年初一", "2-18": "年初二", "2-19": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-24": "佛誕", "6-19": "端午節", "7-1": "特區成立", "9-26": "中秋翌日", "10-1": "國慶日", "10-19": "重陽節", "12-22": "冬至", "12-25": "聖誕節" },
+        2027: { "1-1": "元旦", "2-6": "年初一", "2-8": "年初三", "2-9": "年初四", "4-5": "清明節", "5-1": "勞動節", "5-13": "佛誕", "6-9": "端午節", "7-1": "特區成立", "9-16": "中秋翌日", "10-1": "國慶日", "10-8": "重陽節", "12-22": "冬至", "12-25": "聖誕節" },
+        2028: { "1-1": "元旦", "1-26": "年初一", "1-27": "年初二", "1-28": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-2": "佛誕", "5-28": "端午節", "7-1": "特區成立", "10-1": "國慶日", "10-4": "中秋翌日", "10-26": "重陽節", "12-21": "冬至", "12-25": "聖誕節" },
+        2029: { "1-1": "元旦", "2-13": "年初一", "2-14": "年初二", "2-15": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-20": "佛誕", "6-16": "端午節", "7-1": "特區成立", "9-22": "中秋翌日", "10-1": "國慶日", "10-16": "重陽節", "12-21": "冬至", "12-25": "聖誕節" },
+        2030: { "1-1": "元旦", "2-3": "年初一", "2-4": "年初二", "2-5": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-9": "佛誕", "6-5": "端午節", "7-1": "特區成立", "9-13": "中秋翌日", "10-1": "國慶日", "10-6": "重陽節", "12-22": "冬至", "12-25": "聖誕節" }
+    };
+
+    const defaultLegend = [
+        { code: 'A', time: '08:30-18:30', hours: 9 },
+        { code: 'B', time: '12:30-22:30', hours: 9 },
+        { code: 'C', time: '13:30-22:30', hours: 8 },
+        { code: 'D', time: '08:00-18:00', hours: 9.5 },
+        { code: 'NPL', time: '無薪假', hours: 0 },
+        { code: 'ML', time: '產假', hours: 0 },
+        { code: 'PL', time: '侍產假', hours: 0 },
+        { code: 'MAR', time: '婚假', hours: 0 },
+        { code: 'COM', time: '丧假', hours: 0 },
+        { code: 'EC', time: '工傷病假', hours: 0 },
+        { code: 'TY', time: '颱風假', hours: 0 },
+        { code: 'RC', time: '補假', hours: 0 },
+        { code: 'OFF', time: '休息日', hours: 0 },
+        { code: 'AL', time: '有薪年假', hours: 0 },
+        { code: 'SL', time: '病假', hours: 0 }
+    ];
+
+    let rosterData = { metaTo: 'HR Dept./ Area Manager', metaCoffeeHouse: 'HCC', year: 2026, month: 7, legend: [], employees: [] };
+    let activeMenuEmpIdx = null;
+    let canvasObjects = {};
+
+
+
+    function getStorageKey() {
+        const y = document.getElementById('yearSelect').value || 2026;
+        const m = document.getElementById('monthSelect').value || 7;
+        const mm = parseInt(m) < 10 ? `0${parseInt(m)}` : m;
+        return `official_sign_roster_key_${y}_${mm}`;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadRosterByMonth();
+    });
+
+    function loadRosterByMonth() {
+        const currentKey = getStorageKey();
+        const local = localStorage.getItem(currentKey);
+        
+        if (local) {
+            try { 
+                const parsed = JSON.parse(local);
+                if (parsed.legend && parsed.legend.length > 0 && parsed.employees && parsed.employees.length > 0) {
+                    rosterData = parsed;
+                } else { loadDefaultsData(); }
+            } catch(e) { loadDefaultsData(); }
+        } else { loadDefaultsData(); }
+        
+        document.getElementById('metaTo').value = rosterData.metaTo || 'HR Dept./ Area Manager';
+        document.getElementById('metaCoffeeHouse').value = rosterData.metaCoffeeHouse || 'HCC';
+        document.getElementById('yearSelect').value = rosterData.year || 2026;
+        document.getElementById('monthSelect').value = rosterData.month || 7;
+
+        renderLegendPanels();
+        rebuildTable();
+        updateHkHolidaysLedger();
+    }
+
+    function loadDefaultsData() {
+        rosterData.legend = JSON.parse(JSON.stringify(defaultLegend));
+        rosterData.employees = [];
+        for(let i = 1; i <= 6; i++) {
+            rosterData.employees.push({ id: `HK00385${i}AA`, name: `Staff ${i}`, schedule: {}, signature: "" });
+        }
+        rosterData.year = parseInt(document.getElementById('yearSelect').value) || 2026;
+        rosterData.month = parseInt(document.getElementById('monthSelect').value) || 7;
+        rosterData.metaTo = document.getElementById('metaTo').value || 'HR Dept./ Area Manager';
+        rosterData.metaCoffeeHouse = document.getElementById('metaCoffeeHouse').value || 'HCC';
+    }
+
+    function handleYearMonthChange() {
+        rosterData.year = parseInt(document.getElementById('yearSelect').value) || 2026;
+        rosterData.month = parseInt(document.getElementById('monthSelect').value) || 7;
+        rosterData.metaTo = document.getElementById('metaTo').value;
+        rosterData.metaCoffeeHouse = document.getElementById('metaCoffeeHouse').value;
+        loadRosterByMonth();
+    }
+
+    function syncUIToMemory() {
+        rosterData.metaTo = document.getElementById('metaTo').value;
+        rosterData.metaCoffeeHouse = document.getElementById('metaCoffeeHouse').value;
+        rosterData.year = parseInt(document.getElementById('yearSelect').value) || 2026;
+        rosterData.month = parseInt(document.getElementById('monthSelect').value) || 7;
+
+        const currentLegend = [];
+        const items = document.querySelectorAll('.legend-item');
+        items.forEach((item, idx) => {
+            const keyEl = document.getElementById(`cfg_code_key_${idx}`);
+            const timeEl = document.getElementById(`cfg_time_range_${idx}`);
+            const hoursEl = document.getElementById(`cfg_hours_num_${idx}`);
+            if (keyEl && keyEl.value.trim()) {
+                currentLegend.push({
+                    code: keyEl.value.toUpperCase().trim(),
+                    time: timeEl.value,
+                    hours: parseFloat(hoursEl.value) || 0
+                });
+            }
+        });
+        rosterData.legend = currentLegend;
+
+        const daysInMonth = getDaysInMonth();
+        rosterData.employees.forEach((emp, empIdx) => {
+            const nameInp = document.getElementById('emp_name_' + empIdx);
+            if(nameInp) emp.name = nameInp.value;
+            const idInp = document.getElementById('emp_id_' + empIdx);
+            if(idInp) emp.id = idInp.value;
+
+            for(let d = 1; d <= daysInMonth; d++) {
+                const cellInp = document.getElementById('cell_' + empIdx + '_' + d);
+                if(cellInp) emp.schedule[d] = cellInp.value.toUpperCase().trim();
+            }
+            
+            const canvas = document.getElementById('sig_canvas_' + empIdx);
+            if (canvas && canvasObjects[empIdx] && canvasObjects[empIdx].isSigned) {
+                emp.signature = canvas.toDataURL();
+            }
+        });
+    }
+
+    function autoSave() {
+        syncUIToMemory();
+        const currentKey = getStorageKey();
+        localStorage.setItem(currentKey, JSON.stringify(rosterData));
+        calculateRosterStats();
+    }
+
+    function addNewCodeItemAtD() {
+        syncUIToMemory();
+        const dIdx = rosterData.legend.findIndex(item => item.code === 'D');
+        const insertPos = dIdx !== -1 ? dIdx + 1 : rosterData.legend.length;
+        rosterData.legend.splice(insertPos, 0, { code: 'NEW', time: '00:00-00:00', hours: 0 });
+        renderLegendPanels();
+        autoSave();
+    }
+
+    function deleteCodeItem(idx) {
+        syncUIToMemory();
+        rosterData.legend.splice(idx, 1);
+        renderLegendPanels();
+        autoSave();
+    }
+
+    function renderLegendPanels() {
+        const container = document.getElementById('legendContainer');
+        let html = '';
+        rosterData.legend.forEach((item, idx) => {
+            html += `
+                <div class="legend-item">
+                    <input type="text" id="cfg_code_key_${idx}" class="code-key" value="${item.code}" oninput="autoSave()">
+                    <input type="text" id="cfg_time_range_${idx}" class="time-range" value="${item.time}" oninput="autoSave()">
+                    <input type="number" id="cfg_hours_num_${idx}" class="hours-num" value="${item.hours}" step="0.5" oninput="autoSave()">
+                    <button class="del-code-btn no-print-btn" onclick="deleteCodeItem(${idx})">×</button>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function updateHkHolidaysLedger() {
+        const year = parseInt(document.getElementById('yearSelect').value) || 2026;
+        document.getElementById('ledgerYearTitle').innerText = year;
+        const grid = document.getElementById('hkLedgerGrid');
+        if (!HK_HOLIDAYS[year]) {
+            grid.innerHTML = '<div style="color:#64748b; font-size:12px;">暫無該年份的香港法定假期資料。</div>';
+            return;
+        }
+        let html = '';
+        Object.keys(HK_HOLIDAYS[year]).forEach(dateKey => {
+            const parts = dateKey.split('-');
+            html += `<div class="hk-ledger-item">📅 ${parts[0]}月${parts[1]}日：${HK_HOLIDAYS[year][dateKey]}</div>`;
+        });
+        grid.innerHTML = html;
+    }
+
+    function getDaysInMonth() {
+        const y = parseInt(document.getElementById('yearSelect').value) || 2026;
+        const m = parseInt(document.getElementById('monthSelect').value) || 7;
+        return new Date(y, m, 0).getDate();
+    }
+
+    function rebuildTable() {
+        const y = parseInt(document.getElementById('yearSelect').value) || 2026;
+        const m = parseInt(document.getElementById('monthSelect').value) || 7;
+        const daysInMonth = getDaysInMonth();
+        const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
+        canvasObjects = {}; 
+
+        let thDaysHtml = `<th rowspan="2" class="col-name" style="background:#e2e8f0;">Staff Name</th><th rowspan="2" class="col-no">Staff no.</th>`;
+        let thWdaysHtml = '';
+
+        for (let d = 1; d <= daysInMonth; d++) {
+            let holidayHint = '';
+            if (HK_HOLIDAYS[y] && HK_HOLIDAYS[y][`${m}-${d}`]) {
+                holidayHint = `<span class="hk-sh-hint">${HK_HOLIDAYS[y][`${m}-${d}`]}</span>`;
+            }
+            thDaysHtml += `<th class="col-day">${d}${holidayHint}</th>`;
+            const dayOfWeek = new Date(y, m - 1, d).getDay();
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) ? 'style="color:red; background:#fee2e2;"' : '';
+            thWdaysHtml += `<th ${isWeekend}>${weekdayNames[dayOfWeek]}</th>`;
+        }
+        thDaysHtml += `<th rowspan="2" class="col-hours">Total Hours</th><th rowspan="2" class="col-sign">Sign</th>`;
+
+        document.getElementById('trHeaderDays').innerHTML = thDaysHtml;
+        document.getElementById('trHeaderWdays').innerHTML = thWdaysHtml;
+
+        let rowsHtml = '';
+        rosterData.employees.forEach((emp, empIdx) => {
+            let daysCells = '';
+            for (let d = 1; d <= daysInMonth; d++) {
+                const currentCode = emp.schedule[d] || '';
+                daysCells += `<td><input type="text" id="cell_${empIdx}_${d}" class="cell-input" value="${currentCode}" oninput="autoSave()"></td>`;
+            }
+            rowsHtml += `
+                <tr id="emp_row_${empIdx}">
+                    <td class="col-name" oncontextmenu="triggerContextMenu(event, ${empIdx})" ontouchstart="triggerTouchStart(event, ${empIdx})" ontouchend="triggerTouchEnd(event)">
+                        <input type="text" id="emp_name_${empIdx}" class="cell-input" value="${emp.name}" style="text-align:left; font-weight:bold;" oninput="autoSave()">
+                    </td>
+                    <td><input type="text" id="emp_id_${empIdx}" class="cell-input" value="${emp.id}" oninput="autoSave()"></td>
+                    ${daysCells}
+                    <td id="emp_total_hours_${empIdx}" style="font-weight:bold; color:var(--accent);">0 hrs</td>
+                    <td class="col-sign" oncontextmenu="triggerSignatureMenu(event, ${empIdx})" ontouchstart="triggerSignatureTouchStart(event, ${empIdx})" ontouchend="triggerSignatureTouchEnd(event)">
+                        <canvas id="sig_canvas_${empIdx}" class="sig-canvas"></canvas>
+                    </td>
+                </tr>
+            `;
+        });
+               document.getElementById('tbodyRows').innerHTML = rowsHtml;
+        calculateRosterStats();
+        
+        setTimeout(() => {
+            rosterData.employees.forEach((emp, empIdx) => { initSignaturePad(empIdx, emp.signature); });
+        }, 50);
+        bindGlobalMenuCloser(); 
+    } // 👈 Part 3 在這裡圓滿結束
+
+    function getHoursByCode(code){
+        if(!code)return 0;
+        const target=rosterData.legend.find(item=>item.code===code);
+        if(target&&target.hours!==undefined){return parseFloat(target.hours)||0;}
+        return 0;
+    }
+    function calculateRosterStats(){
+        const daysInMonth=getDaysInMonth();
+        let dailyTotalsArray=new Array(daysInMonth+1).fill(0);
+        rosterData.employees.forEach((emp,empIdx)=>{
+            let empMonthHours=0;
+            for(let d=1;d<=daysInMonth;d++){
+                const cell=document.getElementById(`cell_${empIdx}_${d}`);
+                if(!cell)continue;
+                const val=cell.value.toUpperCase().trim();
+                if(val){const hrs=getHoursByCode(val);empMonthHours+=hrs;dailyTotalsArray[d]+=hrs;}
+            }
+            const targetCell=document.getElementById(`emp_total_hours_${empIdx}`);
+            if(targetCell)targetCell.innerText=`${empMonthHours.toFixed(1)} hrs`;
+        });
+        let chTotalRowHtml=`<td colspan="2" style="text-align:right;">CH Daily Working Hour</td>`;
+        let totalAllMonth=0;
+        for(let d=1;d<=daysInMonth;d++){
+            const formattedDailyHour=dailyTotalsArray[d]>0?dailyTotalsArray[d].toFixed(1):'-';
+            chTotalRowHtml+=`<td style="color:#0f172a; font-weight:900;">${formattedDailyHour}</td>`;
+            totalAllMonth+=dailyTotalsArray[d];
+        }
+        chTotalRowHtml+=`<td style="background:#e2e8f0; color:var(--success); font-weight:900;">${totalAllMonth.toFixed(1)} hrs</td><td></td>`;
+        document.getElementById('trDailyTotalHours').innerHTML=chTotalRowHtml;
+    }
+    function initSignaturePad(idx,savedImgBase64){
+        const canvas=document.getElementById(`sig_canvas_${idx}`);
+        if(!canvas)return;
+        const ctx=canvas.getContext("2d");
+        const rect=canvas.getBoundingClientRect();
+        canvas.width=rect.width;canvas.height=rect.height;
+        ctx.strokeStyle="#000000";ctx.lineWidth=1.5;ctx.lineCap="round";ctx.lineJoin="round";
+        let isDrawing=false;let lastX=0;let lastY=0;
+        canvasObjects[idx]={instance:canvas,isSigned:false};
+        if(savedImgBase64){
+            const img=new Image();img.src=savedImgBase64;
+            img.onload=function(){ctx.drawImage(img,0,0,canvas.width,canvas.height);};
+            canvasObjects[idx].isSigned=true;
+        }
+        function getCoords(e){
+            const clientX=e.touches?e.touches.clientX:e.clientX;
+            const clientY=e.touches?e.touches.clientY:e.clientY;
+            const canvasRect=canvas.getBoundingClientRect();
+            return{x:clientX-canvasRect.left,y:clientY-canvasRect.top};
+        }
+        function startDraw(e){isDrawing=true;const coords=getCoords(e);lastX=coords.x;lastY=coords.y;}
+        function draw(e){
+            if(!isDrawing)return;e.preventDefault();
+            const coords=getCoords(e);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(coords.x,coords.y);ctx.stroke();
+            lastX=coords.x;lastY=coords.y;canvasObjects[idx].isSigned=true;
+        }
+        function endDraw(){if(isDrawing){isDrawing=false;autoSave();}}
+        canvas.addEventListener("mousedown",startDraw);canvas.addEventListener("mousemove",draw);window.addEventListener("mouseup",endDraw);
+        canvas.addEventListener("touchstart",startDraw);canvas.addEventListener("touchmove",draw);canvas.addEventListener("touchend",endDraw);
+    }
+    function triggerSignatureMenu(e,idx){
+        e.preventDefault();syncUIToMemory();activeMenuEmpIdx=idx;
+        const menu=document.getElementById('signatureContextMenu');
+        menu.style.display='block';menu.style.left=`${e.pageX}px`;menu.style.top=`${e.pageY}px`;
+        e.stopPropagation();
+    }
+    let sigTouchTimer=null;
+    function triggerSignatureTouchStart(e,idx){
+        if(sigTouchTimer)clearTimeout(sigTouchTimer);
+        sigTouchTimer=setTimeout(()=>{
+            syncUIToMemory();activeMenuEmpIdx=idx;
+            const touch=e.touches;const menu=document.getElementById('signatureContextMenu');
+            menu.style.display='block';menu.style.left=`${touch.pageX}px`;menu.style.top=`${touch.pageY}px`;
+        },700);
+    }
+    function triggerSignatureTouchEnd(e){if(sigTouchTimer)clearTimeout(sigTouchTimer);}
+    function clearSingleSignatureViaMenu(){
+        if(activeMenuEmpIdx===null)return;
+        const empName=rosterData.employees[activeMenuEmpIdx].name||`Staff ${activeMenuEmpIdx+1}`;
+        if(confirm(`確認要清除 ${empName} 的手寫簽名嗎？`)){
+            rosterData.employees[activeMenuEmpIdx].signature="";
+            const canvas=document.getElementById(`sig_canvas_${activeMenuEmpIdx}`);
+            if(canvas){canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height);}
+            if(canvasObjects[activeMenuEmpIdx])canvasObjects[activeMenuEmpIdx].isSigned=false;
+            autoSave();
+        }
+        document.getElementById('signatureContextMenu').style.display='none';
+    }
+    function exportSystemTxtFile(){
+        syncUIToMemory();const allSystemData={};
+        for(let i=0;i<localStorage.length;i++){
+            const key=localStorage.key(i);
+            if(key.startsWith('official_sign_roster_key_')){
+                try{allSystemData[key]=JSON.parse(localStorage.getItem(key));}catch(e){}
+            }
+        }
+        const packageData={currentSave:rosterData,archive:allSystemData,backupTime:new Date().toLocaleString()};
+        const blob=new Blob([JSON.stringify(packageData,null,2)],{type:"text/plain;charset=utf-8"});
+        const ch=(document.getElementById('metaCoffeeHouse').value||'hcc').toLowerCase().trim();
+        const yy=document.getElementById('yearSelect').value;
+        const mm=parseInt(document.getElementById('monthSelect').value);
+        const formattedMm=mm<10?`0${mm}`:mm;
+        const dlNode=document.createElement('a');
+        dlNode.href=URL.createObjectURL(blob);dlNode.download=`${ch}${yy}${formattedMm}roster.txt`;
+        document.body.appendChild(dlNode);dlNode.click();dlNode.remove();URL.revokeObjectURL(dlNode.href);
+    }
+    function importSystemTxtFile(event){
+        const file=event.target.files;if(!file)return;
+        const reader=new FileReader();
+        reader.onload=function(e){
+            try{
+                const packageData=JSON.parse(e.target.result);
+                if(packageData.currentSave&&packageData.archive){
+                    if(confirm("確認要從實體文字備份檔還原系統嗎？這將覆蓋現有所有月份的班表與簽名！")){
+                        for(let i=localStorage.length-1;i>=0;i--){
+                            const key=localStorage.key(i);
+                            if(key.startsWith('official_sign_roster_key_'))localStorage.removeItem(key);
+                        }
+                        Object.keys(packageData.archive).forEach(key=>{localStorage.setItem(key,JSON.stringify(packageData.archive[key]));});
+                        rosterData=packageData.currentSave;localStorage.setItem(getStorageKey(),JSON.stringify(rosterData));
+                        loadRosterByMonth();alert("🎉 全月份歷史排班與手寫簽名已成功還原載入！");
+                    }
+                }else{alert("錯誤：此檔案格式不正確！");}
+            }catch(err){alert("讀取檔案失敗，請確保這是正確的備份文字檔。");}
+            event.target.value='';
+        };
+        reader.readAsText(file);
+    }
+    let touchTimer=null;
+    function triggerContextMenu(e,idx){
+        e.preventDefault();syncUIToMemory();activeMenuEmpIdx=idx;
+        const menu=document.getElementById('customContextMenu');
+        menu.style.display='block';menu.style.left=`${e.pageX}px`;menu.style.top=`${e.pageY}px`;
+    }
+    function triggerTouchStart(e,idx){
+        if(touchTimer)clearTimeout(touchTimer);
+        touchTimer=setTimeout(()=>{
+            syncUIToMemory();activeMenuEmpIdx=idx;
+            const touch=e.touches;const menu=document.getElementById('customContextMenu');
+            menu.style.display='block';menu.style.left=`${touch.pageX}px`;menu.style.top=`${touch.pageY}px`;
+        },700);
+    }
+    function triggerTouchEnd(e){if(touchTimer)clearTimeout(touchTimer);}
+    function bindGlobalMenuCloser(){
+        document.removeEventListener('click',globalMenuClickCallback);
+        document.addEventListener('click',globalMenuClickCallback);
+    }
+    function globalMenuClickCallback(e){
+        const menu=document.getElementById('customContextMenu');
+        const sigMenu=document.getElementById('signatureContextMenu');
+        if(menu&&!e.target.closest('.col-name')){menu.style.display='none';}
+        if(sigMenu&&!e.target.closest('.col-sign')){sigMenu.style.display='none';}
+    }
+    function moveEmployeeUp(){
+        if(activeMenuEmpIdx===null||activeMenuEmpIdx===0)return;syncUIToMemory();
+        const temp=rosterData.employees[activeMenuEmpIdx];
+        rosterData.employees[activeMenuEmpIdx]=rosterData.employees[activeMenuEmpIdx-1];
+        rosterData.employees[activeMenuEmpIdx-1]=temp;rebuildTable();autoSave();
+    }
+    function moveEmployeeDown(){
+        if(activeMenuEmpIdx===null||activeMenuEmpIdx>=rosterData.employees.length-1)return;syncUIToMemory();
+        const temp=rosterData.employees[activeMenuEmpIdx];
+        rosterData.employees[activeMenuEmpIdx]=rosterData.employees[activeMenuEmpIdx+1];
+        rosterData.employees[activeMenuEmpIdx+1]=temp;rebuildTable();autoSave();
+    }
+    function insertEmployeeBelow(){
+        if(activeMenuEmpIdx===null)return;syncUIToMemory();
+        const nextNo=rosterData.employees.length+1;
+        const newEmp={id:`HK00385${nextNo}AA`,name:`Staff ${nextNo}`,schedule:{},signature:""};
+        rosterData.employees.splice(activeMenuEmpIdx+1,0,newEmp);rebuildTable();autoSave();
+    }
+    function deleteEmployeeViaMenu(){
+        if(activeMenuEmpIdx===null)return;
+        if(confirm(`確定要刪除 ${rosterData.employees[activeMenuEmpIdx].name} 的整月排班嗎？`)){
+            syncUIToMemory();rosterData.employees.splice(activeMenuEmpIdx,1);rebuildTable();autoSave();
+        }
+    }
+</script>
+</body>
+</html>
+
