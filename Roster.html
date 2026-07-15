@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>咖啡店員工排班管理系統 (高階獨立簽名版)</title>
+    <title>咖啡店員工排班管理系統 (平板精準觸控版)</title>
     <script src="https://cloudflare.com"></script>
     <style>
         :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
@@ -37,10 +37,13 @@
         .cell-input { border: none; text-align: center; width: 100%; font-size: 12px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; }
         .cell-input:focus { background: #e0e7ff; }
         .header-input { border: none; border-bottom: 1px solid #000; font-size: 13px; font-weight: bold; outline: none; padding: 2px; }
-        .custom-context-menu { position: absolute; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 9999; display: none; min-width: 160px; padding: 4px 0; }
+        
+        /* 🎯 智慧定位彈出選單（設為 fixed 以免受表格 overflow 滾動影響） */
+        .custom-context-menu { position: fixed; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 99999; display: none; min-width: 160px; padding: 4px 0; }
         .context-menu-item { padding: 8px 12px; cursor: pointer; font-size: 12px; font-weight: bold; color: #334155; display: flex; align-items: center; gap: 8px; }
         .context-menu-item:hover { background: #f1f5f9; color: var(--accent); }
         .context-menu-item.menu-del { color: var(--danger); border-top: 1px solid #f1f5f9; } .context-menu-item.menu-del:hover { background: #fef2f2; }
+        
         @media print {
             @page { size: A4 landscape; margin: 4mm; }
             .no-print-btn { display: none !important; } .no-print { display: block !important; } body { background: white; padding: 0; }
@@ -52,7 +55,7 @@
 </head>
 <body>
 
-<!-- 智慧快顯選單 1：員工名字右鍵/長按選單 -->
+<!-- 智慧快顯選單 1：員工名字專用選單 -->
 <div id="customContextMenu" class="custom-context-menu no-print-btn">
     <div class="context-menu-item" onclick="moveEmployeeUp()">🔼 向上移動</div>
     <div class="context-menu-item" onclick="moveEmployeeDown()">🔽 向下移動</div>
@@ -60,7 +63,7 @@
     <div class="context-menu-item menu-del" onclick="deleteEmployeeViaMenu()">❌ 刪除此員工</div>
 </div>
 
-<!-- 智慧快顯選單 2：簽名格子獨立的右鍵/長按選單 -->
+<!-- 智慧快顯選單 2：簽名格子專用選單 -->
 <div id="signatureContextMenu" class="custom-context-menu no-print-btn">
     <div class="context-menu-item menu-del" onclick="clearSingleSignatureViaMenu()">🧹 刪除此簽名</div>
 </div>
@@ -155,9 +158,6 @@
     let rosterData = { metaTo: 'HR Dept./ Area Manager', metaCoffeeHouse: 'HCC', year: 2026, month: 7, legend: [], employees: [] };
     let activeMenuEmpIdx = null;
     let canvasObjects = {};
-
-
-
     function getStorageKey() {
         const y = document.getElementById('yearSelect').value || 2026;
         const m = document.getElementById('monthSelect').value || 7;
@@ -303,7 +303,7 @@
         let html = '';
         Object.keys(HK_HOLIDAYS[year]).forEach(dateKey => {
             const parts = dateKey.split('-');
-            html += `<div class="hk-ledger-item">📅 ${parts[0]}月${parts[1]}日：${HK_HOLIDAYS[year][dateKey]}</div>`;
+            html += `<div class="hk-ledger-item">📅 ${parts}月${parts}日：${HK_HOLIDAYS[year][dateKey]}</div>`;
         });
         grid.innerHTML = html;
     }
@@ -360,15 +360,14 @@
                 </tr>
             `;
         });
-               document.getElementById('tbodyRows').innerHTML = rowsHtml;
+        document.getElementById('tbodyRows').innerHTML = rowsHtml;
         calculateRosterStats();
         
         setTimeout(() => {
             rosterData.employees.forEach((emp, empIdx) => { initSignaturePad(empIdx, emp.signature); });
         }, 50);
-        bindGlobalMenuCloser(); 
-    } // 👈 Part 3 在這裡圓滿結束
-
+   bindGlobalMenuCloser(); 
+    } // 👈 Part 3 在這裡結束
     function getHoursByCode(code){
         if(!code)return 0;
         const target=rosterData.legend.find(item=>item.code===code);
@@ -399,13 +398,20 @@
         chTotalRowHtml+=`<td style="background:#e2e8f0; color:var(--success); font-weight:900;">${totalAllMonth.toFixed(1)} hrs</td><td></td>`;
         document.getElementById('trDailyTotalHours').innerHTML=chTotalRowHtml;
     }
+    
+    // 🎯 核心規格：初始化手寫畫布，強制鎖定壓力與速度，確保線條筆觸「絕對均勻、一樣粗幻」
     function initSignaturePad(idx,savedImgBase64){
         const canvas=document.getElementById(`sig_canvas_${idx}`);
         if(!canvas)return;
         const ctx=canvas.getContext("2d");
         const rect=canvas.getBoundingClientRect();
         canvas.width=rect.width;canvas.height=rect.height;
-        ctx.strokeStyle="#000000";ctx.lineWidth=1.5;ctx.lineCap="round";ctx.lineJoin="round";
+        
+        ctx.strokeStyle="#000000";
+        ctx.lineWidth=1.8; // 🎯 強制全裝置劃線粗細一致
+        ctx.lineCap="round";
+        ctx.lineJoin="round";
+        
         let isDrawing=false;let lastX=0;let lastY=0;
         canvasObjects[idx]={instance:canvas,isSigned:false};
         if(savedImgBase64){
@@ -414,37 +420,52 @@
             canvasObjects[idx].isSigned=true;
         }
         function getCoords(e){
-            const clientX=e.touches?e.touches.clientX:e.clientX;
-            const clientY=e.touches?e.touches.clientY:e.clientY;
+            const clientX=e.touches?e.touches[0].clientX:e.clientX;
+            const clientY=e.touches?e.touches[0].clientY:e.clientY;
             const canvasRect=canvas.getBoundingClientRect();
             return{x:clientX-canvasRect.left,y:clientY-canvasRect.top};
         }
         function startDraw(e){isDrawing=true;const coords=getCoords(e);lastX=coords.x;lastY=coords.y;}
         function draw(e){
             if(!isDrawing)return;e.preventDefault();
-            const coords=getCoords(e);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(coords.x,coords.y);ctx.stroke();
+            const coords=getCoords(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX,lastY);
+            ctx.lineTo(coords.x,coords.y);
+            ctx.stroke(); // 🎯 純向量渲染，不隨速度與壓力改變，粗細百分之百一模一樣
             lastX=coords.x;lastY=coords.y;canvasObjects[idx].isSigned=true;
         }
         function endDraw(){if(isDrawing){isDrawing=false;autoSave();}}
         canvas.addEventListener("mousedown",startDraw);canvas.addEventListener("mousemove",draw);window.addEventListener("mouseup",endDraw);
         canvas.addEventListener("touchstart",startDraw);canvas.addEventListener("touchmove",draw);canvas.addEventListener("touchend",endDraw);
     }
+
+    // 🎯 核心規格：加入 Viewport 坐標與滾動軸補償，確保選單精準在「手指按住的位置」原地彈出
+    function popupMenuAtElement(menuId, pageX, clientY) {
+        const menu = document.getElementById(menuId);
+        menu.style.display = 'block';
+        
+        // 使用 fixed 定位搭配 client 視窗軸心，徹底無視外層大表格橫向滾動(scrollLeft)的推移干擾
+        menu.style.left = `${pageX - window.pageXOffset}px`;
+        menu.style.top = `${clientY - window.pageYOffset}px`;
+    }
+
     function triggerSignatureMenu(e,idx){
         e.preventDefault();syncUIToMemory();activeMenuEmpIdx=idx;
-        const menu=document.getElementById('signatureContextMenu');
-        menu.style.display='block';menu.style.left=`${e.pageX}px`;menu.style.top=`${e.pageY}px`;
+        popupMenuAtElement('signatureContextMenu', e.pageX, e.clientY);
         e.stopPropagation();
     }
     let sigTouchTimer=null;
     function triggerSignatureTouchStart(e,idx){
         if(sigTouchTimer)clearTimeout(sigTouchTimer);
+        const pX = e.touches[0].pageX; const cY = e.touches[0].clientY;
         sigTouchTimer=setTimeout(()=>{
             syncUIToMemory();activeMenuEmpIdx=idx;
-            const touch=e.touches;const menu=document.getElementById('signatureContextMenu');
-            menu.style.display='block';menu.style.left=`${touch.pageX}px`;menu.style.top=`${touch.pageY}px`;
+            popupMenuAtElement('signatureContextMenu', pX, cY);
         },700);
     }
     function triggerSignatureTouchEnd(e){if(sigTouchTimer)clearTimeout(sigTouchTimer);}
+    
     function clearSingleSignatureViaMenu(){
         if(activeMenuEmpIdx===null)return;
         const empName=rosterData.employees[activeMenuEmpIdx].name||`Staff ${activeMenuEmpIdx+1}`;
@@ -500,15 +521,14 @@
     let touchTimer=null;
     function triggerContextMenu(e,idx){
         e.preventDefault();syncUIToMemory();activeMenuEmpIdx=idx;
-        const menu=document.getElementById('customContextMenu');
-        menu.style.display='block';menu.style.left=`${e.pageX}px`;menu.style.top=`${e.pageY}px`;
+        popupMenuAtElement('customContextMenu', e.pageX, e.clientY);
     }
     function triggerTouchStart(e,idx){
         if(touchTimer)clearTimeout(touchTimer);
+        const pX = e.touches[0].pageX; const cY = e.touches[0].clientY;
         touchTimer=setTimeout(()=>{
             syncUIToMemory();activeMenuEmpIdx=idx;
-            const touch=e.touches;const menu=document.getElementById('customContextMenu');
-            menu.style.display='block';menu.style.left=`${touch.pageX}px`;menu.style.top=`${touch.pageY}px`;
+            popupMenuAtElement('customContextMenu', pX, cY);
         },700);
     }
     function triggerTouchEnd(e){if(touchTimer)clearTimeout(touchTimer);}
@@ -522,7 +542,7 @@
         if(menu&&!e.target.closest('.col-name')){menu.style.display='none';}
         if(sigMenu&&!e.target.closest('.col-sign')){sigMenu.style.display='none';}
     }
-    function moveEmployeeUp(){
+      function moveEmployeeUp(){
         if(activeMenuEmpIdx===null||activeMenuEmpIdx===0)return;syncUIToMemory();
         const temp=rosterData.employees[activeMenuEmpIdx];
         rosterData.employees[activeMenuEmpIdx]=rosterData.employees[activeMenuEmpIdx-1];
