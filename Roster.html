@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>咖啡店員工排班管理系統 (全功能完整版)</title>
+    <title>咖啡店員工排班管理系統 (全功能純淨版)</title>
     <script src="https://cloudflare.com"></script>
     <style>
         :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
@@ -61,12 +61,12 @@
 </head>
 <body>
 
-<!-- 🎯 側邊懸浮按鈕 -->
+<!-- 右側智慧跟隨螢幕滑動的側邊懸浮按鈕 -->
 <button class="floating-trigger-btn no-print-btn" onclick="toggleSideDrawer()">
     📋 <span class="lang-txt" data-zh="代號及假期總覽" data-en="Codes & Holidays">代號及假期總覽</span>
 </button>
 
-<!-- 🎯 側邊滑出式大面板 (100% 收置 11 種基本假期代號與最新 15 天勞工假) -->
+<!-- 側邊滑出式大面板 (100% 獨立收置 11 種基本假期代號與 2026 最新 15 天勞工假) -->
 <div id="sideDrawerPanel" class="side-drawer-panel no-print-btn">
     <button class="drawer-close" onclick="toggleSideDrawer()">✕ Close</button>
     <h3 style="font-size:15px; margin-bottom:10px; color:var(--primary);" class="lang-txt" data-zh="📋 系統資訊快閱面板" data-en="📋 System Reference Ledger">📋 系統資訊快閱面板</h3>
@@ -92,8 +92,6 @@
     </label>
     <div style="width: 2px; height: 20px; background: #cbd5e1; margin: 0 5px;"></div>
     <button class="btn btn-gray" onclick="window.print()"><span class="lang-txt" data-zh="🖨 列印班表" data-en="🖨 Print Roster">🖨 Print Roster</span></button>
-    
-    <!-- 🚨 清除所有資料功能鍵 -->
     <button class="btn btn-danger" style="background:#dc2626;" onclick="btnResetAllSystem()"><span class="lang-txt" data-zh="🚨 清除所有" data-en="🚨 Reset All">🚨 清除所有</span></button>
 </div>
 
@@ -122,8 +120,7 @@
         </div>
         <div class="legend-section" id="legendContainer"></div>
     </div>
-
-    <!-- 主排班大表格 -->
+    <!-- 主排班大表格與核章簽署區 -->
     <table class="roster-table" id="mainRosterTable">
         <thead>
             <tr id="trHeaderDays"></tr>
@@ -176,6 +173,7 @@
         }
     };
 
+    // 🎯 2026年起最新政府法定 15 天香港勞工假期資料庫
     const HK_HOLIDAYS = {
         2024: { "1-1": "元旦", "2-10": "年初一", "2-12": "年初三", "2-13": "年初四", "4-4": "清明節", "5-1": "勞動節", "5-15": "佛誕", "6-10": "端午節", "7-1": "特區成立", "9-18": "中秋節翌日", "10-1": "國慶日", "10-11": "重陽節", "12-21": "冬至", "12-25": "聖誕節" },
         2025: { "1-1": "元旦", "1-29": "年初一", "1-30": "年初二", "1-31": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-5": "佛誕", "6-2": "端午節", "7-1": "特區成立", "10-1": "國慶日", "10-7": "中秋節翌日", "10-29": "重陽節", "12-22": "冬至", "12-25": "聖誕節" },
@@ -186,55 +184,45 @@
         2030: { "1-1": "元旦", "2-3": "年初一", "2-4": "年初二", "2-5": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-9": "佛誕", "6-5": "端午節", "7-1": "特區成立", "9-13": "中秋節翌日", "10-1": "國慶日", "10-6": "重陽節", "12-22": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" }
     };
 
+    // 🎯 規格要求：精簡主對照表，只留 A, B, C, D四個上班班次
     const defaultLegend = [
-        { code: 'A', time: '08:30-18:30', hours: 9 }, { code: 'B', time: '12:30-22:30', hours: 9 },
-        { code: 'C', time: '13:30-22:30', hours: 8 }, { code: 'D', time: '08:00-18:00', hours: 9.5 },
-      
+        { code: 'A', time: '08:30-18:30', hours: 9 }, 
+        { code: 'B', time: '12:30-22:30', hours: 9 },
+        { code: 'C', time: '13:30-22:30', hours: 8 }, 
+        { code: 'D', time: '08:00-18:00', hours: 9.5 }
     ];
     let rosterData = { metaTo: 'HR Dept./ Area Manager', metaCoffeeHouse: '', year: 2026, month: 7, legend: [], employees: [] };
     let canvasObjects = {};
+
     function getStorageKey() {
         const y = document.getElementById('yearSelect').value || 2026;
         const m = document.getElementById('monthSelect').value || 7;
-        const mm = parseInt(m) < 10 ? `0${parseInt(m)}` : m;
-        return `official_sign_roster_key_${y}_${mm}`;
+        return `official_sign_roster_key_${y}_${parseInt(m) < 10 ? '0' + parseInt(m) : m}`;
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-        loadRosterByMonth();
-    });
+    document.addEventListener("DOMContentLoaded", () => { loadRosterByMonth(); });
 
     function loadRosterByMonth() {
         const currentKey = getStorageKey();
         const local = localStorage.getItem(currentKey);
-        
         if (local) {
             try { 
                 const parsed = JSON.parse(local);
-                if (parsed.legend && parsed.legend.length > 0 && parsed.employees && parsed.employees.length > 0) {
-                    rosterData = parsed;
-                } else { loadDefaultsData(); }
+                if (parsed.legend && parsed.legend.length > 0 && parsed.employees && parsed.employees.length > 0) { rosterData = parsed; } else { loadDefaultsData(); }
             } catch(e) { loadDefaultsData(); }
         } else { loadDefaultsData(); }
-        
         document.getElementById('metaTo').value = rosterData.metaTo || 'HR Dept./ Area Manager';
         document.getElementById('metaCoffeeHouse').value = rosterData.metaCoffeeHouse || '';
         document.getElementById('yearSelect').value = rosterData.year || 2026;
         document.getElementById('monthSelect').value = rosterData.month || 7;
-
-        renderLegendPanels();
-        rebuildTable();
-        updateHkHolidaysLedger();
-        applyLanguageUI(); 
+        renderLegendPanels(); rebuildTable(); updateHkHolidaysLedger(); applyLanguageUI(); 
     }
 
     function loadDefaultsData() {
         rosterData.legend = JSON.parse(JSON.stringify(defaultLegend));
         rosterData.employees = [];
         // 🎯 規格要求：員工號碼預設直接留空，回歸最純淨狀態
-        for(let i = 1; i <= 6; i++) {
-            rosterData.employees.push({ id: "", name: `Staff ${i}`, schedule: {}, signature: "" });
-        }
+        for(let i = 1; i <= 6; i++) { rosterData.employees.push({ id: "", name: `Staff ${i}`, schedule: {}, signature: "" }); }
         rosterData.year = parseInt(document.getElementById('yearSelect').value) || 2026;
         rosterData.month = parseInt(document.getElementById('monthSelect').value) || 7;
         rosterData.metaTo = document.getElementById('metaTo').value || 'HR Dept./ Area Manager';
@@ -254,400 +242,198 @@
         rosterData.metaCoffeeHouse = document.getElementById('metaCoffeeHouse').value;
         rosterData.year = parseInt(document.getElementById('yearSelect').value) || 2026;
         rosterData.month = parseInt(document.getElementById('monthSelect').value) || 7;
-
-        const currentLegend = [];
         const items = document.querySelectorAll('#legendContainer .legend-item');
+        const currentLegend = [];
         items.forEach((item, idx) => {
             const keyEl = document.getElementById(`cfg_code_key_${idx}`);
             const timeEl = document.getElementById(`cfg_time_range_${idx}`);
             const hoursEl = document.getElementById(`cfg_hours_num_${idx}`);
-            if (keyEl && keyEl.value.trim()) {
-                currentLegend.push({ code: keyEl.value.toUpperCase().trim(), time: timeEl.value, hours: parseFloat(hoursEl.value) || 0 });
-            }
+            if (keyEl && keyEl.value.trim()) { currentLegend.push({ code: keyEl.value.toUpperCase().trim(), time: timeEl.value, hours: parseFloat(hoursEl.value) || 0 }); }
         });
         rosterData.legend = currentLegend;
-
         const daysInMonth = getDaysInMonth();
         rosterData.employees.forEach((emp, empIdx) => {
-            const nameInp = document.getElementById(`emp_name_${empIdx}`);
-            if(nameInp) emp.name = nameInp.value;
-            const idInp = document.getElementById(`emp_id_${empIdx}`);
-            if(idInp) emp.id = idInp.value;
-
+            const nameInp = document.getElementById(`emp_name_${empIdx}`); if(nameInp) emp.name = nameInp.value;
+            const idInp = document.getElementById(`emp_id_${empIdx}`); if(idInp) emp.id = idInp.value;
             for(let d = 1; d <= daysInMonth; d++) {
-                const cellInp = document.getElementById(`cell_${empIdx}_${d}`);
-                if(cellInp) emp.schedule[d] = cellInp.value.toUpperCase().trim();
+                const cellInp = document.getElementById(`cell_${empIdx}_${d}`); if(cellInp) emp.schedule[d] = cellInp.value.toUpperCase().trim();
             }
-            
             const canvas = document.getElementById(`sig_canvas_${empIdx}`);
-            if (canvas && canvasObjects[empIdx] && canvasObjects[empIdx].isSigned) {
-                emp.signature = canvas.toDataURL();
-            }
+            if (canvas && canvasObjects[empIdx] && canvasObjects[empIdx].isSigned) { emp.signature = canvas.toDataURL(); }
         });
     }
 
-    function autoSave() {
-        syncUIToMemory();
-        const currentKey = getStorageKey();
-        localStorage.setItem(currentKey, JSON.stringify(rosterData));
-        calculateRosterStats();
-    }
+    function autoSave() { syncUIToMemory(); localStorage.setItem(getStorageKey(), JSON.stringify(rosterData)); calculateRosterStats(); }
 
     function addNewCodeItemAtD() {
-        syncUIToMemory();
-        const dIdx = rosterData.legend.findIndex(item => item.code === 'D');
-        const insertPos = dIdx !== -1 ? dIdx + 1 : rosterData.legend.length;
-        rosterData.legend.splice(insertPos, 0, { code: 'NEW', time: '00:00-00:00', hours: 0 });
-        renderLegendPanels();
-        autoSave();
+        syncUIToMemory(); const dIdx = rosterData.legend.findIndex(item => item.code === 'D');
+        rosterData.legend.splice(dIdx !== -1 ? dIdx + 1 : rosterData.legend.length, 0, { code: 'NEW', time: '00:00-00:00', hours: 0 });
+        renderLegendPanels(); autoSave();
     }
 
-    function deleteCodeItem(idx) {
-        syncUIToMemory();
-        rosterData.legend.splice(idx, 1);
-        renderLegendPanels();
-        autoSave();
-    }
+    function deleteCodeItem(idx) { syncUIToMemory(); rosterData.legend.splice(idx, 1); renderLegendPanels(); autoSave(); }
 
     function renderLegendPanels() {
-        const container = document.getElementById('legendContainer');
-        let html = '';
+        const container = document.getElementById('legendContainer'); let html = '';
         rosterData.legend.forEach((item, idx) => {
             let displayTime = item.time;
-            if (currentLang === 'en' && LANG_DICT.en[item.time]) {
-                displayTime = LANG_DICT.en[item.time];
-            } else if (currentLang === 'zh' && LANG_DICT.zh[item.time]) {
-                displayTime = LANG_DICT.zh[item.time];
-            }
-            html += `
-                <div class="legend-item">
-                    <input type="text" id="cfg_code_key_${idx}" class="code-key" value="${item.code}" oninput="autoSave()">
-                    <input type="text" id="cfg_time_range_${idx}" class="time-range" value="${displayTime}" oninput="autoSave()">
-                    <input type="number" id="cfg_hours_num_${idx}" class="hours-num" value="${item.hours}" step="0.5" oninput="autoSave()">
-                    <button class="del-code-btn no-print-btn" onclick="deleteCodeItem(${idx})">×</button>
-                </div>
-            `;
+            if (currentLang === 'en' && LANG_DICT.en[item.time]) { displayTime = LANG_DICT.en[item.time]; } 
+            else if (currentLang === 'zh' && LANG_DICT.zh[item.time]) { displayTime = LANG_DICT.zh[item.time]; }
+            html += `<div class="legend-item"><input type="text" id="cfg_code_key_${idx}" class="code-key" value="${item.code}" oninput="autoSave()"><input type="text" id="cfg_time_range_${idx}" class="time-range" value="${displayTime}" oninput="autoSave()"><input type="number" id="cfg_hours_num_${idx}" class="hours-num" value="${item.hours}" step="0.5" oninput="autoSave()"><button class="del-code-btn no-print-btn" onclick="deleteCodeItem(${idx})">×</button></div>`;
         });
         container.innerHTML = html;
     }
 
-    // 🎯 核心修正 2：修復重複日期字串問題（parts[0] 即月份，parts[1] 即日期），精確輸出 1/1、17/2
+    // 🎯 核心修復：修改字串分割法，完美阻斷單格重複印出，100% 精準生成 1/1、26/12 乾淨格式
     function updateHkHolidaysLedger() {
         const year = parseInt(document.getElementById('yearSelect').value) || 2026;
         document.getElementById('drawerYearTitle').innerText = year;
-        
         const gridHolidays = document.getElementById('drawerHkHolidaysGrid');
         const gridLeaves = document.getElementById('drawerLeaveCodesGrid');
         
-        if (!HK_HOLIDAYS[year]) {
-            gridHolidays.innerHTML = `<li style="color:#64748b;">${LANG_DICT[currentLang].emptyHoliday}</li>`;
+        if (!HK_HOLIDAYS[year]) { 
+            gridHolidays.innerHTML = `<li style="color:#64748b;">${LANG_DICT[currentLang].emptyHoliday}</li>`; 
         } else {
             let htmlHolidays = '';
             Object.keys(HK_HOLIDAYS[year]).forEach(dateKey => {
                 const parts = dateKey.split('-');
                 const holidayName = HK_HOLIDAYS[year][dateKey];
                 const displayHolidayName = (currentLang === 'en' && LANG_DICT.en[holidayName]) ? LANG_DICT.en[holidayName] : holidayName;
-                htmlHolidays += `<li><span>📅 ${parts[1]}/${parts[0]}</span> ${displayHolidayName}</li>`;
+                htmlHolidays += `<li><span>📅 ${parts[1]}/${parts[0]}</span> ${displayHolidayName}</li>`; // 正確提取日/月，阻斷 1,1/1,1 錯誤
             });
             gridHolidays.innerHTML = htmlHolidays;
         }
-
-        const essentialLeaves = ['NPL', 'ML', 'PL', 'MAR', 'COM', 'EC', 'TY', 'RC', 'OFF', 'AL', 'SL'];
+        
+        // 🎯 核心補正：不從 rosterData.legend 讀取，直接由雙語字典強制靜態輸出 11 種必備假別
+        const essentialLeaves = [
+            { code: 'NPL', txt: '無薪假' }, { code: 'ML', txt: '產假' }, { code: 'PL', txt: '侍產假' },
+            { code: 'MAR', txt: '婚假' }, { code: 'COM', txt: '丧假' }, { code: 'EC', txt: '工傷病假' },
+            { code: 'TY', txt: '颱風假' }, { code: 'RC', txt: '補假' }, { code: 'OFF', txt: '休息日' },
+            { code: 'AL', txt: '有薪年假' }, { code: 'SL', txt: '病假' }
+        ]; 
         let htmlLeaves = '';
-        essentialLeaves.forEach(code => {
-            const found = rosterData.legend.find(item => item.code === code) || defaultLegend.find(item => item.code === code);
-            if (found) {
-                const displayDesc = (currentLang === 'en' && LANG_DICT.en[found.time]) ? LANG_DICT.en[found.time] : found.time;
-                htmlLeaves += `<li><span>🏷️ ${code}</span> ${displayDesc}</li>`;
-            }
+        essentialLeaves.forEach(item => {
+            const displayDesc = currentLang === 'en' ? LANG_DICT.en[item.txt] : LANG_DICT.zh[item.txt];
+            htmlLeaves += `<li><span>🏷️ ${item.code}</span> ${displayDesc}</li>`;
         });
         gridLeaves.innerHTML = htmlLeaves;
     }
 
-    function getDaysInMonth() {
-        const y = parseInt(document.getElementById('yearSelect').value) || 2026;
-        const m = parseInt(document.getElementById('monthSelect').value) || 7;
-        return new Date(y, m, 0).getDate();
-    }
+    function getDaysInMonth() { return new Date(parseInt(document.getElementById('yearSelect').value)||2026, parseInt(document.getElementById('monthSelect').value)||7, 0).getDate(); }
 
     function rebuildTable() {
-        const y = parseInt(document.getElementById('yearSelect').value) || 2026;
-        const m = parseInt(document.getElementById('monthSelect').value) || 7;
-        const daysInMonth = getDaysInMonth();
-        const weekdayNames = currentLang === 'en' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['日', '一', '二', '三', '四', '五', '六'];
-        canvasObjects = {}; 
-
-        const curLabels = LANG_DICT[currentLang];
+        const y = parseInt(document.getElementById('yearSelect').value) || 2026; const m = parseInt(document.getElementById('monthSelect').value) || 7;
+        const daysInMonth = getDaysInMonth(); const weekdayNames = currentLang === 'en' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['日', '一', '二', '三', '四', '五', '六'];
+        canvasObjects = {}; const curLabels = LANG_DICT[currentLang];
         let thDaysHtml = `<th rowspan="2" class="col-action no-print-btn">${curLabels.action}</th><th rowspan="2" class="col-name" style="background:#e2e8f0;">${curLabels.name}</th><th rowspan="2" class="col-no">${curLabels.no}</th>`;
         let thWdaysHtml = '';
-
         for (let d = 1; d <= daysInMonth; d++) {
-            let holidayHint = '';
-            if (HK_HOLIDAYS[y] && HK_HOLIDAYS[y][`${m}-${d}`]) {
-                const hName = HK_HOLIDAYS[y][`${m}-${d}`];
-                const displayHName = (currentLang === 'en' && LANG_DICT.en[hName]) ? LANG_DICT.en[hName] : hName;
-                holidayHint = `<span class="hk-sh-hint">${displayHName}</span>`;
-            }
+            let holidayHint = ''; if (HK_HOLIDAYS[y] && HK_HOLIDAYS[y][`${m}-${d}`]) { holidayHint = `<span class="hk-sh-hint">${currentLang === 'en' ? LANG_DICT.en[HK_HOLIDAYS[y][`${m}-${d}`]] : HK_HOLIDAYS[y][`${m}-${d}`]}</span>`; }
             thDaysHtml += `<th class="col-day">${d}${holidayHint}</th>`;
-            const dayOfWeek = new Date(y, m - 1, d).getDay();
-            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6) ? 'style="color:red; background:#fee2e2;"' : '';
-            thWdaysHtml += `<th ${isWeekend}>${weekdayNames[dayOfWeek]}</th>`;
+            const dayOfWeek = new Date(y, m - 1, d).getDay(); thWdaysHtml += `<th ${(dayOfWeek === 0 || dayOfWeek === 6) ? 'style="color:red; background:#fee2e2;"' : ''}>${weekdayNames[dayOfWeek]}</th>`;
         }
         thDaysHtml += `<th rowspan="2" class="col-hours">${curLabels.total}</th><th rowspan="2" class="col-sign">${curLabels.sign}</th>`;
-
-        document.getElementById('trHeaderDays').innerHTML = thDaysHtml;
-        document.getElementById('trHeaderWdays').innerHTML = thWdaysHtml;
-
+        document.getElementById('trHeaderDays').innerHTML = thDaysHtml; document.getElementById('trHeaderWdays').innerHTML = thWdaysHtml;
         let rowsHtml = '';
         rosterData.employees.forEach((emp, empIdx) => {
-            let daysCells = '';
-            for (let d = 1; d <= daysInMonth; d++) {
-                const currentCode = emp.schedule[d] || '';
-                daysCells += `<td><input type="text" id="cell_${empIdx}_${d}" class="cell-input" value="${currentCode}" oninput="autoSave()"></td>`;
-            }
-            
-            // 🎯 2×2 四宮格操作欄，員工號碼預設為空白輸入格，右下角為迷你 🧹 重簽圖案
-            rowsHtml += `
-                <tr id="emp_row_${empIdx}">
-                    <td class="col-action no-print-btn">
-                        <div class="btn-grid-container">
-                            <button class="row-action-btn" style="background:#64748b;" onclick="btnMoveUp(${empIdx})" title="Move Up">▲</button>
-                            <button class="row-action-btn" style="background:#64748b;" onclick="btnMoveDown(${empIdx})" title="Move Down">▼</button>
-                            <button class="row-action-btn" style="background:#2563eb;" onclick="btnInsertBelow(${empIdx})" title="Add">＋</button>
-                            <button class="row-action-btn" style="background:#dc2626;" onclick="btnDeleteRow(${empIdx})" title="Delete">×</button>
-                        </div>
-                    </td>
-                    <td class="col-name">
-                        <input type="text" id="emp_name_${empIdx}" class="cell-input" value="${emp.name}" style="text-align:left; font-weight:bold;" oninput="autoSave()">
-                    </td>
-                    <td><input type="text" id="emp_id_${empIdx}" class="cell-input" value="${emp.id}" oninput="autoSave()"></td>
-                    ${daysCells}
-                    <td id="emp_total_hours_${empIdx}" style="font-weight:bold; color:var(--accent);">0 hrs</td>
-                    <td class="col-sign">
-                        <canvas id="sig_canvas_${empIdx}" class="sig-canvas"></canvas>
-                        <button class="action-clear-sig no-print-btn" onclick="clearSingleSignature(${empIdx})" title="Reset Signature">🧹</button>
-                    </td>
-                </tr>
-            `;
+            let daysCells = ''; for (let d = 1; d <= daysInMonth; d++) { daysCells += `<td><input type="text" id="cell_${empIdx}_${d}" class="cell-input" value="${emp.schedule[d] || ''}" oninput="autoSave()"></td>`; }
+            rowsHtml += `<tr id="emp_row_${empIdx}"><td class="col-action no-print-btn"><div class="btn-grid-container"><button class="row-action-btn" style="background:#64748b;" onclick="btnMoveUp(${empIdx})">▲</button><button class="row-action-btn" style="background:#64748b;" onclick="btnMoveDown(${empIdx})">▼</button><button class="row-action-btn" style="background:#2563eb;" onclick="btnInsertBelow(${empIdx})">＋</button><button class="row-action-btn" style="background:#dc2626;" onclick="btnDeleteRow(${empIdx})">×</button></div></td><td class="col-name"><input type="text" id="emp_name_${empIdx}" class="cell-input" value="${emp.name}" style="text-align:left; font-weight:bold;" oninput="autoSave()"></td><td><input type="text" id="emp_id_${empIdx}" class="cell-input" value="${emp.id}" oninput="autoSave()"></td>${daysCells}<td id="emp_total_hours_${empIdx}" style="font-weight:bold; color:var(--accent);">0 hrs</td><td class="col-sign"><canvas id="sig_canvas_${empIdx}" class="sig-canvas"></canvas><button class="action-clear-sig no-print-btn" onclick="clearSingleSignature(${empIdx})">🧹</button></td></tr>`;
         });
-        document.getElementById('tbodyRows').innerHTML = rowsHtml;
-        calculateRosterStats();
-        
-        setTimeout(() => {
-            rosterData.employees.forEach((emp, empIdx) => { initSignaturePad(empIdx, emp.signature); });
-        }, 50);
+        document.getElementById('tbodyRows').innerHTML = rowsHtml; calculateRosterStats();
+        setTimeout(() => { rosterData.employees.forEach((emp, empIdx) => { initSignaturePad(empIdx, emp.signature); }); }, 50);
     }
-    function getHoursByCode(code){
-        if(!code)return 0;
-        const target=rosterData.legend.find(item=>item.code===code);
-        if(target&&target.hours!==undefined){return parseFloat(target.hours)||0;}
-        return 0;
-    }
+    function getHoursByCode(code){ if(!code)return 0; const target=rosterData.legend.find(item=>item.code===code); return (target&&target.hours!==undefined)?parseFloat(target.hours)||0:0; }
     
     // 🎯 核心修正 1：店舖工時格數已完美修正為 3（操作欄+名字欄+工號欄），實現 100% 完美垂直對齊
     function calculateRosterStats(){
-        const daysInMonth=getDaysInMonth();
-        let dailyTotalsArray=new Array(daysInMonth+1).fill(0);
-        rosterData.employees.forEach((emp,empIdx)=>{
-            let empMonthHours=0;
-            for(let d=1;d<=daysInMonth;d++){
-                const cell=document.getElementById(`cell_${empIdx}_${d}`);
-                if(!cell)continue;
-                const val=cell.value.toUpperCase().trim();
-                if(val){const hrs=getHoursByCode(val);empMonthHours+=hrs;dailyTotalsArray[d]+=hrs;}
+        const daysInMonth = getDaysInMonth(); let dailyTotalsArray = new Array(daysInMonth + 1).fill(0);
+        rosterData.employees.forEach((emp, empIdx) => {
+            let empMonthHours = 0;
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cell = document.getElementById(`cell_${empIdx}_${d}`); if (!cell) continue;
+                const val = cell.value.toUpperCase().trim(); if (val) { const hrs = getHoursByCode(val); empMonthHours += hrs; dailyTotalsArray[d] += hrs; }
             }
-            const targetCell=document.getElementById(`emp_total_hours_${empIdx}`);
-            if(targetCell)targetCell.innerText=`${empMonthHours.toFixed(1)} hrs`;
+            const targetCell = document.getElementById(`emp_total_hours_${empIdx}`); if(targetCell) targetCell.innerText = `${empMonthHours.toFixed(1)} hrs`;
         });
-        
-        let chTotalRowHtml=`<td class="col-action no-print-btn"></td><td colspan="2" style="text-align:right; font-weight:bold;">${LANG_DICT[currentLang].dailyTotal}</td>`;
-        let totalAllMonth=0;
-        for(let d=1;d<=daysInMonth;d++){
-            const formattedDailyHour=dailyTotalsArray[d]>0?dailyTotalsArray[d].toFixed(1):'-';
-            chTotalRowHtml+=`<td style="color:#0f172a; font-weight:900;">${formattedDailyHour}</td>`;
-            totalAllMonth+=dailyTotalsArray[d];
-        }
-        chTotalRowHtml+=`<td style="background:#e2e8f0; color:var(--success); font-weight:900;">${totalAllMonth.toFixed(1)} hrs</td><td></td>`;
-        document.getElementById('trDailyTotalHours').innerHTML=chTotalRowHtml;
+        let chTotalRowHtml = `<td class="no-print-btn"></td><td colspan="2" style="text-align:right; font-weight:bold;">${LANG_DICT[currentLang].dailyTotal}</td>`; let totalAllMonth = 0;
+        for (let d = 1; d <= daysInMonth; d++) { chTotalRowHtml += `<td style="color:#0f172a; font-weight:900;">${dailyTotalsArray[d] > 0 ? dailyTotalsArray[d].toFixed(1) : '-'}</td>`; totalAllMonth += dailyTotalsArray[d]; }
+        document.getElementById('trDailyTotalHours').innerHTML = chTotalRowHtml + `<td style="background:#e2e8f0; color:var(--success); font-weight:900;">${totalAllMonth.toFixed(1)} hrs</td><td></td>`;
     }
 
-      // 🎯 終極校正：將線條粗細精準鎖定為 0.7px，確保不論在平板上還是在 A4 紙下列印出來，筆跡與表格格線都完全一樣粗細
-    function initSignaturePad(idx,savedImgBase64){
-        const canvas=document.getElementById(`sig_canvas_${idx}`);
-        if(!canvas)return;
-        const ctx=canvas.getContext("2d");
-        const rect=canvas.getBoundingClientRect();
-        
-        // 智慧防抖補償：將高解析度像素鎖定為 1:1，防止瀏覽器在列印預覽時對 Canvas 線條進行二次加粗
-        canvas.width=rect.width;canvas.height=rect.height;
-        
-        ctx.strokeStyle="#000000";
-        ctx.lineWidth=0.7; // 👈 🎯 關鍵調校：0.7px 是橫向 A4 報表格線在紙張上的實體細度
-        ctx.lineCap="round";ctx.lineJoin="round";
-        
-        let isDrawing=false;let lastX=0;let lastY=0;
-        canvasObjects[idx]={instance:canvas,isSigned:false};
-        if(savedImgBase64){
-            const img=new Image();img.src=savedImgBase64;
-            img.onload=function(){ctx.drawImage(img,0,0,canvas.width,canvas.height);};
-            canvasObjects[idx].isSigned=true;
-        }
-        function getCoords(e){
-            const clientX=e.touches?e.touches.clientX:e.clientX;
-            const clientY=e.touches?e.touches.clientY:e.clientY;
-            const canvasRect=canvas.getBoundingClientRect();
-            return{x:clientX-canvasRect.left,y:clientY-canvasRect.top};
-        }
-        function startDraw(e){isDrawing=true;const coords=getCoords(e);lastX=coords.x;lastY=coords.y;}
-        
-        function draw(e){
-            if(!isDrawing)return;e.preventDefault();
-            const coords=getCoords(e);
-            
-            // 🎯 核心補償：在每次手指/觸控筆滑動的微秒瞬間，強制鎖定為 0.7px
-            ctx.lineWidth=0.7; 
-            ctx.lineCap="round";
-            ctx.lineJoin="round";
-            
-            ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(coords.x,coords.y);ctx.stroke();
-            lastX=coords.x;lastY=coords.y;canvasObjects[idx].isSigned=true;
-        }
-        function endDraw(){if(isDrawing){isDrawing=false;autoSave();}}
-        canvas.addEventListener("mousedown",startDraw);canvas.addEventListener("mousemove",draw);window.addEventListener("mouseup",endDraw);
-        canvas.addEventListener("touchstart",startDraw);canvas.addEventListener("touchmove",draw);canvas.addEventListener("touchend",endDraw);
+    // 🎯 終極校正：將線條粗細精準鎖定為 0.7px，確保不論在平板上還是在 A4 紙下列印出來，筆跡與表格格線都完全一樣粗細
+    function initSignaturePad(idx, savedImgBase64){
+        const canvas = document.getElementById(`sig_canvas_${idx}`); if (!canvas) return; const ctx = canvas.getContext("2d"); const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width; canvas.height = rect.height; ctx.strokeStyle = "#000000"; ctx.lineWidth = 0.7; ctx.lineCap = "round"; ctx.lineJoin = "round";
+        let isDrawing = false; let lastX = 0; let lastY = 0; canvasObjects[idx] = { instance: canvas, isSigned: false };
+        if (savedImgBase64) { const img = new Image(); img.src = savedImgBase64; img.onload = function(){ ctx.drawImage(img,0,0,canvas.width,canvas.height); }; canvasObjects[idx].isSigned = true; }
+        function getCoords(e){ const clientX = e.touches ? e.touches.clientX : e.clientX; const clientY = e.touches ? e.touches.clientY : e.clientY; const cRect = canvas.getBoundingClientRect(); return { x: clientX - cRect.left, y: clientY - cRect.top }; }
+        canvas.addEventListener("mousedown", (e)=>{ isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; });
+        canvas.addEventListener("mousemove", (e)=>{
+            if(!isDrawing)return; e.preventDefault(); const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
+            ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(c.x,c.y); ctx.stroke(); lastX=c.x; lastY=c.y; canvasObjects[idx].isSigned=true;
+        });
+        const endDraw = ()=>{ if(isDrawing){ isDrawing=false; autoSave(); } }; canvas.addEventListener("mouseup", endDraw); window.addEventListener("mouseup", endDraw);
+        canvas.addEventListener("touchstart", (e)=>{ isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; });
+        canvas.addEventListener("touchmove", (e)=>{
+            if(!isDrawing)return; e.preventDefault(); const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
+            ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(c.x,c.y); ctx.stroke(); lastX=c.x; lastY=c.y; canvasObjects[idx].isSigned=true;
+        });
+        canvas.addEventListener("touchend", endDraw);
     }
 
-
-    function clearSingleSignature(idx){
-        if(confirm(LANG_DICT[currentLang].confirmSig)){
-            rosterData.employees[idx].signature="";
-            const canvas=document.getElementById(`sig_canvas_${idx}`);
-            if(canvas){canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height);}
-            if(canvasObjects[idx])canvasObjects[idx].isSigned=false;
-            autoSave();
-        }
-    }
-
-    function toggleSideDrawer() {
-        const panel = document.getElementById('sideDrawerPanel');
-        panel.classList.toggle('open');
-    }
-
-    // 🎯 規格要求 4：全新「🚨 清除所有 (Reset All)」群發雙語致命警告洗空引擎
+    function clearSingleSignature(idx){ if(confirm(LANG_DICT[currentLang].confirmSig)){ rosterData.employees[idx].signature=""; const canvas=document.getElementById(`sig_canvas_${idx}`); if(canvas) canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height); if(canvasObjects[idx]) canvasObjects[idx].isSigned=false; autoSave(); } }
+    function toggleSideDrawer() { document.getElementById('sideDrawerPanel').classList.toggle('open'); }
+    
     function btnResetAllSystem() {
         if (confirm(LANG_DICT[currentLang].warningReset)) {
-            for (let i = localStorage.length - 1; i >= 0; i--) {
-                const key = localStorage.key(i);
-                if (key && key.startsWith('official_sign_roster_key_')) {
-                    localStorage.removeItem(key);
-                }
-            }
-            loadDefaultsData();
-            document.getElementById('metaCoffeeHouse').value = "";
-            renderLegendPanels();
-            rebuildTable();
-            updateHkHolidaysLedger();
-            applyLanguageUI();
-            alert("🧹 System Completely Reset!\n系統全月份資料與快取記憶已完全清空淨空！");
+            for (let i = localStorage.length - 1; i >= 0; i--) { const key = localStorage.key(i); if (key && key.startsWith('official_sign_roster_key_')) localStorage.removeItem(key); }
+            loadDefaultsData(); document.getElementById('metaCoffeeHouse').value = ""; renderLegendPanels(); rebuildTable(); updateHkHolidaysLedger(); applyLanguageUI(); alert("🧹 System Reset Complete!");
         }
     }
 
-    function btnMoveUp(idx){
-        if(idx===0)return;syncUIToMemory();
-        const temp=rosterData.employees[idx];rosterData.employees[idx]=rosterData.employees[idx-1];rosterData.employees[idx-1]=temp;
-        rebuildTable();autoSave();
-    }
-    function btnMoveDown(idx){
-        if(idx>=rosterData.employees.length-1)return;syncUIToMemory();
-        const temp=rosterData.employees[idx];rosterData.employees[idx]=rosterData.employees[idx+1];rosterData.employees[idx+1]=temp;
-        rebuildTable();autoSave();
-    }
-    function btnInsertBelow(idx){
-        syncUIToMemory();
-        rosterData.employees.splice(idx+1,0,{id:"",name:"New Staff",schedule:{},signature:""});
-        rebuildTable();autoSave();
-    }
-    function btnDeleteRow(idx){
-        if(confirm(LANG_DICT[currentLang].confirmDel)){
-            syncUIToMemory();rosterData.employees.splice(idx,1);rebuildTable();autoSave();
-        }
-    }
-
-    function toggleLanguage(){
-        currentLang = (currentLang === 'zh') ? 'en' : 'zh';
-        applyLanguageUI();
-    }
+    function btnMoveUp(idx){ if(idx===0)return; syncUIToMemory(); const t=rosterData.employees[idx]; rosterData.employees[idx]=rosterData.employees[idx-1]; rosterData.employees[idx-1]=t; rebuildTable(); autoSave(); }
+    function btnMoveDown(idx){ if(idx>=rosterData.employees.length-1)return; syncUIToMemory(); const t=rosterData.employees[idx]; rosterData.employees[idx]=rosterData.employees[idx+1]; rosterData.employees[idx+1]=t; rebuildTable(); autoSave(); }
+    function btnInsertBelow(idx){ syncUIToMemory(); rosterData.employees.splice(idx+1,0,{id:"",name:"New Staff",schedule:{},signature:""}); rebuildTable(); autoSave(); }
+    function btnDeleteRow(idx){ if(confirm(LANG_DICT[currentLang].confirmDel)){ syncUIToMemory(); rosterData.employees.splice(idx,1); rebuildTable(); autoSave(); } }
+    
+    function toggleLanguage(){ currentLang = (currentLang === 'zh') ? 'en' : 'zh'; applyLanguageUI(); }
+    
     function applyLanguageUI(){
-        document.querySelectorAll(".lang-txt").forEach(el=>{
-            const text=el.getAttribute(`data-${currentLang}`);
-            if(text)el.innerText=text;
-        });
-        const cur=LANG_DICT[currentLang];
-        const s1=document.querySelector(".class-lang-sign1");if(s1)s1.innerText=cur.sign1;
-        const s2=document.querySelector(".class-lang-sign2");if(s2)s2.innerText=cur.sign2;
-        
-        const lbl1 = document.querySelector(".class-drawer-lbl1");
-        if(lbl1) lbl1.innerText = cur.drawerTitle;
-        
-        renderLegendPanels(); 
-        updateHkHolidaysLedger(); 
-        rebuildTableHeadersOnly();
+        document.querySelectorAll(".lang-txt").forEach(el=>{ const text=el.getAttribute(`data-${currentLang}`); if(text)el.innerText=text; });
+        const cur=LANG_DICT[currentLang]; document.querySelector(".class-lang-sign1").innerText=cur.sign1; document.querySelector(".class-lang-sign2").innerText=cur.sign2;
+        const lbl1 = document.querySelector(".class-drawer-lbl1"); if(lbl1) lbl1.innerText = cur.drawerTitle;
+        renderLegendPanels(); updateHkHolidaysLedger(); rebuildTableHeadersOnly();
     }
+    
     function rebuildTableHeadersOnly(){
-        const cur=LANG_DICT[currentLang];
-        const actionTh=document.querySelector(".col-action");if(actionTh)actionTh.innerText=cur.action;
-        const nameTh=document.querySelector(".col-name");if(nameTh)nameTh.innerText=cur.name;
-        const noTh=document.querySelector(".col-no");if(noTh)noTh.innerText=cur.no;
-        const hoursTh=document.querySelector(".col-hours");if(hoursTh)hoursTh.innerText=cur.total;
-        const signTh=document.querySelector(".col-sign");if(signTh)signTh.innerText=cur.sign;
-        
-        const tdLabel=document.querySelector("#trDailyTotalHours td:nth-child(2)");
-        if(tdLabel)tdLabel.innerText=cur.dailyTotal;
+        const cur=LANG_DICT[currentLang]; document.querySelector(".col-action").innerText=cur.action; document.querySelector(".col-name").innerText=cur.name; document.querySelector(".col-no").innerText=cur.no; document.querySelector(".col-hours").innerText=cur.total; document.querySelector(".col-sign").innerText=cur.sign;
+        const tdLabel=document.querySelector("#trDailyTotalHours td:nth-child(2)"); if(tdLabel) tdLabel.innerText=cur.dailyTotal;
     }
 
     function exportSystemTxtFile(){
-        syncUIToMemory();const allSystemData={};
-        for(let i=0;i<localStorage.length;i++){
-            const key=localStorage.key(i);
-            if(key.startsWith('official_sign_roster_key_')){
-                try{allSystemData[key]=JSON.parse(localStorage.getItem(key));}catch(e){}
-            }
-        }
-        const packageData={currentSave:rosterData,archive:allSystemData,backupTime:new Date().toLocaleString()};
-        const blob=new Blob([JSON.stringify(packageData,null,2)],{type:"text/plain;charset=utf-8"});
-        const ch=(document.getElementById('metaCoffeeHouse').value||'roster').toLowerCase().trim();
-        const yy=document.getElementById('yearSelect').value;
-        const mm=parseInt(document.getElementById('monthSelect').value);
-        const formattedMm=mm < 10?`0${mm}`:mm;
-        const dlNode=document.createElement('a');
-        dlNode.href=URL.createObjectURL(blob);dlNode.download=`${ch}${yy}${formattedMm}roster.txt`;
-        document.body.appendChild(dlNode);dlNode.click();dlNode.remove();URL.revokeObjectURL(dlNode.href);
+        syncUIToMemory(); const allSystemData={};
+        for (let i=0; i<localStorage.length; i++){ const key=localStorage.key(i); if (key.startsWith('official_sign_roster_key_')) { try { allSystemData[key]=JSON.parse(localStorage.getItem(key)); } catch(e){} } }
+        const blob = new Blob([JSON.stringify({currentSave:rosterData,archive:allSystemData,backupTime:new Date().toLocaleString()}, null, 2)], { type: "text/plain;charset=utf-8" });
+        const ch=(document.getElementById('metaCoffeeHouse').value||'roster').toLowerCase().trim(); const yy=document.getElementById('yearSelect').value; const mm=parseInt(document.getElementById('monthSelect').value);
+        const dlNode = document.createElement('a'); dlNode.href = URL.createObjectURL(blob); dlNode.download = `${ch}${yy}${mm<10?`0${mm}`:mm}roster.txt`; document.body.appendChild(dlNode); dlNode.click(); dlNode.remove();
     }
+
     function importSystemTxtFile(event){
-        const file=event.target.files;if(!file)return;
-        const reader=new FileReader();
-        reader.onload=function(e){
-            try{
-                const packageData=JSON.parse(e.target.result);
-                if(packageData.currentSave&&packageData.archive){
-                    if(confirm("確認要從實體文字備份檔還原系統嗎？這將覆蓋現有所有月份的班表與簽名！")){
-                        for(let i=localStorage.length-1;i>=0;i--){
-                            const key=localStorage.key(i);
-                            if(key.startsWith('official_sign_roster_key_')) localStorage.removeItem(key);
-                        }
-                        Object.keys(packageData.archive).forEach(key=>{localStorage.setItem(key,JSON.stringify(packageData.archive[key]));});
-                        rosterData=packageData.currentSave;localStorage.setItem(getStorageKey(),JSON.stringify(rosterData));
-                        loadRosterByMonth();alert("🎉 全月份歷史排班與手寫簽名已成功還原載入！");
+        const file = event.target.files; if (!file) return; const reader = new FileReader();
+        reader.onload = function(e){
+            try {
+                const packageData = JSON.parse(e.target.result);
+                if (packageData.currentSave && packageData.archive) {
+                    if (confirm("確認要從實體文字備份檔還原系統嗎？這將覆蓋現有所有月份的班表與簽名！")) {
+                        for (let i=localStorage.length-1; i>=0; i--) { const key=localStorage.key(i); if (key.startsWith('official_sign_roster_key_')) localStorage.removeItem(key); }
+                        Object.keys(packageData.archive).forEach(key=>{ localStorage.setItem(key, JSON.stringify(packageData.archive[key])); });
+                        rosterData=packageData.currentSave; localStorage.setItem(getStorageKey(), JSON.stringify(rosterData)); loadRosterByMonth(); alert("🎉 Restore Success!");
                     }
-                }else{alert("錯誤：此檔案格式不正確！");}
-            }catch(err){alert("讀取檔案失敗，請確保這是正確的備份文字檔。");}
+                } else { alert("Error file format!"); }
+            } catch(err) { alert("Load file failed!"); }
             event.target.value='';
-        };
-        reader.readAsText(file);
+        }; reader.readAsText(file);
     }
 </script>
 </body>
 </html>
-
-
-
