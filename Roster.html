@@ -3,73 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>咖啡店員工排班管理系統 (中英雙語手寫版)</title>
+    <title>咖啡店員工排班管理系統 (全功能完整版)</title>
     <script src="https://cloudflare.com"></script>
     <style>
         :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
-        body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 13px; }
+        body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 13px; position: relative; }
         .controls-panel { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .controls-panel select, .controls-panel input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; }
         .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
         .btn-primary { background: var(--accent); } .btn-success { background: var(--success); } .btn-gray { background: #64748b; } .btn-danger { background: var(--danger); }
-        .btn-lang { background: #0f172a; border: 2px solid #38bdf8; color: #38bdf8; box-shadow: 0 0 8px rgba(56,189,248,0.2); } .btn-lang:hover { background: #38bdf8; color: #0f172a; }
-        .roster-report { background: var(--card); border: 2px solid #000; padding: 20px; border-radius: 4px; overflow-x: auto; position: relative; }
+        .btn-lang { background: #0f172a; border: 2px solid #38bdf8; color: #38bdf8; } .btn-lang:hover { background: #38bdf8; color: #0f172a; }
+        .floating-trigger-btn { position: fixed; right: 20px; bottom: 30px; z-index: 9999; background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: 50px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(79,70,229,0.4); display: flex; align-items: center; gap: 6px; }
+        .side-drawer-panel { position: fixed; top: 0; right: -420px; width: 400px; height: 100vh; background: #ffffff; box-shadow: -5px 0 25px rgba(0,0,0,0.15); z-index: 10000; overflow-y: auto; padding: 20px; transition: right 0.3s ease; border-left: 3px solid var(--accent); }
+        .side-drawer-panel.open { right: 0; }
+        .drawer-close { background: #cbd5e1; border: none; padding: 5px 10px; font-weight: bold; border-radius: 4px; cursor: pointer; float: right; font-size: 11px; }
+        .drawer-section-title { font-size: 14px; font-weight: bold; color: var(--accent); margin: 15px 0 8px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; }
+        .drawer-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+        .drawer-list li { background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: bold; }
+        .drawer-list li span { color: var(--accent); font-weight: 900; margin-right: 6px; }
+        .roster-report { background: var(--card); border: 2px solid #000; padding: 20px; border-radius: 4px; overflow-x: auto; }
+        .report-title { font-size: 22px; text-align: center; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 2px double #000; }
         .report-header { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
         .report-header td { border: none; padding: 4px; font-weight: bold; }
-        .report-title { font-size: 22px; text-align: center; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 2px double #000; }
-        .legend-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 10px; border-radius: 4px; }
+        .legend-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 15px; border-radius: 4px; width: 100% !important; }
         .legend-item { display: flex; align-items: center; gap: 4px; background: white; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; }
         .legend-item input.code-key { font-weight: bold; width: 45px; text-align: center; border: 1px solid #cbd5e1; border-radius: 3px; text-transform: uppercase; color: var(--accent); }
         .legend-item input.time-range { width: 100px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 11px; padding: 3px; }
         .legend-item input.hours-num { width: 40px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 11px; padding: 3px; text-align: center; font-weight: bold; background: #fff7ed; color: #c2410c; }
         .del-code-btn { background: none; border: none; color: var(--danger); font-size: 16px; cursor: pointer; padding: 0 4px; font-weight: bold; }
-        .hk-yearly-ledger { background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 6px; padding: 10px; margin-bottom: 15px; }
-        .hk-ledger-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; margin-top: 6px; }
-        .hk-ledger-item { font-size: 11px; color: #991b1b; background: white; padding: 4px 8px; border-radius: 4px; border: 1px solid #fee2e2; }
-        
-        /* 表格結構基礎寬度配置 */
         table.roster-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 1780px; margin-top: 10px; table-layout: fixed; }
         table.roster-table th, table.roster-table td { border: 1px solid #000; padding: 4px; font-size: 12px; overflow: hidden; }
         table.roster-table th { background: #f1f5f9; font-weight: bold; position: relative; vertical-align: middle; }
         .hk-sh-hint { display: block; font-size: 9px; color: #dc2626; font-weight: normal; margin-top: 2px; line-height: 1.1; max-width: 45px; margin-left: auto; margin-right: auto; }
-        
-        /* 🎯 規格要求 2：4個實體控制鍵縮小一半，改為精緻 2x2 四宮格排列排版 */
         .col-action { width: 56px; min-width: 56px; background: #f8fafc; text-align: center; padding: 2px !important; }
         .btn-grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 44px; margin: 0 auto; }
         .row-action-btn { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 20px; font-size: 9px; border: none; border-radius: 2px; font-weight: bold; color: white; cursor: pointer; }
-        
-        /* 🎯 大幅加寬：完美容納 Katherine 及 HK003851AA 長工號不擠擁 */
         .col-name { width: 140px; min-width: 140px; background: #f8fafc; font-weight: bold; }
         .col-no { width: 115px; min-width: 115px; } .col-day { width: 38px; min-width: 38px; } .col-hours { width: 85px; min-width: 85px; }
-        
-        /* 🎯 規格要求 3：簽名格縮小版迷你【重簽】按鈕絕對定位樣式 */
         .col-sign { width: 115px; min-width: 115px; position: relative; padding: 2px !important; background: #fafafa; }
         .sig-canvas { width: 100%; height: 32px; display: block; cursor: crosshair; background: transparent; }
-        .action-clear-sig { position: absolute; right: 2px; bottom: 2px; width: 20px; height: 20px; font-size: 11px; padding: 0; margin: 0; border: 1px solid #cbd5e1; background: rgba(241,245,249,0.9); color: #475569; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; z-index: 10; }
-        .action-clear-sig:hover { background: #fee2e2; color: var(--danger); border-color: #fca5a5; }
-
+        .action-clear-sig { position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; font-size: 10px; padding: 0; margin: 0; border: 1px solid #cbd5e1; background: rgba(241,245,249,0.9); color: #475569; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; z-index: 10; }
         .cell-input { border: none; text-align: center; width: 100%; font-size: 12px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; }
         .cell-input:focus { background: #e0e7ff; }
         .header-input { border: none; border-bottom: 1px solid #000; font-size: 13px; font-weight: bold; outline: none; padding: 2px; }
         .footer-sign-area { display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; padding: 0 10px; }
         .sign-line { border-top: 1px solid #000; width: 260px; margin-top: 50px; text-align: center; padding-top: 5px; font-size: 12px; }
-
         @media print {
             @page { size: A4 landscape; margin: 4mm; }
-            .no-print-btn { display: none !important; } .no-print { display: block !important; } body { background: white; padding: 0; }
+            .no-print-btn { display: none !important; } body { background: white; padding: 0; }
             .roster-report { border: none; padding: 0; width: 100%; overflow: visible; }
             table.roster-table { min-width: 100% !important; page-break-inside: avoid; }
-            .cell-input { border: none !important; } .del-code-btn, .action-clear-sig { display: none !important; }
+            .cell-input { border: none !important; } .action-clear-sig, .del-code-btn { display: none !important; }
             .col-action { display: none !important; }
         }
     </style>
 </head>
 <body>
 
+<!-- 🎯 側邊懸浮按鈕 -->
+<button class="floating-trigger-btn no-print-btn" onclick="toggleSideDrawer()">
+    📋 <span class="lang-txt" data-zh="代號及假期總覽" data-en="Codes & Holidays">代號及假期總覽</span>
+</button>
+
+<!-- 🎯 側邊滑出式大面板 (100% 收置 11 種基本假期代號與最新 15 天勞工假) -->
+<div id="sideDrawerPanel" class="side-drawer-panel no-print-btn">
+    <button class="drawer-close" onclick="toggleSideDrawer()">✕ Close</button>
+    <h3 style="font-size:15px; margin-bottom:10px; color:var(--primary);" class="lang-txt" data-zh="📋 系統資訊快閱面板" data-en="📋 System Reference Ledger">📋 系統資訊快閱面板</h3>
+    
+    <div class="drawer-section-title class-drawer-lbl1">11 種基本假期代號對照 (Leave Codes)</div>
+    <ul class="drawer-list" id="drawerLeaveCodesGrid"></ul>
+    
+    <div class="drawer-section-title">
+        <span id="drawerYearTitle">2026</span> <span class="lang-txt" data-zh="年度 15 天香港法定假期對照" data-en="Year 15 Days HK Statutory Holidays">年度 15 天香港法定假期對照</span>
+    </div>
+    <ul class="drawer-list" id="drawerHkHolidaysGrid"></ul>
+</div>
+
 <!-- 頂部功能按鈕控制列 -->
 <div class="controls-panel no-print-btn">
-    <!-- 中英文一鍵切換智慧按鈕 -->
     <button class="btn btn-lang" onclick="toggleLanguage()">🌐 中/英轉換 (En/中)</button>
     <div style="width: 2px; height: 20px; background: #cbd5e1; margin: 0 5px;"></div>
     
@@ -79,10 +91,13 @@
         <input type="file" id="importSystemFile" accept=".txt" onchange="importSystemTxtFile(event)" style="display:none;">
     </label>
     <div style="width: 2px; height: 20px; background: #cbd5e1; margin: 0 5px;"></div>
-    <button class="btn btn-gray" onclick="window.print()"><span class="lang-txt" data-zh="🖨 列印班表" data-en="🖨 Print Roster">🖨 列印班表</span></button>
+    <button class="btn btn-gray" onclick="window.print()"><span class="lang-txt" data-zh="🖨 列印班表" data-en="🖨 Print Roster">🖨 Print Roster</span></button>
+    
+    <!-- 🚨 清除所有資料功能鍵 -->
+    <button class="btn btn-danger" style="background:#dc2626;" onclick="btnResetAllSystem()"><span class="lang-txt" data-zh="🚨 清除所有" data-en="🚨 Reset All">🚨 清除所有</span></button>
 </div>
 
-<!-- 官方格式報表紙張區 -->
+<!-- 官方格式報表紙張 -->
 <div class="roster-report" id="rosterReportArea">
     <div class="report-title">ROSTER</div>
     
@@ -91,7 +106,7 @@
             <td style="width: 40px;"><span class="lang-txt" data-zh="致:" data-en="To:">To:</span></td>
             <td><input type="text" id="metaTo" class="header-input" value="HR Dept./ Area Manager" oninput="autoSave()"></td>
             <td style="width: 120px; text-align: right;"><span class="lang-txt" data-zh="咖啡店店名:" data-en="Coffee House:">Coffee House:</span></td>
-            <td><input type="text" id="metaCoffeeHouse" class="header-input" value="HCC" oninput="autoSave()"></td>
+            <td><input type="text" id="metaCoffeeHouse" class="header-input" value="" oninput="autoSave()"></td>
             <td style="width: 60px; text-align: right;"><span class="lang-txt" data-zh="月份:" data-en="Month:">Month:</span></td>
             <td>
                 <input type="number" id="yearSelect" class="header-input" value="2026" style="width: 60px;" onchange="handleYearMonthChange()"> <span class="lang-txt" data-zh="年" data-en="Year">年</span> 
@@ -102,16 +117,10 @@
 
     <div class="no-print-area">
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 10px 0;" class="no-print-btn">
-            <h2 style="font-size:14px; color:var(--accent); margin:0;" class="lang-txt" data-zh="更期及假期代號自訂對照表" data-en="Shift & Leave Code Reference Table">更期及假期代號自訂對照表</h2>
+            <h2 style="font-size:14px; color:var(--accent); margin:0;" class="lang-txt" data-zh="更期代號自訂對照表" data-en="Shift Code Reference Table">更期代號自訂對照表</h2>
             <button class="btn btn-primary" onclick="addNewCodeItemAtD()" style="padding:4px 8px; font-size:12px;"><span class="lang-txt" data-zh="＋ 增加代號列" data-en="＋ Add Code Row">＋ 增加代號列</span></button>
         </div>
         <div class="legend-section" id="legendContainer"></div>
-        
-        <!-- 香港勞工假期對照看板 -->
-        <div class="hk-yearly-ledger">
-            <strong>📅 <span id="ledgerYearTitle">2026</span> <span class="lang-txt" data-zh="年香港法定勞工假期對照總覽：" data-en="Year HK Statutory Holidays Overview:">年香港法定勞工假期對照總覽：</span></strong>
-            <div class="hk-ledger-grid" id="hkLedgerGrid"></div>
-        </div>
     </div>
 
     <!-- 主排班大表格 -->
@@ -126,80 +135,69 @@
         </tfoot>
     </table>
 
-    <!-- 簽署欄雙語支援 -->
     <div class="footer-sign-area">
         <div><div class="sign-line class-lang-sign1">Prepare & Confirmed by in-charge</div></div>
-        <div><div class="sign-line class-lang-sign2">Acknowledged By</div></div>
+        <div><div class="sign-line" style="width: 200px;">Acknowledged By</div></div>
     </div>
 </div>
 
 <script>
-    // 🎯 規格要求 1：包含所有假期與更期名詞的 100% 完全雙語翻譯庫字典
-    let currentLang = 'zh'; // 預設繁體中文
+    let currentLang = 'zh'; 
     const LANG_DICT = {
         en: {
-            sign1: "Prepare & Confirmed by in-charge",
-            sign2: "Acknowledged By",
+            sign1: "Prepare & Confirmed by in-charge", sign2: "Acknowledged By",
             action: "Action", name: "Staff Name", no: "Staff no.", total: "Total Hours", sign: "Sign",
             dailyTotal: "CH Daily Working Hour", confirmDel: "Are you sure you want to delete this employee's roster?",
-            confirmSig: "Clear this signature?", emptyHoliday: "No public holiday data for this year.",
-            // 🎯 法定假期與描述英文翻譯庫
-            "元旦": "New Year's Day", "年初一": "The 1st Day of Lunar New Year", 
-            "年初二": "The 2nd Day of Lunar New Year", "年初三": "The 3rd Day of Lunar New Year",
-            "年初四": "The 4th Day of Lunar New Year", "清明節": "Ching Ming Festival", 
-            "勞動節": "Labour Day", "佛誕": "Birthday of the Buddha", "端午節": "Tuen Ng Festival", 
-            "特區成立": "HKSAR Establishment Day", "中秋節翌日": "The Day Following Chinese Mid-Autumn Festival", 
-            "國慶日": "National Day", "重陽節": "Chung Yeung Festival", "冬至": "Winter Solstice", "聖誕節": "Christmas Day",
-            // 🎯 假別描述英文翻譯庫
-            "無薪假": "Unpaid Leave", "產假": "Maternity Leave", "侍產假": "Paternity Leave", 
-            "婚假": "Marriage Leave", "丧假": "Compassionate Leave", "工傷病假": "Injury Leave", 
-            "颱風假": "Typhoon Leave", "補假": "Compensation Leave", "休息日": "Rest Day", 
-            "有薪年假": "Annual Leave", "病假": "Sick Leave"
+            confirmSig: "Clear this signature?", emptyHoliday: "No data available.",
+            drawerTitle: "11 Essential Leave Codes Overview",
+            warningReset: "⚠️ WARNING:\nThis will permanently delete ALL months of roster data, employee profiles, and handwritten signatures in this system. This action CANNOT be undone!\n\nAre you sure you want to reset everything?",
+            "元旦": "New Year's Day", "年初一": "Lunar New Year's Day", "年初二": "The 2nd Day of Lunar New Year", 
+            "年初三": "The 3rd Day of Lunar New Year", "年初四": "The 4th Day of Lunar New Year", "清明節": "Ching Ming Festival", 
+            "勞動節": "Labour Day", "佛誕": "Birthday of the Buddha", "端午節": "Tuen Ng Festival", "特區成立": "HKSAR Establishment Day", 
+            "中秋節翌日": "The Day Following Chinese Mid-Autumn Festival", "國慶日": "National Day", "重陽節": "Chung Yeung Festival", 
+            "冬至": "Winter Solstice", "聖誕節": "Christmas Day", "聖誕節翌日": "The first weekday after Christmas Day",
+            "無薪假": "Unpaid Leave (NPL)", "產假": "Maternity Leave (ML)", "侍產假": "Paternity Leave (PL)", 
+            "婚假": "Marriage Leave (MAR)", "丧假": "Compassionate Leave (COM)", "工傷病假": "Injury Leave (EC)", 
+            "颱風假": "Typhoon Leave (TY)", "補假": "Compensation Leave (RC)", "休息日": "Rest Day (OFF)", 
+            "有薪年假": "Annual Leave (AL)", "病假": "Sick Leave (SL)"
         },
         zh: {
-            sign1: "負責人編排及確認 (Prepare & Confirmed by in-charge)",
-            sign2: "經理/HR簽署核實 (Acknowledged By)",
+            sign1: "負責人編排及確認 (Prepare & Confirmed by in-charge)", sign2: "經理/HR簽署核實 (Acknowledged By)",
             action: "操作", name: "員工姓名", no: "員工號碼", total: "當月總工時", sign: "員工簽名",
             dailyTotal: "每日店舖總工時 (CH Daily Working Hour)", confirmDel: "確定要刪除該員工的整月排班列嗎？",
             confirmSig: "確認要清除該員工的手寫簽名嗎？", emptyHoliday: "暫無該年份的香港法定假期資料。",
-            // 法定假期與描述中文庫
+            drawerTitle: "11 種基本假期代號對照 (Leave Codes)",
+            warningReset: "⚠️ 警告：\n這將徹底清空本系統內「所有月份」的排班大表、員工名冊與手寫簽名。清除後資料將會完全消失且無法恢復！\n\n確認要清除所有資料嗎？",
             "元旦": "元旦", "年初一": "年初一", "年初二": "年初二", "年初三": "年初三", "年初四": "年初四",
             "清明節": "清明節", "勞動節": "勞動節", "佛誕": "佛誕", "端午節": "端午節", "特區成立": "特區成立",
-            "中秋節翌日": "中秋節翌日", "國慶日": "國慶日", "重陽節": "重陽節", "冬至": "冬至", "聖誕節": "聖誕節",
-            // 假別描述中文庫
+            "中秋節翌日": "中秋節翌日", "國慶日": "國慶日", "重陽節": "重陽節", "冬至": "冬至", "聖誕節": "聖誕節", "聖誕節翌日": "聖誕節翌日(節禮日)",
             "無薪假": "無薪假", "產假": "產假", "侍產假": "侍產假", "婚假": "婚假", "丧假": "丧假",
             "工傷病假": "工傷病假", "颱風假": "颱風假", "補假": "補假", "休息日": "休息日", "有薪年假": "有薪年假", "病假": "病假"
         }
     };
 
-    // 精確無誤的香港 2024-2030 法定勞工假期資料庫
     const HK_HOLIDAYS = {
         2024: { "1-1": "元旦", "2-10": "年初一", "2-12": "年初三", "2-13": "年初四", "4-4": "清明節", "5-1": "勞動節", "5-15": "佛誕", "6-10": "端午節", "7-1": "特區成立", "9-18": "中秋節翌日", "10-1": "國慶日", "10-11": "重陽節", "12-21": "冬至", "12-25": "聖誕節" },
         2025: { "1-1": "元旦", "1-29": "年初一", "1-30": "年初二", "1-31": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-5": "佛誕", "6-2": "端午節", "7-1": "特區成立", "10-1": "國慶日", "10-7": "中秋節翌日", "10-29": "重陽節", "12-22": "冬至", "12-25": "聖誕節" },
-        2026: { "1-1": "元旦", "2-17": "年初一", "2-18": "年初二", "2-19": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-24": "佛誕", "6-19": "端午節", "7-1": "特區成立", "9-26": "中秋節翌日", "10-1": "國慶日", "10-19": "重陽節", "12-22": "冬至", "12-25": "聖誕節" },
-        2027: { "1-1": "元旦", "2-6": "年初一", "2-8": "年初三", "2-9": "年初四", "4-5": "清明節", "5-1": "勞動節", "5-13": "佛誕", "6-9": "端午節", "7-1": "特區成立", "9-16": "中秋節翌日", "10-1": "國慶日", "10-8": "重陽節", "12-22": "冬至", "12-25": "聖誕節" },
-        2028: { "1-1": "元旦", "1-26": "年初一", "1-27": "年初二", "1-28": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-2": "佛誕", "5-28": "端午節", "7-1": "特區成立", "10-1": "國慶日", "10-4": "中秋節翌日", "10-26": "重陽節", "12-21": "冬至", "12-25": "聖誕節" },
-        2029: { "1-1": "元旦", "2-13": "年初一", "2-14": "年初二", "2-15": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-20": "佛誕", "6-16": "端午節", "7-1": "特區成立", "9-22": "中秋節翌日", "10-1": "國慶日", "10-16": "重陽節", "12-21": "冬至", "12-25": "聖誕節" },
-        2030: { "1-1": "元旦", "2-3": "年初一", "2-4": "年初二", "2-5": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-9": "佛誕", "6-5": "端午節", "7-1": "特區成立", "9-13": "中秋節翌日", "10-1": "國慶日", "10-6": "重陽節", "12-22": "冬至", "12-25": "聖誕節" }
+        2026: { "1-1": "元旦", "2-17": "年初一", "2-18": "年初二", "2-19": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-24": "佛誕", "6-19": "端午節", "7-1": "特區成立", "9-26": "中秋節翌日", "10-1": "國慶日", "10-19": "重陽節", "12-22": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" },
+        2027: { "1-1": "元旦", "2-6": "年初一", "2-7": "年初二", "2-8": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-13": "佛誕", "6-9": "端午節", "7-1": "特區成立", "9-16": "中秋節翌日", "10-1": "國慶日", "10-8": "重陽節", "12-22": "冬至", "12-25": "聖誕節", "12-27": "聖誕節翌日" },
+        2028: { "1-1": "元旦", "1-26": "年初一", "1-27": "年初二", "1-28": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-2": "佛誕", "5-28": "端午節", "7-1": "特區成立", "10-1": "國慶日", "10-4": "中秋節翌日", "10-26": "重陽節", "12-21": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" },
+        2029: { "1-1": "元旦", "2-13": "年初一", "2-14": "年初二", "2-15": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-20": "佛誕", "6-16": "端午節", "7-1": "特區成立", "9-22": "中秋節翌日", "10-1": "國慶日", "10-16": "重陽節", "12-21": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" },
+        2030: { "1-1": "元旦", "2-3": "年初一", "2-4": "年初二", "2-5": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-9": "佛誕", "6-5": "端午節", "7-1": "特區成立", "9-13": "中秋節翌日", "10-1": "國慶日", "10-6": "重陽節", "12-22": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" }
     };
 
     const defaultLegend = [
         { code: 'A', time: '08:30-18:30', hours: 9 }, { code: 'B', time: '12:30-22:30', hours: 9 },
         { code: 'C', time: '13:30-22:30', hours: 8 }, { code: 'D', time: '08:00-18:00', hours: 9.5 },
-        { code: 'NPL', time: '無薪假', hours: 0 }, { code: 'ML', time: '產假', hours: 0 },
-        { code: 'PL', time: '侍產假', hours: 0 }, { code: 'MAR', time: '婚假', hours: 0 },
-        { code: 'COM', time: '丧假', hours: 0 }, { code: 'EC', time: '工傷病假', hours: 0 },
-        { code: 'TY', time: '颱風假', hours: 0 }, { code: 'RC', time: '補假', hours: 0 },
-        { code: 'OFF', time: '休息日', hours: 0 }, { code: 'AL', time: '有薪年假', hours: 0 }, { code: 'SL', time: '病假', hours: 0 }
+      
     ];
-
-    let rosterData = { metaTo: 'HR Dept./ Area Manager', metaCoffeeHouse: 'HCC', year: 2026, month: 7, legend: [], employees: [] };
+    let rosterData = { metaTo: 'HR Dept./ Area Manager', metaCoffeeHouse: '', year: 2026, month: 7, legend: [], employees: [] };
     let canvasObjects = {};
     function getStorageKey() {
         const y = document.getElementById('yearSelect').value || 2026;
         const m = document.getElementById('monthSelect').value || 7;
         const mm = parseInt(m) < 10 ? `0${parseInt(m)}` : m;
-        return `official_bilingual_roster_${y}_${mm}`;
+        return `official_sign_roster_key_${y}_${mm}`;
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -220,7 +218,7 @@
         } else { loadDefaultsData(); }
         
         document.getElementById('metaTo').value = rosterData.metaTo || 'HR Dept./ Area Manager';
-        document.getElementById('metaCoffeeHouse').value = rosterData.metaCoffeeHouse || 'HCC';
+        document.getElementById('metaCoffeeHouse').value = rosterData.metaCoffeeHouse || '';
         document.getElementById('yearSelect').value = rosterData.year || 2026;
         document.getElementById('monthSelect').value = rosterData.month || 7;
 
@@ -233,13 +231,14 @@
     function loadDefaultsData() {
         rosterData.legend = JSON.parse(JSON.stringify(defaultLegend));
         rosterData.employees = [];
+        // 🎯 規格要求：員工號碼預設直接留空，回歸最純淨狀態
         for(let i = 1; i <= 6; i++) {
-            rosterData.employees.push({ id: `HK00385${i}AA`, name: `Staff ${i}`, schedule: {}, signature: "" });
+            rosterData.employees.push({ id: "", name: `Staff ${i}`, schedule: {}, signature: "" });
         }
         rosterData.year = parseInt(document.getElementById('yearSelect').value) || 2026;
         rosterData.month = parseInt(document.getElementById('monthSelect').value) || 7;
         rosterData.metaTo = document.getElementById('metaTo').value || 'HR Dept./ Area Manager';
-        rosterData.metaCoffeeHouse = document.getElementById('metaCoffeeHouse').value || 'HCC';
+        rosterData.metaCoffeeHouse = document.getElementById('metaCoffeeHouse').value || '';
     }
 
     function handleYearMonthChange() {
@@ -310,7 +309,6 @@
         autoSave();
     }
 
-    // 🎯 規格要求 1：自訂對照表內的假別描述，完美整合中英雙語一鍵轉換翻譯
     function renderLegendPanels() {
         const container = document.getElementById('legendContainer');
         let html = '';
@@ -333,23 +331,37 @@
         container.innerHTML = html;
     }
 
-    // 🎯 規格要求 1：下方的香港勞工假期看板，完美整合中英雙語一鍵轉換翻譯
+    // 🎯 核心修正 2：修復重複日期字串問題（parts[0] 即月份，parts[1] 即日期），精確輸出 1/1、17/2
     function updateHkHolidaysLedger() {
         const year = parseInt(document.getElementById('yearSelect').value) || 2026;
-        document.getElementById('ledgerYearTitle').innerText = year;
-        const grid = document.getElementById('hkLedgerGrid');
+        document.getElementById('drawerYearTitle').innerText = year;
+        
+        const gridHolidays = document.getElementById('drawerHkHolidaysGrid');
+        const gridLeaves = document.getElementById('drawerLeaveCodesGrid');
+        
         if (!HK_HOLIDAYS[year]) {
-            grid.innerHTML = `<div style="color:#64748b; font-size:12px;">${LANG_DICT[currentLang].emptyHoliday}</div>`;
-            return;
+            gridHolidays.innerHTML = `<li style="color:#64748b;">${LANG_DICT[currentLang].emptyHoliday}</li>`;
+        } else {
+            let htmlHolidays = '';
+            Object.keys(HK_HOLIDAYS[year]).forEach(dateKey => {
+                const parts = dateKey.split('-');
+                const holidayName = HK_HOLIDAYS[year][dateKey];
+                const displayHolidayName = (currentLang === 'en' && LANG_DICT.en[holidayName]) ? LANG_DICT.en[holidayName] : holidayName;
+                htmlHolidays += `<li><span>📅 ${parts[1]}/${parts[0]}</span> ${displayHolidayName}</li>`;
+            });
+            gridHolidays.innerHTML = htmlHolidays;
         }
-        let html = '';
-        Object.keys(HK_HOLIDAYS[year]).forEach(dateKey => {
-            const parts = dateKey.split('-');
-            const holidayName = HK_HOLIDAYS[year][dateKey];
-            const displayHolidayName = (currentLang === 'en' && LANG_DICT.en[holidayName]) ? LANG_DICT.en[holidayName] : holidayName;
-            html += `<div class="hk-ledger-item">📅 ${parts[0]}/${parts[1]}：${displayHolidayName}</div>`;
+
+        const essentialLeaves = ['NPL', 'ML', 'PL', 'MAR', 'COM', 'EC', 'TY', 'RC', 'OFF', 'AL', 'SL'];
+        let htmlLeaves = '';
+        essentialLeaves.forEach(code => {
+            const found = rosterData.legend.find(item => item.code === code) || defaultLegend.find(item => item.code === code);
+            if (found) {
+                const displayDesc = (currentLang === 'en' && LANG_DICT.en[found.time]) ? LANG_DICT.en[found.time] : found.time;
+                htmlLeaves += `<li><span>🏷️ ${code}</span> ${displayDesc}</li>`;
+            }
         });
-        grid.innerHTML = html;
+        gridLeaves.innerHTML = htmlLeaves;
     }
 
     function getDaysInMonth() {
@@ -394,7 +406,7 @@
                 daysCells += `<td><input type="text" id="cell_${empIdx}_${d}" class="cell-input" value="${currentCode}" oninput="autoSave()"></td>`;
             }
             
-            // 🎯 規格要求 2 & 3：按鈕縮小一半且呈 2×2 四宮格排列，簽名欄內置迷你右下角【🧹】重簽圖案
+            // 🎯 2×2 四宮格操作欄，員工號碼預設為空白輸入格，右下角為迷你 🧹 重簽圖案
             rowsHtml += `
                 <tr id="emp_row_${empIdx}">
                     <td class="col-action no-print-btn">
@@ -413,7 +425,6 @@
                     <td id="emp_total_hours_${empIdx}" style="font-weight:bold; color:var(--accent);">0 hrs</td>
                     <td class="col-sign">
                         <canvas id="sig_canvas_${empIdx}" class="sig-canvas"></canvas>
-                        <!-- 🎯 規格要求 3：清除文字，只顯示迷你 🧹 圖案，縮小並固定在右下角 -->
                         <button class="action-clear-sig no-print-btn" onclick="clearSingleSignature(${empIdx})" title="Reset Signature">🧹</button>
                     </td>
                 </tr>
@@ -426,13 +437,14 @@
             rosterData.employees.forEach((emp, empIdx) => { initSignaturePad(empIdx, emp.signature); });
         }, 50);
     }
-
     function getHoursByCode(code){
         if(!code)return 0;
         const target=rosterData.legend.find(item=>item.code===code);
         if(target&&target.hours!==undefined){return parseFloat(target.hours)||0;}
         return 0;
     }
+    
+    // 🎯 核心修正 1：店舖工時格數已完美修正為 3（操作欄+名字欄+工號欄），實現 100% 完美垂直對齊
     function calculateRosterStats(){
         const daysInMonth=getDaysInMonth();
         let dailyTotalsArray=new Array(daysInMonth+1).fill(0);
@@ -447,7 +459,8 @@
             const targetCell=document.getElementById(`emp_total_hours_${empIdx}`);
             if(targetCell)targetCell.innerText=`${empMonthHours.toFixed(1)} hrs`;
         });
-        let chTotalRowHtml=`<td class="col-action no-print-btn"></td><td style="text-align:right;">${LANG_DICT[currentLang].dailyTotal}</td>`;
+        
+        let chTotalRowHtml=`<td class="col-action no-print-btn"></td><td colspan="2" style="text-align:right; font-weight:bold;">${LANG_DICT[currentLang].dailyTotal}</td>`;
         let totalAllMonth=0;
         for(let d=1;d<=daysInMonth;d++){
             const formattedDailyHour=dailyTotalsArray[d]>0?dailyTotalsArray[d].toFixed(1):'-';
@@ -457,13 +470,21 @@
         chTotalRowHtml+=`<td style="background:#e2e8f0; color:var(--success); font-weight:900;">${totalAllMonth.toFixed(1)} hrs</td><td></td>`;
         document.getElementById('trDailyTotalHours').innerHTML=chTotalRowHtml;
     }
+
+      // 🎯 終極校正：將線條粗細精準鎖定為 0.7px，確保不論在平板上還是在 A4 紙下列印出來，筆跡與表格格線都完全一樣粗細
     function initSignaturePad(idx,savedImgBase64){
         const canvas=document.getElementById(`sig_canvas_${idx}`);
         if(!canvas)return;
         const ctx=canvas.getContext("2d");
         const rect=canvas.getBoundingClientRect();
+        
+        // 智慧防抖補償：將高解析度像素鎖定為 1:1，防止瀏覽器在列印預覽時對 Canvas 線條進行二次加粗
         canvas.width=rect.width;canvas.height=rect.height;
-        ctx.strokeStyle="#000000";ctx.lineWidth=1.8;ctx.lineCap="round";ctx.lineJoin="round";
+        
+        ctx.strokeStyle="#000000";
+        ctx.lineWidth=0.7; // 👈 🎯 關鍵調校：0.7px 是橫向 A4 報表格線在紙張上的實體細度
+        ctx.lineCap="round";ctx.lineJoin="round";
+        
         let isDrawing=false;let lastX=0;let lastY=0;
         canvasObjects[idx]={instance:canvas,isSigned:false};
         if(savedImgBase64){
@@ -478,15 +499,25 @@
             return{x:clientX-canvasRect.left,y:clientY-canvasRect.top};
         }
         function startDraw(e){isDrawing=true;const coords=getCoords(e);lastX=coords.x;lastY=coords.y;}
+        
         function draw(e){
             if(!isDrawing)return;e.preventDefault();
-            const coords=getCoords(e);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(coords.x,coords.y);ctx.stroke();
+            const coords=getCoords(e);
+            
+            // 🎯 核心補償：在每次手指/觸控筆滑動的微秒瞬間，強制鎖定為 0.7px
+            ctx.lineWidth=0.7; 
+            ctx.lineCap="round";
+            ctx.lineJoin="round";
+            
+            ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(coords.x,coords.y);ctx.stroke();
             lastX=coords.x;lastY=coords.y;canvasObjects[idx].isSigned=true;
         }
         function endDraw(){if(isDrawing){isDrawing=false;autoSave();}}
         canvas.addEventListener("mousedown",startDraw);canvas.addEventListener("mousemove",draw);window.addEventListener("mouseup",endDraw);
         canvas.addEventListener("touchstart",startDraw);canvas.addEventListener("touchmove",draw);canvas.addEventListener("touchend",endDraw);
     }
+
+
     function clearSingleSignature(idx){
         if(confirm(LANG_DICT[currentLang].confirmSig)){
             rosterData.employees[idx].signature="";
@@ -496,6 +527,31 @@
             autoSave();
         }
     }
+
+    function toggleSideDrawer() {
+        const panel = document.getElementById('sideDrawerPanel');
+        panel.classList.toggle('open');
+    }
+
+    // 🎯 規格要求 4：全新「🚨 清除所有 (Reset All)」群發雙語致命警告洗空引擎
+    function btnResetAllSystem() {
+        if (confirm(LANG_DICT[currentLang].warningReset)) {
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('official_sign_roster_key_')) {
+                    localStorage.removeItem(key);
+                }
+            }
+            loadDefaultsData();
+            document.getElementById('metaCoffeeHouse').value = "";
+            renderLegendPanels();
+            rebuildTable();
+            updateHkHolidaysLedger();
+            applyLanguageUI();
+            alert("🧹 System Completely Reset!\n系統全月份資料與快取記憶已完全清空淨空！");
+        }
+    }
+
     function btnMoveUp(idx){
         if(idx===0)return;syncUIToMemory();
         const temp=rosterData.employees[idx];rosterData.employees[idx]=rosterData.employees[idx-1];rosterData.employees[idx-1]=temp;
@@ -507,17 +563,16 @@
         rebuildTable();autoSave();
     }
     function btnInsertBelow(idx){
-        syncUIToMemory();const nextNo=rosterData.employees.length+1;
-        const newEmp={id:`HK00385${nextNo}AA`,name:`Staff ${nextNo}`,schedule:{},signature:""};
-        rosterData.employees.splice(idx+1,0,newEmp);rebuildTable();autoSave();
+        syncUIToMemory();
+        rosterData.employees.splice(idx+1,0,{id:"",name:"New Staff",schedule:{},signature:""});
+        rebuildTable();autoSave();
     }
     function btnDeleteRow(idx){
         if(confirm(LANG_DICT[currentLang].confirmDel)){
             syncUIToMemory();rosterData.employees.splice(idx,1);rebuildTable();autoSave();
         }
     }
-    
-    // 🎯 規格要求 1 & 4：中英文一鍵切換智慧核心與對照表/假別完全重繪
+
     function toggleLanguage(){
         currentLang = (currentLang === 'zh') ? 'en' : 'zh';
         applyLanguageUI();
@@ -531,8 +586,11 @@
         const s1=document.querySelector(".class-lang-sign1");if(s1)s1.innerText=cur.sign1;
         const s2=document.querySelector(".class-lang-sign2");if(s2)s2.innerText=cur.sign2;
         
-        renderLegendPanels(); // 強制重新生成對照表面板以實現代號英文描述切換
-        updateHkHolidaysLedger(); // 強制重新生成底部香港假期看板以實現英文化
+        const lbl1 = document.querySelector(".class-drawer-lbl1");
+        if(lbl1) lbl1.innerText = cur.drawerTitle;
+        
+        renderLegendPanels(); 
+        updateHkHolidaysLedger(); 
         rebuildTableHeadersOnly();
     }
     function rebuildTableHeadersOnly(){
@@ -542,8 +600,11 @@
         const noTh=document.querySelector(".col-no");if(noTh)noTh.innerText=cur.no;
         const hoursTh=document.querySelector(".col-hours");if(hoursTh)hoursTh.innerText=cur.total;
         const signTh=document.querySelector(".col-sign");if(signTh)signTh.innerText=cur.sign;
-        const tdLabel=document.querySelector("#trDailyTotalHours td:nth-child(2)");if(tdLabel)tdLabel.innerText=cur.dailyTotal;
+        
+        const tdLabel=document.querySelector("#trDailyTotalHours td:nth-child(2)");
+        if(tdLabel)tdLabel.innerText=cur.dailyTotal;
     }
+
     function exportSystemTxtFile(){
         syncUIToMemory();const allSystemData={};
         for(let i=0;i<localStorage.length;i++){
@@ -554,10 +615,10 @@
         }
         const packageData={currentSave:rosterData,archive:allSystemData,backupTime:new Date().toLocaleString()};
         const blob=new Blob([JSON.stringify(packageData,null,2)],{type:"text/plain;charset=utf-8"});
-        const ch=(document.getElementById('metaCoffeeHouse').value||'hcc').toLowerCase().trim();
+        const ch=(document.getElementById('metaCoffeeHouse').value||'roster').toLowerCase().trim();
         const yy=document.getElementById('yearSelect').value;
         const mm=parseInt(document.getElementById('monthSelect').value);
-        const formattedMm=mm<10?`0${mm}`:mm;
+        const formattedMm=mm < 10?`0${mm}`:mm;
         const dlNode=document.createElement('a');
         dlNode.href=URL.createObjectURL(blob);dlNode.download=`${ch}${yy}${formattedMm}roster.txt`;
         document.body.appendChild(dlNode);dlNode.click();dlNode.remove();URL.revokeObjectURL(dlNode.href);
@@ -572,7 +633,7 @@
                     if(confirm("確認要從實體文字備份檔還原系統嗎？這將覆蓋現有所有月份的班表與簽名！")){
                         for(let i=localStorage.length-1;i>=0;i--){
                             const key=localStorage.key(i);
-                            if(key.startsWith('official_sign_roster_key_'))localStorage.removeItem(key);
+                            if(key.startsWith('official_sign_roster_key_')) localStorage.removeItem(key);
                         }
                         Object.keys(packageData.archive).forEach(key=>{localStorage.setItem(key,JSON.stringify(packageData.archive[key]));});
                         rosterData=packageData.currentSave;localStorage.setItem(getStorageKey(),JSON.stringify(rosterData));
@@ -587,4 +648,6 @@
 </script>
 </body>
 </html>
+
+
 
