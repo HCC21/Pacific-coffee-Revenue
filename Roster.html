@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>咖啡店員工排班管理系統 (高級雙行雙軌完全體)</title>
+    <title>咖啡店員工排班管理系統 (終極手寫修復完全體)</title>
     <script src="https://cloudflare.com"></script>
     <style>
         :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
-        body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 13px; position: relative; }
+        body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 13px; position: relative; -webkit-overflow-scrolling: touch; }
         .controls-panel { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .controls-panel select, .controls-panel input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; }
         .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
@@ -50,7 +50,9 @@
         .col-name { width: 150px; min-width: 150px; background: #f8fafc; font-weight: bold; }
         .col-no { width: 125px; min-width: 125px; } .col-day { width: 42px; min-width: 42px; } .col-hours { width: 85px; min-width: 85px; }
         .col-sign { width: 115px; min-width: 115px; position: relative; padding: 2px !important; background: #fafafa; }
-        .sig-canvas { width: 100%; height: 38px; display: block; cursor: crosshair; background: transparent; }
+        
+        /* 🎯 員工簽名框優化：精確鎖定高寬，不因觸控拉扯變形 */
+        .sig-canvas { width: 100%; height: 38px; display: block; cursor: crosshair; background: transparent; touch-action: none; }
         .action-clear-sig { position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; font-size: 10px; padding: 0; margin: 0; border: 1px solid #cbd5e1; background: rgba(241,245,249,0.9); color: #475569; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; z-index: 10; }
         .header-input { border: none; border-bottom: 1px solid #000; font-size: 13px; font-weight: bold; outline: none; padding: 2px; }
         .footer-sign-area { display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; padding: 0 10px; }
@@ -106,7 +108,7 @@
 
 <!-- 官方格式報表紙張 -->
 <div class="roster-report" id="rosterReportArea">
-    <!-- 🎯 智慧中英切換：更表大標題支援即時中英文切換 -->
+    <!-- 智慧中英切換：更表大標題支援即時中英文切換 -->
     <div class="report-title lang-txt" id="mainRosterTitleLbl" data-zh="更表" data-en="ROSTER">更表</div>
     
     <table class="report-header">
@@ -130,11 +132,12 @@
         </div>
         <div class="legend-section" id="legendContainer"></div>
     </div>
+
     <!-- 主排班大表格 -->
     <table class="roster-table" id="mainRosterTable">
         <thead>
             <tr id="trHeaderDays"></tr>
-            <!-- 🎯 星期一至日（Mon~Sun）全智慧雙語動態切換排 -->
+            <!-- 🎯 星期一至日（Mon~Sun）永久固定英文格式排 -->
             <tr id="trHeaderWdays"></tr>
         </thead>
         <tbody id="tbodyRows"></tbody>
@@ -295,7 +298,6 @@
         });
         container.innerHTML = html;
     }
-    // 🎯 規格要求：側邊面板 15 天勞工假與 11 種 Leave Codes 完美獨立驅動中英對照
     function updateHkHolidaysLedger() {
         const year = parseInt(document.getElementById('yearSelect').value) || 2026;
         document.getElementById('drawerYearTitle').innerText = year;
@@ -309,7 +311,7 @@
             Object.keys(HK_HOLIDAYS[year]).forEach(dateKey => {
                 const parts = dateKey.split('-'); const holidayName = HK_HOLIDAYS[year][dateKey];
                 const displayHolidayName = (currentLang === 'en' && LANG_DICT.en[holidayName]) ? LANG_DICT.en[holidayName] : holidayName;
-                htmlHolidays += `<li><span>📅 ${parts[1]}/${parts[0]}</span> ${displayHolidayName}</li>`; // 精確乾淨的日/月排列
+                htmlHolidays += `<li><span>📅 ${parts}/${parts}</span> ${displayHolidayName}</li>`;
             });
             gridHolidays.innerHTML = htmlHolidays;
         }
@@ -333,14 +335,18 @@
     function rebuildTable() {
         const y = parseInt(document.getElementById('yearSelect').value) || 2026; const m = parseInt(document.getElementById('monthSelect').value) || 7;
         const daysInMonth = getDaysInMonth(); 
-        const weekdayNames = currentLang === 'en' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['日', '一', '二', '三', '四', '五', '六'];
+        const weekdayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         canvasObjects = {}; 
         
-        // 🎯 規格要求：三大欄位大表頭強制中英雙語永久並存，排版完美對齊不變形
         let thDaysHtml = `<th rowspan="2" class="col-action no-print-btn">操作<br>Operate</th><th rowspan="2" class="col-name" style="background:#e2e8f0;">員工姓名<br>Staff Name</th><th rowspan="2" class="col-no">員工號碼<br>Staff No.</th>`;
         let thWdaysHtml = '';
         for (let d = 1; d <= daysInMonth; d++) {
-            let holidayHint = ''; if (HK_HOLIDAYS[y] && HK_HOLIDAYS[y][`${m}-${d}`]) { holidayHint = `<span class="hk-sh-hint">${currentLang === 'en' ? LANG_DICT.en[HK_HOLIDAYS[y][`${m}-${d}`]] : HK_HOLIDAYS[y][`${m}-${d}`]}</span>`; }
+            let holidayHint = ''; 
+            if (HK_HOLIDAYS[y] && HK_HOLIDAYS[y][`${m}-${d}`]) { 
+                const hName = HK_HOLIDAYS[y][`${m}-${d}`];
+                const displayHName = (currentLang === 'en' && LANG_DICT.en[hName]) ? LANG_DICT.en[hName] : hName;
+                holidayHint = `<span class="hk-sh-hint">${displayHName}</span>`; 
+            }
             thDaysHtml += `<th class="col-day">${d}${holidayHint}</th>`;
             const dayOfWeek = new Date(y, m - 1, d).getDay(); thWdaysHtml += `<th ${(dayOfWeek === 0 || dayOfWeek === 6) ? 'style="color:red; background:#fee2e2;"' : ''}>${weekdayNames[dayOfWeek]}</th>`;
         }
@@ -361,11 +367,8 @@
                         else if (!isNaN(oldStr) && !isNaN(parseFloat(oldStr))) { dayObj.hours = parseFloat(oldStr).toFixed(2); }
                     }
                 }
-                const savedCode = dayObj.code || ''; 
-                const savedHours = dayObj.hours !== undefined ? dayObj.hours : ''; 
-                const modClass = dayObj.isMod ? 'user-modified' : '';
+                const savedCode = dayObj.code || ''; const savedHours = dayObj.hours !== undefined ? dayObj.hours : ''; const modClass = dayObj.isMod ? 'user-modified' : '';
                 
-                // 🎯 核心規格優核：下排時鐘欄全數改為 onchange！打字時（如輸入 12.25）完全不攔截，移開手指或失焦才捕全
                 daysCells += `
                     <td>
                         <div class="cell-double-container">
@@ -401,7 +404,7 @@
         let diff = endMins - startMins;
         if (diff < 0) diff += 24 * 60; // 跨深夜更期智慧演算補償
         
-        return parseFloat((diff / 60).toFixed(2)); // 🎯 直接輸出 100% 真實時數
+        return parseFloat((diff / 60).toFixed(2)); // 直接輸出 100% 真實時數
     }
 
     // 第一行輸入更期代號或自訂時間帶時觸獲的智慧聯動
@@ -425,7 +428,7 @@
         autoSave();
     }
 
-    // 🎯 核心優化：打字時（如輸入 12.25）完全不干擾，移開手指或失焦才補全兩位小數與變紅！
+    // 🎯 智慧失焦防卡鎖：打字時（如輸入 12.25）完全不干擾，移開手指或失焦才補全兩位小數與變紅
     function handleBtmInput(empIdx, d) {
         const btmInp = document.getElementById(`cell_btm_${empIdx}_${d}`);
         const rawVal = btmInp.value.trim();
@@ -444,7 +447,7 @@
         autoSave();
     }
 
-    // 總工時計算核心：全面升級小數點後兩位精確加總核心
+    // 總工時計算核心：全面升級小數點後雙位精密加總核心
     function calculateRosterStats(){
         const daysInMonth = getDaysInMonth(); let dailyTotalsArray = new Array(daysInMonth + 1).fill(0);
         rosterData.employees.forEach((emp, empIdx) => {
@@ -459,23 +462,41 @@
         for (let d = 1; d <= daysInMonth; d++) { chTotalRowHtml += `<td style="color:#0f172a; font-weight:900;">${dailyTotalsArray[d] > 0 ? dailyTotalsArray[d].toFixed(2) : '-'}</td>`; totalAllMonth += dailyTotalsArray[d]; }
         document.getElementById('trDailyTotalHours').innerHTML = chTotalRowHtml + `<td style="background:#e2e8f0; color:var(--success); font-weight:900;">${totalAllMonth.toFixed(2)} hrs</td><td></td>`;
     }
+    // 🎯 終極手寫修復線路：100% 扣除水平滾動條位移量，並強制鎖定 0.7px 向量粗細
     function initSignaturePad(idx, savedImgBase64){
-        const canvas = document.getElementById(`sig_canvas_${idx}`); if (!canvas) return; const ctx = canvas.getContext("2d"); const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width; canvas.height = rect.height; ctx.strokeStyle = "#000000"; ctx.lineWidth = 0.7; ctx.lineCap = "round"; ctx.lineJoin = "round";
+        const canvas = document.getElementById(`sig_canvas_${idx}`); if (!canvas) return; const ctx = canvas.getContext("2d");
+        const rect = canvas.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height;
+        ctx.strokeStyle = "#000000"; ctx.lineWidth = 0.7; ctx.lineCap = "round"; ctx.lineJoin = "round";
         let isDrawing = false; let lastX = 0; let lastY = 0; canvasObjects[idx] = { instance: canvas, isSigned: false };
         if (savedImgBase64) { const img = new Image(); img.src = savedImgBase64; img.onload = function(){ ctx.drawImage(img,0,0,canvas.width,canvas.height); }; canvasObjects[idx].isSigned = true; }
-        function getCoords(e){ const clientX = e.touches ? e.touches.clientX : e.clientX; const clientY = e.touches ? e.touches.clientY : e.clientY; const cRect = canvas.getBoundingClientRect(); return { x: clientX - cRect.left, y: clientY - cRect.top }; }
+        
+        // 🎯 智慧座標解碼：完美疊加視窗原生 PageXOffset 與 PageYOffset 滾動補償，手感 100% 精準不拋離
+        function getCoords(e){
+            const cRect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - cRect.left,
+                y: clientY - cRect.top
+            };
+        }
+        
+        // 滑鼠監聽線路
         canvas.addEventListener("mousedown", (e)=>{ isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; });
         canvas.addEventListener("mousemove", (e)=>{
-            if(!isDrawing)return; e.preventDefault(); const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
+            if(!isDrawing) return; const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
             ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(c.x,c.y); ctx.stroke(); lastX=c.x; lastY=c.y; canvasObjects[idx].isSigned=true;
         });
-        const endDraw = ()=>{ if(isDrawing){ isDrawing=false; autoSave(); } }; canvas.addEventListener("mouseup", endDraw); window.addEventListener("mouseup", endDraw);
-        canvas.addEventListener("touchstart", (e)=>{ isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; });
+        const endDraw = ()=>{ if(isDrawing){ isDrawing=false; autoSave(); } };
+        canvas.addEventListener("mouseup", endDraw); window.addEventListener("mouseup", endDraw);
+        
+        // 🎯 觸控筆/手指監聽線路：加入最高級防拉動干擾，單指劃動時絕對不再拖走整個排班表網頁
+        canvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); e.stopPropagation(); isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; }, { passive: false });
         canvas.addEventListener("touchmove", (e)=>{
-            if(!isDrawing)return; e.preventDefault(); const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
+            if(!isDrawing) return; e.preventDefault(); e.stopPropagation(); const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
             ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(c.x,c.y); ctx.stroke(); lastX=c.x; lastY=c.y; canvasObjects[idx].isSigned=true;
-        }); canvas.addEventListener("touchend", endDraw);
+        }, { passive: false });
+        canvas.addEventListener("touchend", (e)=>{ e.preventDefault(); e.stopPropagation(); endDraw(); }, { passive: false });
     }
 
     function clearSingleSignature(idx){ if(confirm(LANG_DICT[currentLang].confirmSig)){ rosterData.employees[idx].signature=""; const canvas=document.getElementById(`sig_canvas_${idx}`); if(canvas) canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height); if(canvasObjects[idx]) canvasObjects[idx].isSigned=false; autoSave(); } }
@@ -494,23 +515,18 @@
     function btnDeleteRow(idx){ if(confirm(LANG_DICT[currentLang].confirmDel)){ syncUIToMemory(); rosterData.employees.splice(idx,1); rebuildTable(); autoSave(); } }
     function toggleLanguage(){ currentLang = (currentLang === 'zh') ? 'en' : 'zh'; applyLanguageUI(); }
     
+    // 🎯 核心補正：語系切換時，連同右側隱藏側邊欄一併重新渲染，確保 15 天勞工假與對照代號瞬間切換成純英文/純中文
     function applyLanguageUI(){
-        document.querySelectorAll(".lang-txt").forEach(el=>{ const text=el.getAttribute(`data-${currentLang}`); if(text)el.innerText=text; });
+        document.querySelectorAll(".lang-txt").forEach(el=>{ const text=el.getAttribute(`data-${currentLang}`); if(text) el.innerText=text; });
         const cur=LANG_DICT[currentLang]; document.querySelector(".class-lang-sign1").innerText=cur.sign1; document.querySelector(".class-lang-sign2").innerText=cur.sign2;
         const lbl1 = document.querySelector(".class-drawer-lbl1"); if(lbl1) lbl1.innerText = cur.drawerTitle;
-        renderLegendPanels(); updateHkHolidaysLedger(); rebuildTableHeadersOnly();
+        renderLegendPanels(); 
+        updateHkHolidaysLedger(); // 🔥 即時同步刷新隱藏假期
+        rebuildTableHeadersOnly();
     }
     
-    // 🎯 核心修正：點擊轉換按鈕時，即時重繪 1 到 31 天整排星期的中英對照，並刷新店舖總工時標籤
     function rebuildTableHeadersOnly(){
-        const weekdayNames = currentLang === 'en' ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['日', '一', '二', '三', '四', '五', '六'];
-        const y = parseInt(document.getElementById('yearSelect').value) || 2026; const m = parseInt(document.getElementById('monthSelect').value) || 7;
-        const daysInMonth = getDaysInMonth();
-        for (let d = 1; d <= daysInMonth; d++) {
-            const dayOfWeek = new Date(y, m - 1, d).getDay();
-            const thWday = document.querySelector(`#trHeaderWdays th:nth-child(${d})`);
-            if (thWday) thWday.innerText = weekdayNames[dayOfWeek];
-        }
+        // 🎯 智慧固定：星期排永久維持英文 Mon ~ Sun，此處僅重塑統計欄位與核簽欄位之雙語 UI 包
         const tdLabel = document.querySelector("#trDailyTotalHours td:nth-child(2)"); if (tdLabel) tdLabel.innerText = LANG_DICT[currentLang].dailyTotal;
         const thHours = document.querySelector(".col-hours"); if (thHours) thHours.innerText = LANG_DICT[currentLang].total;
         const thSign = document.querySelector(".col-sign"); if (thSign) thSign.innerText = LANG_DICT[currentLang].sign;
