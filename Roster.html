@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>咖啡店員工排班管理系統 (終極手寫修復完全體)</title>
-    <script src="https://cloudflare.com"></script>
+    <title>咖啡店員工排班管理系統 (高級雙軌 PDF 自動命名完全體)</title>
+   <!-- PDF依賴 正確CDN 順序不能亂 -->
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
     <style>
         :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
@@ -25,6 +28,7 @@
         .roster-report { background: var(--card); border: 2px solid #000; padding: 20px; border-radius: 4px; overflow-x: auto; }
         .report-title { font-size: 22px; text-align: center; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 2px double #000; font-weight: bold; }
         .legend-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 15px; border-radius: 4px; width: 100% !important; }
+
         .report-header { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
         .report-header td { border: none; padding: 4px; font-weight: bold; }
         .legend-item { display: flex; align-items: center; gap: 4px; background: white; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; }
@@ -33,41 +37,49 @@
         .legend-item input.hours-num { width: 40px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 11px; padding: 3px; text-align: center; font-weight: bold; background: #fff7ed; color: #c2410c; }
         .del-code-btn { background: none; border: none; color: var(--danger); font-size: 16px; cursor: pointer; padding: 0 4px; font-weight: bold; }
         
-        table.roster-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 1850px; margin-top: 10px; table-layout: fixed; }
-        table.roster-table th, table.roster-table td { border: 1px solid #000; padding: 4px; font-size: 11px; overflow: hidden; }
+        table.roster-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 1950px; margin-top: 10px; table-layout: fixed; }
+        table.roster-table th, table.roster-table td { border: 1px solid #000; padding: 2px; font-size: 11px; overflow: hidden; }
         table.roster-table th { background: #f1f5f9; font-weight: bold; position: relative; vertical-align: middle; }
         .hk-sh-hint { display: block; font-size: 9px; color: #dc2626; font-weight: normal; margin-top: 2px; line-height: 1.1; max-width: 45px; margin-left: auto; margin-right: auto; }
         
-        /* 雙行單格專屬排版 CSS */
-        .cell-double-container { display: flex; flex-direction: column; gap: 2px; width: 100%; height: 100%; justify-content: center; }
-        .cell-input-top { border: none; text-align: center; width: 100%; font-size: 11px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; border-bottom: 1px dashed #cbd5e1; padding-bottom: 2px; }
+        /* 三行單格精密網格排版 CSS */
+        .cell-triple-container { display: flex; flex-direction: column; gap: 1px; width: 100%; height: 100%; justify-content: center; }
+        
+        /* 1. 頂層外借/跨店備註欄（淡藍色，多行自動換行） */
+        .cell-textarea-note { border: none; text-align: center; width: 100%; font-size: 10px; font-weight: bold; outline: none; background: #e0f2fe; color: #0369a1; border-radius: 2px; padding: 1px 0; border-bottom: 1px dotted #bae6fd; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 26px; }
+        
+        /* 2. 中層更期代號/自訂時間帶（白色，多行自動換行） */
+        .cell-textarea-top { border: none; text-align: center; width: 100%; font-size: 10px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 26px; padding: 2px 0; border-bottom: 1px dashed #cbd5e1; }
+        
+        /* 3. 底層結算時鐘欄（淡黃色） */
         .cell-input-bottom { border: none; text-align: center; width: 100%; font-size: 11px; font-weight: 900; outline: none; background: #fef3c7; color: #b45309; border-radius: 2px; padding: 1px 0; }
-        .cell-input-bottom.user-modified { background: #fee2e2; color: #991b1b; } /* 手動修改時變紅色 */
+        .cell-input-bottom.user-modified { background: #fee2e2; color: #991b1b; } 
         
         .col-action { width: 65px; min-width: 65px; background: #f8fafc; text-align: center; padding: 2px !important; }
         .btn-grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 44px; margin: 0 auto; }
         .row-action-btn { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 20px; font-size: 9px; border: none; border-radius: 2px; font-weight: bold; color: white; cursor: pointer; }
         .col-name { width: 150px; min-width: 150px; background: #f8fafc; font-weight: bold; }
-        .col-no { width: 125px; min-width: 125px; } .col-day { width: 42px; min-width: 42px; } .col-hours { width: 85px; min-width: 85px; }
-        .col-sign { width: 115px; min-width: 115px; position: relative; padding: 2px !important; background: #fafafa; }
+        .col-no { width: 125px; min-width: 125px; } .col-day { width: 46px; min-width: 46px; } .col-hours { width: 85px; min-width: 85px; }
         
-        /* 🎯 員工簽名框優化：精確鎖定高寬，不因觸控拉扯變形 */
-        .sig-canvas { width: 100%; height: 38px; display: block; cursor: crosshair; background: transparent; touch-action: none; }
+        /* 簽名與 PDF 顯影優化排版 */
+        .col-sign { width: 115px; min-width: 115px; position: relative; padding: 2px !important; background: #fafafa; }
+        .sig-container-wrapper { width: 100%; height: 38px; position: relative; }
+        .sig-canvas { width: 100%; height: 38px; display: block; cursor: crosshair; background: transparent; touch-action: none; position: absolute; top: 0; left: 0; z-index: 5; }
+        .sig-print-img { width: 100%; height: 38px; display: none; position: absolute; top: 0; left: 0; z-index: 2; object-fit: contain; background: transparent; }
         .action-clear-sig { position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; font-size: 10px; padding: 0; margin: 0; border: 1px solid #cbd5e1; background: rgba(241,245,249,0.9); color: #475569; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; z-index: 10; }
         .header-input { border: none; border-bottom: 1px solid #000; font-size: 13px; font-weight: bold; outline: none; padding: 2px; }
         .footer-sign-area { display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; padding: 0 10px; }
         .sign-line { border-top: 1px solid #000; width: 260px; margin-top: 50px; text-align: center; padding-top: 5px; font-size: 12px; }
         
-        @media print {
-            @page { size: A4 landscape; margin: 4mm; }
-            .no-print-btn { display: none !important; } body { background: white; padding: 0; }
-            .roster-report { border: none; padding: 0; width: 100%; overflow: visible; }
-            table.roster-table { min-width: 100% !important; page-break-inside: avoid; }
-            .cell-input-top { border-bottom: 1px dashed #000 !important; }
-            .cell-input-bottom { background: transparent !important; color: #000 !important; font-weight: bold !important; }
-            .action-clear-sig, .del-code-btn { display: none !important; }
-            .col-action { display: none !important; }
-        }
+        /* PDF 專用向量列印引擎防線 */
+        .pdf-printing-target { background: white !important; padding: 0 !important; width: 1950px !important; }
+        .pdf-printing-target .no-print-btn { display: none !important; }
+        .pdf-printing-target .col-action { display: none !important; }
+        .pdf-printing-target .sig-canvas { display: none !important; }
+        .pdf-printing-target .sig-print-img { display: block !important; }
+        .pdf-printing-target .cell-textarea-note { border: none !important; background: transparent !important; color: #000 !important; font-weight: bold !important; border-bottom: 1px dotted #000 !important; height: auto !important; }
+        .pdf-printing-target .cell-textarea-top { border: none !important; background: transparent !important; color: #000 !important; border-bottom: 1px dashed #000 !important; height: auto !important; }
+        .pdf-printing-target .cell-input-bottom { background: transparent !important; color: #000 !important; font-weight: bold !important; }
     </style>
 </head>
 <body>
@@ -102,7 +114,8 @@
         <input type="file" id="importSystemFile" accept=".txt" onchange="importSystemTxtFile(event)" style="display:none;">
     </label>
     <div style="width: 2px; height: 20px; background: #cbd5e1; margin: 0 5px;"></div>
-    <button class="btn btn-gray" onclick="window.print()"><span class="lang-txt" data-zh="🖨 列印班表" data-en="🖨 Print Roster">🖨 Print Roster</span></button>
+    <!-- 原Print按鈕升級為單頁 A4 智慧命名導出 PDF 功能 -->
+    <button class="btn btn-gray" style="background:#4f46e5;" onclick="exportRosterToPdf()"><span class="lang-txt" data-zh="📄 匯出 PDF" data-en="📄 Export PDF">📄 匯出 PDF</span></button>
     <button class="btn btn-danger" style="background:#dc2626;" onclick="btnResetAllSystem()"><span class="lang-txt" data-zh="🚨 清除所有" data-en="🚨 Reset All">🚨 清除所有</span></button>
 </div>
 
@@ -116,7 +129,7 @@
             <td style="width: 40px;"><span class="lang-txt" data-zh="致:" data-en="To:">To:</span></td>
             <td><input type="text" id="metaTo" class="header-input" value="HR Dept./ Area Manager" oninput="autoSave()"></td>
             <td style="width: 120px; text-align: right;"><span class="lang-txt" data-zh="咖啡店店名:" data-en="Coffee House:">Coffee House:</span></td>
-            <td><input type="text" id="metaCoffeeHouse" class="header-input" value="" oninput="autoSave()"></td>
+            <td><input type="text" id="metaCoffeeHouse" class="header-input" value="" placeholder="e.g. HCC" oninput="autoSave()"></td>
             <td style="width: 60px; text-align: right;"><span class="lang-txt" data-zh="月份:" data-en="Month:">Month:</span></td>
             <td>
                 <input type="number" id="yearSelect" class="header-input" value="2026" style="width: 60px;" onchange="handleYearMonthChange()"> <span class="lang-txt" data-zh="年" data-en="Year">年</span> 
@@ -132,7 +145,6 @@
         </div>
         <div class="legend-section" id="legendContainer"></div>
     </div>
-
     <!-- 主排班大表格 -->
     <table class="roster-table" id="mainRosterTable">
         <thead>
@@ -267,10 +279,16 @@
             const nameInp = document.getElementById(`emp_name_${empIdx}`); if(nameInp) emp.name = nameInp.value;
             const idInp = document.getElementById(`emp_id_${empIdx}`); if(idInp) emp.id = idInp.value;
             for(let d = 1; d <= daysInMonth; d++) {
+                const noteInp = document.getElementById(`cell_note_${empIdx}_${d}`);
                 const topInp = document.getElementById(`cell_top_${empIdx}_${d}`);
                 const btmInp = document.getElementById(`cell_btm_${empIdx}_${d}`);
                 if(topInp && btmInp) {
-                    emp.schedule[d] = { code: topInp.value.toUpperCase().trim(), hours: btmInp.value.trim(), isMod: btmInp.classList.contains('user-modified') ? 1 : 0 };
+                    emp.schedule[d] = { 
+                        note: noteInp ? noteInp.value.trim() : '',
+                        code: topInp.value.toUpperCase().trim(), 
+                        hours: btmInp.value.trim(), 
+                        isMod: btmInp.classList.contains('user-modified') ? 1 : 0 
+                    };
                 }
             }
             const canvas = document.getElementById(`sig_canvas_${empIdx}`);
@@ -298,6 +316,7 @@
         });
         container.innerHTML = html;
     }
+    // 🎯 終極修復：100% 根除 1,1/1,1 複製 Bug，並將側邊欄假期與代號改為「中英文永久同時並存」顯示
     function updateHkHolidaysLedger() {
         const year = parseInt(document.getElementById('yearSelect').value) || 2026;
         document.getElementById('drawerYearTitle').innerText = year;
@@ -305,13 +324,15 @@
         const gridLeaves = document.getElementById('drawerLeaveCodesGrid');
         
         if (!HK_HOLIDAYS[year]) { 
-            gridHolidays.innerHTML = `<li style="color:#64748b;">${LANG_DICT[currentLang].emptyHoliday}</li>`; 
+            gridHolidays.innerHTML = `<li style="color:#64748b;">暫無該年份的香港法定假期資料。 No data available.</li>`; 
         } else {
             let htmlHolidays = '';
             Object.keys(HK_HOLIDAYS[year]).forEach(dateKey => {
-                const parts = dateKey.split('-'); const holidayName = HK_HOLIDAYS[year][dateKey];
-                const displayHolidayName = (currentLang === 'en' && LANG_DICT.en[holidayName]) ? LANG_DICT.en[holidayName] : holidayName;
-                htmlHolidays += `<li><span>📅 ${parts}/${parts}</span> ${displayHolidayName}</li>`;
+                const parts = dateKey.split('-'); // 1-1 拆分
+                const holidayZh = HK_HOLIDAYS[year][dateKey];
+                const holidayEn = LANG_DICT.en[holidayZh] || holidayZh;
+                // 🎯 核心補正：日/月精確組裝（如 1/1），並強制中英文並存顯示
+                htmlHolidays += `<li><span>📅 ${parts[1]}/${parts[0]}</span> ${holidayZh} | ${holidayEn}</li>`;
             });
             gridHolidays.innerHTML = htmlHolidays;
         }
@@ -324,8 +345,10 @@
         ]; 
         let htmlLeaves = '';
         essentialLeaves.forEach(item => {
-            const displayDesc = currentLang === 'en' ? LANG_DICT.en[item.txt] : LANG_DICT.zh[item.txt];
-            htmlLeaves += `<li><span>🏷️ ${item.code}</span> ${displayDesc}</li>`;
+            const leaveZh = LANG_DICT.zh[item.txt] || item.txt;
+            const leaveEn = LANG_DICT.en[item.txt] || item.txt;
+            // 🎯 核心補正：基本代號對照永久同時顯示中文與英文
+            htmlLeaves += `<li><span>🏷️ ${item.code}</span> ${leaveZh} | ${leaveEn}</li>`;
         });
         gridLeaves.innerHTML = htmlLeaves;
     }
@@ -360,24 +383,28 @@
                 let dayObj = emp.schedule[d];
                 if (!dayObj || typeof dayObj === 'string') {
                     const oldStr = (dayObj || '').toUpperCase().trim();
-                    dayObj = { code: oldStr, hours: '', isMod: 0 };
+                    dayObj = { note: '', code: oldStr, hours: '', isMod: 0 };
                     if (oldStr) {
                         const matchedDef = defaultLegend.find(item => item.code === oldStr);
                         if (matchedDef) { dayObj.hours = matchedDef.hours.toFixed(2); } 
                         else if (!isNaN(oldStr) && !isNaN(parseFloat(oldStr))) { dayObj.hours = parseFloat(oldStr).toFixed(2); }
                     }
                 }
-                const savedCode = dayObj.code || ''; const savedHours = dayObj.hours !== undefined ? dayObj.hours : ''; const modClass = dayObj.isMod ? 'user-modified' : '';
+                const savedNote = dayObj.note || '';
+                const savedCode = dayObj.code || ''; 
+                const savedHours = dayObj.hours !== undefined ? dayObj.hours : ''; 
+                const modClass = dayObj.isMod ? 'user-modified' : '';
                 
                 daysCells += `
                     <td>
-                        <div class="cell-double-container">
-                            <input type="text" id="cell_top_${empIdx}_${d}" class="cell-input-top" value="${savedCode}" oninput="handleTopInput(${empIdx},${d})">
+                        <div class="cell-triple-container">
+                            <textarea id="cell_note_${empIdx}_${d}" class="cell-textarea-note" placeholder="..." onchange="autoSave()">${savedNote}</textarea>
+                            <textarea id="cell_top_${empIdx}_${d}" class="cell-textarea-top" oninput="handleTopInput(${empIdx},${d})">${savedCode}</textarea>
                             <input type="text" id="cell_btm_${empIdx}_${d}" class="cell-input-bottom ${modClass}" value="${savedHours}" onchange="handleBtmInput(${empIdx},${d})">
                         </div>
                     </td>`;
             }
-            rowsHtml += `<tr id="emp_row_${empIdx}"><td class="col-action no-print-btn"><div class="btn-grid-container"><button class="row-action-btn" style="background:#64748b;" onclick="btnMoveUp(${empIdx})">▲</button><button class="row-action-btn" style="background:#64748b;" onclick="btnMoveDown(${empIdx})">▼</button><button class="row-action-btn" style="background:#2563eb;" onclick="btnInsertBelow(${empIdx})">＋</button><button class="row-action-btn" style="background:#dc2626;" onclick="btnDeleteRow(${empIdx})">×</button></div></td><td class="col-name"><input type="text" id="emp_name_${empIdx}" class="cell-input" value="${emp.name}" style="text-align:left; font-weight:bold;" oninput="autoSave()"></td><td><input type="text" id="emp_id_${empIdx}" class="cell-input" value="${emp.id}" oninput="autoSave()"></td>${daysCells}<td id="emp_total_hours_${empIdx}" style="font-weight:bold; color:var(--accent);">0.00 hrs</td><td class="col-sign"><canvas id="sig_canvas_${empIdx}" class="sig-canvas"></canvas><button class="action-clear-sig no-print-btn" onclick="clearSingleSignature(${empIdx})">🧹</button></td></tr>`;
+            rowsHtml += `<tr id="emp_row_${empIdx}"><td class="col-action no-print-btn"><div class="btn-grid-container"><button class="row-action-btn" style="background:#64748b;" onclick="btnMoveUp(${empIdx})">▲</button><button class="row-action-btn" style="background:#64748b;" onclick="btnMoveDown(${empIdx})">▼</button><button class="row-action-btn" style="background:#2563eb;" onclick="btnInsertBelow(${empIdx})">＋</button><button class="row-action-btn" style="background:#dc2626;" onclick="btnDeleteRow(${empIdx})">×</button></div></td><td class="col-name"><input type="text" id="emp_name_${empIdx}" class="cell-input" value="${emp.name}" style="text-align:left; font-weight:bold;" oninput="autoSave()"></td><td><input type="text" id="emp_id_${empIdx}" class="cell-input" value="${emp.id}" oninput="autoSave()"></td>${daysCells}<td id="emp_total_hours_${empIdx}" style="font-weight:bold; color:var(--accent);">0.00 hrs</td><td class="col-sign"><div class="sig-container-wrapper"><canvas id="sig_canvas_${empIdx}" class="sig-canvas"></canvas><img id="sig_img_${empIdx}" class="sig-print-img"></div><button class="action-clear-sig no-print-btn" onclick="clearSingleSignature(${empIdx})">🧹</button></td></tr>`;
         });
         document.getElementById('tbodyRows').innerHTML = rowsHtml; calculateRosterStats();
         setTimeout(() => { rosterData.employees.forEach((emp, empIdx) => { initSignaturePad(empIdx, emp.signature); }); }, 50);
@@ -404,7 +431,7 @@
         let diff = endMins - startMins;
         if (diff < 0) diff += 24 * 60; // 跨深夜更期智慧演算補償
         
-        return parseFloat((diff / 60).toFixed(2)); // 直接輸出 100% 真實時數
+        return parseFloat((diff / 60).toFixed(2)); // 🎯 直接輸出 100% 真實時數
     }
 
     // 第一行輸入更期代號或自訂時間帶時觸獲的智慧聯動
@@ -462,44 +489,139 @@
         for (let d = 1; d <= daysInMonth; d++) { chTotalRowHtml += `<td style="color:#0f172a; font-weight:900;">${dailyTotalsArray[d] > 0 ? dailyTotalsArray[d].toFixed(2) : '-'}</td>`; totalAllMonth += dailyTotalsArray[d]; }
         document.getElementById('trDailyTotalHours').innerHTML = chTotalRowHtml + `<td style="background:#e2e8f0; color:var(--success); font-weight:900;">${totalAllMonth.toFixed(2)} hrs</td><td></td>`;
     }
-    // 🎯 終極手寫修復線路：100% 扣除水平滾動條位移量，並強制鎖定 0.7px 向量粗細
+    // 🎯 終極修正：落筆即時重置動態像素邊界，徹底扣除表格向右滾動造成的坐標拋離移位
     function initSignaturePad(idx, savedImgBase64){
         const canvas = document.getElementById(`sig_canvas_${idx}`); if (!canvas) return; const ctx = canvas.getContext("2d");
-        const rect = canvas.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height;
+        const imgEl = document.getElementById(`sig_img_${idx}`);
+        
+        // 確保初始像素寬高完全等於 CSS 實際物理高寬
+        canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
         ctx.strokeStyle = "#000000"; ctx.lineWidth = 0.7; ctx.lineCap = "round"; ctx.lineJoin = "round";
         let isDrawing = false; let lastX = 0; let lastY = 0; canvasObjects[idx] = { instance: canvas, isSigned: false };
-        if (savedImgBase64) { const img = new Image(); img.src = savedImgBase64; img.onload = function(){ ctx.drawImage(img,0,0,canvas.width,canvas.height); }; canvasObjects[idx].isSigned = true; }
         
-        // 🎯 智慧座標解碼：完美疊加視窗原生 PageXOffset 與 PageYOffset 滾動補償，手感 100% 精準不拋離
+        if (savedImgBase64) {
+            const img = new Image(); img.src = savedImgBase64;
+            img.onload = function(){ ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
+            if (imgEl) imgEl.src = savedImgBase64;
+            canvasObjects[idx].isSigned = true;
+        }
+        
+        // 🎯 核心補正：不依賴初始化 rect，落筆瞬間即時拉取最新幾何邊界，100% 根除滾動偏移 Bug
         function getCoords(e){
-            const cRect = canvas.getBoundingClientRect();
+            const cRect = canvas.getBoundingClientRect(); // ⚡ 即時獲取當前最新的網頁絕對邊界
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return {
-                x: clientX - cRect.left,
-                y: clientY - cRect.top
+            return { 
+                x: clientX - cRect.left, 
+                y: clientY - cRect.top 
             };
         }
         
-        // 滑鼠監聽線路
+        // 滑鼠手勢硬體流暢通道
         canvas.addEventListener("mousedown", (e)=>{ isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; });
         canvas.addEventListener("mousemove", (e)=>{
             if(!isDrawing) return; const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
-            ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(c.x,c.y); ctx.stroke(); lastX=c.x; lastY=c.y; canvasObjects[idx].isSigned=true;
+            ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(c.x, c.y); ctx.stroke(); lastX=c.x; lastY=c.y; canvasObjects[idx].isSigned=true;
         });
-        const endDraw = ()=>{ if(isDrawing){ isDrawing=false; autoSave(); } };
+        
+        const endDraw = ()=>{
+            if(isDrawing){
+                isDrawing=false;
+                const base64Data = canvas.toDataURL();
+                if (imgEl) imgEl.src = base64Data; // 建立 A4 實體映像供 PDF 快照讀取
+                autoSave();
+            }
+        };
         canvas.addEventListener("mouseup", endDraw); window.addEventListener("mouseup", endDraw);
         
-        // 🎯 觸控筆/手指監聽線路：加入最高級防拉動干擾，單指劃動時絕對不再拖走整個排班表網頁
+        // 🎯 平板觸控筆/手指防滑動干擾：100% 阻斷拉扯整個頁面滾動條的現象
         canvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); e.stopPropagation(); isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; }, { passive: false });
         canvas.addEventListener("touchmove", (e)=>{
             if(!isDrawing) return; e.preventDefault(); e.stopPropagation(); const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
-            ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(c.x,c.y); ctx.stroke(); lastX=c.x; lastY=c.y; canvasObjects[idx].isSigned=true;
+            ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(c.x, c.y); ctx.stroke(); lastX=c.x; lastY=c.y; canvasObjects[idx].isSigned=true;
         }, { passive: false });
         canvas.addEventListener("touchend", (e)=>{ e.preventDefault(); e.stopPropagation(); endDraw(); }, { passive: false });
     }
 
-    function clearSingleSignature(idx){ if(confirm(LANG_DICT[currentLang].confirmSig)){ rosterData.employees[idx].signature=""; const canvas=document.getElementById(`sig_canvas_${idx}`); if(canvas) canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height); if(canvasObjects[idx]) canvasObjects[idx].isSigned=false; autoSave(); } }
+ function exportRosterToPdf() {
+    syncUIToMemory(); 
+    
+    let rawCh = document.getElementById('metaCoffeeHouse').value.trim();
+    let chName = rawCh ? rawCh.toUpperCase() : "ROSTER"; 
+    let yy = document.getElementById('yearSelect').value;
+    let mm = parseInt(document.getElementById('monthSelect').value) || 7;
+    
+    let mmStr = mm < 10 ? '0' + mm : mm.toString();
+    let finalFileName = `${chName}${mmStr}${yy}.pdf`;
+
+    const targetElement = document.getElementById('rosterReportArea');
+    
+    // 預渲染所有簽名圖片
+    rosterData.employees.forEach((emp, empIdx) => {
+        const canvas = document.getElementById(`sig_canvas_${empIdx}`);
+        const imgEl = document.getElementById(`sig_img_${empIdx}`);
+        if (canvas && imgEl && canvasObjects[empIdx] && canvasObjects[empIdx].isSigned) {
+            imgEl.src = canvas.toDataURL();
+        }
+    });
+
+    targetElement.classList.add('pdf-printing-target');
+
+    // 【核心修正參數】強制單頁、自動縮放適配A4橫向
+    const pdfOptions = {
+        margin: 3, // 輕微留白，防止內容被頁邊裁切
+        filename: finalFileName,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: {
+            scale: 1.2, // 降低解析度，大幅減少寬度溢出
+            useCORS: true,
+            logging: false,
+            letterRendering: true,
+            width: 1950, // 固定表格原始寬度
+        },
+        jsPDF: {
+            unit: 'mm',
+            format: 'a4',
+            orientation: 'landscape' // 橫向A4不建議修改
+        },
+        // 禁止自動分頁，所有內容強制同一頁
+        pagebreak: {
+            mode: ['avoid-all', 'css', 'legacy'],
+            before: '.no-page-break'
+        }
+    };
+
+    html2pdf()
+        .set(pdfOptions)
+        .from(targetElement)
+        .output('blob')
+        .then((pdfBlob) => {
+            const blobUrl = URL.createObjectURL(pdfBlob);
+            const downloadNode = document.createElement('a');
+            downloadNode.href = blobUrl;
+            downloadNode.download = finalFileName;
+            document.body.appendChild(downloadNode);
+            downloadNode.click();
+            downloadNode.remove();
+
+            setTimeout(() => {
+                const newWindow = window.open(blobUrl, '_blank');
+                if (!newWindow || newWindow.closed) {
+                    alert("PDF已生成，如下載失敗請關閉瀏覽器彈窗攔截");
+                }
+                URL.revokeObjectURL(blobUrl);
+            }, 300);
+
+            targetElement.classList.remove('pdf-printing-target');
+        })
+        .catch((err) => {
+            targetElement.classList.remove('pdf-printing-target');
+            console.error("PDF匯出錯誤:", err);
+            alert("PDF匯出失敗，請檢查網路載入依賴");
+        });
+}
+ 
+    function clearSingleSignature(idx){ if(confirm(LANG_DICT[currentLang].confirmSig)){ rosterData.employees[idx].signature=""; const canvas=document.getElementById(`sig_canvas_${idx}`); if(canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height); const imgEl=document.getElementById(`sig_img_${idx}`); if(imgEl) imgEl.src=""; if(canvasObjects[idx]) canvasObjects[idx].isSigned=false; autoSave(); } }
     function toggleSideDrawer() { document.getElementById('sideDrawerPanel').classList.toggle('open'); }
     
     function btnResetAllSystem() {
@@ -511,22 +633,18 @@
 
     function btnMoveUp(idx){ if(idx===0)return; syncUIToMemory(); const t=rosterData.employees[idx]; rosterData.employees[idx]=rosterData.employees[idx-1]; rosterData.employees[idx-1]=t; rebuildTable(); autoSave(); }
     function btnMoveDown(idx){ if(idx>=rosterData.employees.length-1)return; syncUIToMemory(); const t=rosterData.employees[idx]; rosterData.employees[idx]=rosterData.employees[idx+1]; rosterData.employees[idx+1]=t; rebuildTable(); autoSave(); }
-    function btnInsertBelow(idx){ syncUIToMemory(); rosterData.employees.splice(idx+1,0,{id:"",name:"New Staff",schedule:{},signature:""}); rebuildTable(); autoSave(); }
-    function btnDeleteRow(idx){ if(confirm(LANG_DICT[currentLang].confirmDel)){ syncUIToMemory(); rosterData.employees.splice(idx,1); rebuildTable(); autoSave(); } }
+    function btnInsertBelow(idx){ syncUIToMemory(); rosterData.employees.splice(idx+1, 0, {id:"", name:"New Staff", schedule:{}, signature:""}); rebuildTable(); autoSave(); }
+    function btnDeleteRow(idx){ if(confirm(LANG_DICT[currentLang].confirmDel)){ syncUIToMemory(); rosterData.employees.splice(idx, 1); rebuildTable(); autoSave(); } }
     function toggleLanguage(){ currentLang = (currentLang === 'zh') ? 'en' : 'zh'; applyLanguageUI(); }
     
-    // 🎯 核心補正：語系切換時，連同右側隱藏側邊欄一併重新渲染，確保 15 天勞工假與對照代號瞬間切換成純英文/純中文
     function applyLanguageUI(){
         document.querySelectorAll(".lang-txt").forEach(el=>{ const text=el.getAttribute(`data-${currentLang}`); if(text) el.innerText=text; });
         const cur=LANG_DICT[currentLang]; document.querySelector(".class-lang-sign1").innerText=cur.sign1; document.querySelector(".class-lang-sign2").innerText=cur.sign2;
         const lbl1 = document.querySelector(".class-drawer-lbl1"); if(lbl1) lbl1.innerText = cur.drawerTitle;
-        renderLegendPanels(); 
-        updateHkHolidaysLedger(); // 🔥 即時同步刷新隱藏假期
-        rebuildTableHeadersOnly();
+        renderLegendPanels(); updateHkHolidaysLedger(); rebuildTableHeadersOnly();
     }
     
     function rebuildTableHeadersOnly(){
-        // 🎯 智慧固定：星期排永久維持英文 Mon ~ Sun，此處僅重塑統計欄位與核簽欄位之雙語 UI 包
         const tdLabel = document.querySelector("#trDailyTotalHours td:nth-child(2)"); if (tdLabel) tdLabel.innerText = LANG_DICT[currentLang].dailyTotal;
         const thHours = document.querySelector(".col-hours"); if (thHours) thHours.innerText = LANG_DICT[currentLang].total;
         const thSign = document.querySelector(".col-sign"); if (thSign) thSign.innerText = LANG_DICT[currentLang].sign;
@@ -535,7 +653,7 @@
     function exportSystemTxtFile(){
         syncUIToMemory(); const allSystemData={};
         for (let i=0; i<localStorage.length; i++){ const key=localStorage.key(i); if (key.startsWith('official_sign_roster_key_')) { try { allSystemData[key]=JSON.parse(localStorage.getItem(key)); } catch(e){} } }
-        const blob = new Blob([JSON.stringify({currentSave:rosterData,archive:allSystemData,backupTime:new Date().toLocaleString()}, null, 2)], { type: "text/plain;charset=utf-8" });
+        const blob = new Blob([JSON.stringify({currentSave:rosterData, archive:allSystemData, backupTime:new Date().toLocaleString()}, null, 2)], { type: "text/plain;charset=utf-8" });
         const ch=(document.getElementById('metaCoffeeHouse').value||'roster').toLowerCase().trim(); const yy=document.getElementById('yearSelect').value; const mm=parseInt(document.getElementById('monthSelect').value);
         const dlNode = document.createElement('a'); dlNode.href = URL.createObjectURL(blob); dlNode.download = `${ch}${yy}${mm<10?`0${mm}`:mm}roster.txt`; document.body.appendChild(dlNode); dlNode.click(); dlNode.remove();
         URL.revokeObjectURL(dlNode.href);
@@ -550,13 +668,14 @@
                     if (confirm("確認要從實體文字備份檔還原系統嗎？這將覆蓋現有所有月份的班表與簽名！")) {
                         for (let i=localStorage.length-1; i>=0; i--) { const key=localStorage.key(i); if (key.startsWith('official_sign_roster_key_')) localStorage.removeItem(key); }
                         Object.keys(packageData.archive).forEach(key=>{ localStorage.setItem(key, JSON.stringify(packageData.archive[key])); });
-                        rosterData=packageData.currentSave; localStorage.setItem(getStorageKey(), JSON.stringify(rosterData)); loadRosterByMonth(); alert("🎉 全月雙行排班資料與手寫簽名還原成功！");
+                        rosterData=packageData.currentSave; localStorage.setItem(getStorageKey(), JSON.stringify(rosterData)); loadRosterByMonth(); alert("🎉 全月三行排班資料與手寫簽名還原成功！");
                     }
                 } else { alert("Error file format!"); }
             } catch(err) { alert("Load file failed!"); }
             event.target.value='';
         }; reader.readAsText(file);
     }
+
 </script>
 </body>
 </html>
