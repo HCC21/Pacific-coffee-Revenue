@@ -3,84 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>咖啡店員工排班管理系統 (高級雙軌 PDF 自動命名完全體)</title>
+    <title>咖啡店員工排班管理系統</title>
    <!-- PDF依賴 正確CDN 順序不能亂 -->
 <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
     <style>
-        :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
-        body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 13px; position: relative; -webkit-overflow-scrolling: touch; }
-        .controls-panel { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .controls-panel select, .controls-panel input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; }
-        .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
-        .btn-primary { background: var(--accent); } .btn-success { background: var(--success); } .btn-gray { background: #64748b; } .btn-danger { background: var(--danger); }
-        .btn-lang { background: #0f172a; border: 2px solid #38bdf8; color: #38bdf8; } .btn-lang:hover { background: #38bdf8; color: #0f172a; }
-        .floating-trigger-btn { position: fixed; right: 20px; bottom: 30px; z-index: 9999; background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: 50px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(79,70,229,0.4); display: flex; align-items: center; gap: 6px; }
-        .side-drawer-panel { position: fixed; top: 0; right: -420px; width: 400px; height: 100vh; background: #ffffff; box-shadow: -5px 0 25px rgba(0,0,0,0.15); z-index: 10000; overflow-y: auto; padding: 20px; transition: right 0.3s ease; border-left: 3px solid var(--accent); }
-        .side-drawer-panel.open { right: 0; }
-        .drawer-close { background: #cbd5e1; border: none; padding: 5px 10px; font-weight: bold; border-radius: 4px; cursor: pointer; float: right; font-size: 11px; }
-        .drawer-section-title { font-size: 14px; font-weight: bold; color: var(--accent); margin: 15px 0 8px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; }
-        .drawer-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-        .drawer-list li { background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: bold; }
-        .drawer-list li span { color: var(--accent); font-weight: 900; margin-right: 6px; }
-        .roster-report { background: var(--card); border: 2px solid #000; padding: 20px; border-radius: 4px; overflow-x: auto; }
-        .report-title { font-size: 22px; text-align: center; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 2px double #000; font-weight: bold; }
-        .legend-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 15px; border-radius: 4px; width: 100% !important; }
+     :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 18px; position: relative; -webkit-overflow-scrolling: touch; }
+.controls-panel { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.controls-panel select, .controls-panel input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; }
+.btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+.btn-primary { background: var(--accent); } .btn-success { background: var(--success); } .btn-gray { background: #64748b; } .btn-danger { background: var(--danger); }
+.btn-lang { background: #0f172a; border: 2px solid #38bdf8; color: #38bdf8; } .btn-lang:hover { background: #38bdf8; color: #0f172a; }
+.floating-trigger-btn { position: fixed; right: 20px; bottom: 30px; z-index: 9999; background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: 50px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(79,70,229,0.4); display: flex; align-items: center; gap: 6px; }
+.side-drawer-panel { position: fixed; top: 0; right: -420px; width: 400px; height: 100vh; background: #ffffff; box-shadow: -5px 0 25px rgba(0,0,0,0.15); z-index: 10000; overflow-y: auto; padding: 20px; transition: right 0.3s ease; border-left: 3px solid var(--accent); }
+.side-drawer-panel.open { right: 0; }
+.drawer-close { background: #cbd5e1; border: none; padding: 5px 10px; font-weight: bold; border-radius: 4px; cursor: pointer; float: right; font-size: 11px; }
+.drawer-section-title { font-size: 14px; font-weight: bold; color: var(--accent); margin: 15px 0 8px 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; }
+.drawer-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.drawer-list li { background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: bold; }
+.drawer-list li span { color: var(--accent); font-weight: 900; margin-right: 6px; }
+.roster-report { background: var(--card); border: 2px solid #000; padding: 20px; border-radius: 4px; overflow-x: auto; }
+.report-title { font-size: 22px; text-align: center; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 2px double #000; font-weight: bold; }
+.legend-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 15px; border-radius: 4px; width: 100% !important; }
+.report-header { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+.report-header td { border: none; padding: 4px; font-weight: bold; }
+.legend-item { display: flex; align-items: center; gap: 6px; background: white; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; }
+.legend-item input {flex-shrink: 0;}
+.legend-item input.code-key { font-weight: bold; width: 35px; text-align: center; border: 1px solid #cbd5e1; border-radius: 3px; text-transform: uppercase; color: var(--accent); }
+.legend-item input.time-range { width: 115px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 18px; padding: 3px; }
+.legend-item input.hours-num { width: 50px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 18px; padding: 3px; text-align: center; font-weight: bold; background: #fff7ed; color: #c2410c; }
+.del-code-btn { background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; padding: 0 6px; font-weight: bold; min-width: 24px; flex-shrink: 0;  }
 
-        .report-header { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-        .report-header td { border: none; padding: 4px; font-weight: bold; }
-        .legend-item { display: flex; align-items: center; gap: 4px; background: white; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; }
-        .legend-item input.code-key { font-weight: bold; width: 45px; text-align: center; border: 1px solid #cbd5e1; border-radius: 3px; text-transform: uppercase; color: var(--accent); }
-        .legend-item input.time-range { width: 100px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 11px; padding: 3px; }
-        .legend-item input.hours-num { width: 40px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 11px; padding: 3px; text-align: center; font-weight: bold; background: #fff7ed; color: #c2410c; }
-        .del-code-btn { background: none; border: none; color: var(--danger); font-size: 16px; cursor: pointer; padding: 0 4px; font-weight: bold; }
-        
-        table.roster-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 1950px; margin-top: 10px; table-layout: fixed; }
-        table.roster-table th, table.roster-table td { border: 1px solid #000; padding: 2px; font-size: 11px; overflow: hidden; }
-        table.roster-table th { background: #f1f5f9; font-weight: bold; position: relative; vertical-align: middle; }
-        .hk-sh-hint { display: block; font-size: 9px; color: #dc2626; font-weight: normal; margin-top: 2px; line-height: 1.1; max-width: 45px; margin-left: auto; margin-right: auto; }
-        
-        /* 三行單格精密網格排版 CSS */
-        .cell-triple-container { display: flex; flex-direction: column; gap: 1px; width: 100%; height: 100%; justify-content: center; }
-        
-        /* 1. 頂層外借/跨店備註欄（淡藍色，多行自動換行） */
-        .cell-textarea-note { border: none; text-align: center; width: 100%; font-size: 10px; font-weight: bold; outline: none; background: #e0f2fe; color: #0369a1; border-radius: 2px; padding: 1px 0; border-bottom: 1px dotted #bae6fd; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 26px; }
-        
-        /* 2. 中層更期代號/自訂時間帶（白色，多行自動換行） */
-        .cell-textarea-top { border: none; text-align: center; width: 100%; font-size: 10px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 26px; padding: 2px 0; border-bottom: 1px dashed #cbd5e1; }
-        
-        /* 3. 底層結算時鐘欄（淡黃色） */
-        .cell-input-bottom { border: none; text-align: center; width: 100%; font-size: 11px; font-weight: 900; outline: none; background: #fef3c7; color: #b45309; border-radius: 2px; padding: 1px 0; }
-        .cell-input-bottom.user-modified { background: #fee2e2; color: #991b1b; } 
-        
-        .col-action { width: 65px; min-width: 65px; background: #f8fafc; text-align: center; padding: 2px !important; }
-        .btn-grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 44px; margin: 0 auto; }
-        .row-action-btn { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 20px; font-size: 9px; border: none; border-radius: 2px; font-weight: bold; color: white; cursor: pointer; }
-        .col-name { width: 150px; min-width: 150px; background: #f8fafc; font-weight: bold; }
-        .col-no { width: 125px; min-width: 125px; } .col-day { width: 46px; min-width: 46px; } .col-hours { width: 85px; min-width: 85px; }
-        
-        /* 簽名與 PDF 顯影優化排版 */
-        .col-sign { width: 115px; min-width: 115px; position: relative; padding: 2px !important; background: #fafafa; }
-        .sig-container-wrapper { width: 100%; height: 38px; position: relative; }
-        .sig-canvas { width: 100%; height: 38px; display: block; cursor: crosshair; background: transparent; touch-action: none; position: absolute; top: 0; left: 0; z-index: 5; }
-        .sig-print-img { width: 100%; height: 38px; display: none; position: absolute; top: 0; left: 0; z-index: 2; object-fit: contain; background: transparent; }
-        .action-clear-sig { position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; font-size: 10px; padding: 0; margin: 0; border: 1px solid #cbd5e1; background: rgba(241,245,249,0.9); color: #475569; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; z-index: 10; }
-        .header-input { border: none; border-bottom: 1px solid #000; font-size: 13px; font-weight: bold; outline: none; padding: 2px; }
-        .footer-sign-area { display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; padding: 0 10px; }
-        .sign-line { border-top: 1px solid #000; width: 260px; margin-top: 50px; text-align: center; padding-top: 5px; font-size: 12px; }
-        
-        /* PDF 專用向量列印引擎防線 */
-        .pdf-printing-target { background: white !important; padding: 0 !important; width: 1950px !important; }
-        .pdf-printing-target .no-print-btn { display: none !important; }
-        .pdf-printing-target .col-action { display: none !important; }
-        .pdf-printing-target .sig-canvas { display: none !important; }
-        .pdf-printing-target .sig-print-img { display: block !important; }
-        .pdf-printing-target .cell-textarea-note { border: none !important; background: transparent !important; color: #000 !important; font-weight: bold !important; border-bottom: 1px dotted #000 !important; height: auto !important; }
-        .pdf-printing-target .cell-textarea-top { border: none !important; background: transparent !important; color: #000 !important; border-bottom: 1px dashed #000 !important; height: auto !important; }
-        .pdf-printing-target .cell-input-bottom { background: transparent !important; color: #000 !important; font-weight: bold !important; }
-    </style>
+table.roster-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 2200px; margin-top: 10px; table-layout: fixed; }
+table.roster-table th, table.roster-table td { border: 1px solid #000; padding: 2px; font-size: 14px; overflow: hidden; }
+table.roster-table th { background: #f1f5f9; font-weight: bold; position: relative; vertical-align: middle; }
+.hk-sh-hint { display: block; font-size: 9px; color: #dc2626; font-weight: normal; margin-top: 2px; line-height: 1.1; max-width: 45px; margin-left: auto; margin-right: auto; }
+
+/* 三行單格精密網格排版 CSS */
+.cell-triple-container { display: flex; flex-direction: column; gap: 1px; width: 100%; height: 100%; justify-content: center; }
+
+/* 1. 頂層外借/跨店備註欄（淡藍色，多行自動換行） */
+.cell-textarea-note { border: none; text-align: center; width: 100%; font-size: 10px; font-weight: bold; outline: none; background: #e0f2fe; color: #0369a1; border-radius: 2px; padding: 1px 0; border-bottom: 1px dotted #bae6fd; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 26px; }
+
+/* 2. 中層更期代號/自訂時間帶（白色，多行自動換行） */
+.cell-textarea-top { border: none; text-align: center; width: 100%; font-size: 16px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 50px; padding: 2px 0; border-bottom: 1px dashed #cbd5e1; }
+
+/* 3. 底層結算時鐘欄（淡黃色） */
+.cell-input-bottom { border: none; text-align: center; width: 100%; font-size: 11px; font-weight: 900; outline: none; background: #fef3c7; color: #b45309; border-radius: 2px; padding: 1px 0; }
+.cell-input-bottom.user-modified { background: #fee2e2; color: #991b1b; } 
+
+.col-action { width: 65px; min-width: 65px; background: #f8fafc; text-align: center; padding: 2px !important; }
+.btn-grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 44px; margin: 0 auto; }
+.row-action-btn { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 20px; font-size: 9px; border: none; border-radius: 2px; font-weight: bold; color: white; cursor: pointer; }
+
+/* 員工姓名方格：加粗放大 */
+.col-name { 
+    width: 100px; min-width: 100px; background: #e2e8f0; 
+    font-weight: 900; font-size: 16px !important;
+}
+.col-name input.cell-input {
+    font-weight: 900; font-size: 16px;
+}
+
+/* 員工號碼方格：加粗放大 */
+.col-no { 
+    width: 100px; min-width: 100px;
+    font-weight: bold; font-size: 16px !important;
+}
+.col-no input.cell-input {
+    font-weight: bold; font-size: 16px;
+}
+
+/* 當月總工時方格：縱向貫穿、超粗放大 */
+.col-hours { 
+    width: 65px; min-width: 65px; 
+    font-weight: 900; font-size: 15px !important;
+    vertical-align: middle;
+}
+
+/* 員工簽名方格：加粗放大、加大內邊距 */
+.col-sign { 
+    width: 115px; min-width: 115px; position: relative; padding: 4px !important; 
+    background: #fafafa; font-weight: bold; font-size: 16px !important;
+}
+
+.sig-container-wrapper { width: 100%; height: 70px; position: relative; }
+.sig-canvas { width: 100%; height: 70; display: block; cursor: crosshair; background: transparent; touch-action: none; position: absolute; top: 0; left: 0; z-index: 5; }
+.sig-print-img { width: 100%; height: 70px; display: none; position: absolute; top: 0; left: 0; z-index: 2; object-fit: contain; background: transparent; }
+.action-clear-sig { position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; font-size: 10px; padding: 0; margin: 0; border: 1px solid #cbd5e1; background: rgba(241,245,249,0.9); color: #475569; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; z-index: 10; }
+.header-input { border: none; border-bottom: 1px solid #000; font-size: 18px; font-weight: bold; outline: none; padding: 2px; }
+.footer-sign-area { display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; padding: 0 10px; }
+.sign-line { border-top: 1px solid #000; width: 260px; margin-top: 50px; text-align: center; padding-top: 5px; font-size: 18px; }
+
+/* PDF 專用向量列印引擎防線 */
+.pdf-printing-target {
+    background: white !important;
+    padding: 0 !important;
+    width: 2200px !important;
+}
+.pdf-printing-target .no-print-btn { display: none !important; }
+.pdf-printing-target .col-action { display: none !important; }
+.pdf-printing-target .sig-canvas { display: none !important; }
+.pdf-printing-target .sig-print-img { display: block !important; }
+.pdf-printing-target .cell-textarea-note { border: none !important; background: transparent !important; color: #000 !important; font-weight: bold !important; border-bottom: 1px dotted #000 !important; height: 26px !important; }
+.pdf-printing-target .cell-textarea-top { border: none !important; background: transparent !important; color: #000 !important; border-bottom: 1px dashed #000 !important; height: 26px !important; }
+.pdf-printing-target .cell-input-bottom { background: transparent !important; color: #000 !important; font-weight: bold !important; }
+/* 压缩顶部标题空白 */
+.pdf-printing-target .roster-report {
+    padding: 0px !important;
+}
+.pdf-printing-target .report-header {
+    margin-bottom: 0px !important;
+}
+.pdf-printing-target .report-title {
+    margin-bottom: 0px !important;
+    padding-bottom: 0px !important;
+}    </style>
 </head>
 <body>
 
@@ -399,7 +440,7 @@
                     <td>
                         <div class="cell-triple-container">
                             <textarea id="cell_note_${empIdx}_${d}" class="cell-textarea-note" placeholder="..." onchange="autoSave()">${savedNote}</textarea>
-                            <textarea id="cell_top_${empIdx}_${d}" class="cell-textarea-top" oninput="handleTopInput(${empIdx},${d})">${savedCode}</textarea>
+                         <textarea id="cell_top_${empIdx}_${d}" class="cell-textarea-top" oninput="handleTopInput(${empIdx},${d})">${savedCode.toUpperCase()}</textarea>
                             <input type="text" id="cell_btm_${empIdx}_${d}" class="cell-input-bottom ${modClass}" value="${savedHours}" onchange="handleBtmInput(${empIdx},${d})">
                         </div>
                     </td>`;
@@ -435,10 +476,14 @@
     }
 
     // 第一行輸入更期代號或自訂時間帶時觸獲的智慧聯動
-    function handleTopInput(empIdx, d) {
-        const topVal = document.getElementById(`cell_top_${empIdx}_${d}`).value.toUpperCase().trim();
-        const btmInp = document.getElementById(`cell_btm_${empIdx}_${d}`);
-        
+   function handleTopInput(empIdx, d) {
+    const topInpEl = document.getElementById(`cell_top_${empIdx}_${d}`); // 1. 先獲取元素
+    let topVal = topInpEl.value.toUpperCase().trim(); // 2. 轉大寫
+    topInpEl.value = topVal; //  【加入這行】讓輸入框的文字在內部真正變成大寫！
+    
+    const btmInp = document.getElementById(`cell_btm_${empIdx}_${d}`);
+    // ...後面原本的程式碼保持不變...
+
         if (!topVal) { btmInp.value = ''; btmInp.classList.remove('user-modified'); autoSave(); return; }
         
         const matched = rosterData.legend.find(item => item.code === topVal);
@@ -568,28 +613,24 @@
     targetElement.classList.add('pdf-printing-target');
 
     // 【核心修正參數】強制單頁、自動縮放適配A4橫向
-    const pdfOptions = {
-        margin: 3, // 輕微留白，防止內容被頁邊裁切
-        filename: finalFileName,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: {
-            scale: 1.2, // 降低解析度，大幅減少寬度溢出
-            useCORS: true,
-            logging: false,
-            letterRendering: true,
-            width: 1950, // 固定表格原始寬度
-        },
-        jsPDF: {
-            unit: 'mm',
-            format: 'a4',
-            orientation: 'landscape' // 橫向A4不建議修改
-        },
-        // 禁止自動分頁，所有內容強制同一頁
-        pagebreak: {
-            mode: ['avoid-all', 'css', 'legacy'],
-            before: '.no-page-break'
-        }
-    };
+ const pdfOptions = {
+    margin: [2, 2, 5, 2],
+    filename: finalFileName,
+    image: { type: 'jpeg', quality: 0.95 },
+    html2canvas: {
+        scale: 1.2,
+        useCORS: true,
+        logging: false,
+        letterRendering: true,
+        width: 2200,
+    },
+    jsPDF: {
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'landscape'
+    },
+    pagebreak: { mode: 'avoid-all' } // 簡化為 avoid-all，防止在表格中間或上方強制斷頁
+};
 
     html2pdf()
         .set(pdfOptions)
