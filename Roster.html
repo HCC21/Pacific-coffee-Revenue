@@ -4,14 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>咖啡店員工排班管理系統</title>
-   <!-- PDF依賴 正確CDN 順序不能亂 -->
-<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
     <style>
      :root { --primary: #1e293b; --accent: #4f46e5; --success: #16a34a; --danger: #dc2626; --bg: #f8fafc; --card: #ffffff; --border: #94a3b8; }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
-body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 18px; position: relative; -webkit-overflow-scrolling: touch; }
+body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 12px; position: relative; -webkit-overflow-scrolling: touch; }
 .controls-panel { background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .controls-panel select, .controls-panel input { padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; }
 .btn { padding: 6px 12px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
@@ -26,102 +22,101 @@ body { background: var(--bg); padding: 15px; color: #1e293b; font-size: 18px; po
 .drawer-list li { background: #f8fafc; padding: 6px 10px; border-radius: 4px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: bold; }
 .drawer-list li span { color: var(--accent); font-weight: 900; margin-right: 6px; }
 .roster-report { background: var(--card); border: 2px solid #000; padding: 20px; border-radius: 4px; overflow-x: auto; }
-.report-title { font-size: 22px; text-align: center; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 2px double #000; font-weight: bold; }
+.report-title { font-size: 12px; text-align: center; letter-spacing: 2px; padding-bottom: 10px; border-bottom: 2px double #000; font-weight: bold; }
 .legend-section { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 15px; border-radius: 4px; width: 100% !important; }
 .report-header { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
 .report-header td { border: none; padding: 4px; font-weight: bold; }
 .legend-item { display: flex; align-items: center; gap: 6px; background: white; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; }
 .legend-item input {flex-shrink: 0;}
 .legend-item input.code-key { font-weight: bold; width: 35px; text-align: center; border: 1px solid #cbd5e1; border-radius: 3px; text-transform: uppercase; color: var(--accent); }
-.legend-item input.time-range { width: 115px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 18px; padding: 3px; }
-.legend-item input.hours-num { width: 50px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 18px; padding: 3px; text-align: center; font-weight: bold; background: #fff7ed; color: #c2410c; }
-.del-code-btn { background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; padding: 0 6px; font-weight: bold; min-width: 24px; flex-shrink: 0;  }
+.legend-item input.time-range { width: 115px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 12px; padding: 3px; }
+.legend-item input.hours-num { width: 50px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 12px; padding: 3px; text-align: center; font-weight: bold; background: #fff7ed; color: #c2410c; }
+.del-code-btn { background: none; border: none; color: var(--danger); font-size: 12px; cursor: pointer; padding: 0 6px; font-weight: bold; min-width: 24px; flex-shrink: 0;  }
 
 table.roster-table { width: 100%; border-collapse: collapse; text-align: center; min-width: 2200px; margin-top: 10px; table-layout: fixed; }
 table.roster-table th, table.roster-table td { border: 1px solid #000; padding: 2px; font-size: 14px; overflow: hidden; }
 table.roster-table th { background: #f1f5f9; font-weight: bold; position: relative; vertical-align: middle; }
 .hk-sh-hint { display: block; font-size: 9px; color: #dc2626; font-weight: normal; margin-top: 2px; line-height: 1.1; max-width: 45px; margin-left: auto; margin-right: auto; }
 
-/* 三行單格精密網格排版 CSS */
 .cell-triple-container { display: flex; flex-direction: column; gap: 1px; width: 100%; height: 100%; justify-content: center; }
 
-/* 1. 頂層外借/跨店備註欄（淡藍色，多行自動換行） */
+
 .cell-textarea-note { border: none; text-align: center; width: 100%; font-size: 10px; font-weight: bold; outline: none; background: #e0f2fe; color: #0369a1; border-radius: 2px; padding: 1px 0; border-bottom: 1px dotted #bae6fd; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 26px; }
 
-/* 2. 中層更期代號/自訂時間帶（白色，多行自動換行） */
-.cell-textarea-top { border: none; text-align: center; width: 100%; font-size: 16px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 50px; padding: 2px 0; border-bottom: 1px dashed #cbd5e1; }
 
-/* 3. 底層結算時鐘欄（淡黃色） */
-.cell-input-bottom { border: none; text-align: center; width: 100%; font-size: 11px; font-weight: 900; outline: none; background: #fef3c7; color: #b45309; border-radius: 2px; padding: 1px 0; }
+.cell-textarea-top { border: none; text-align: center; width: 100%; font-size: 10px; font-weight: bold; outline: none; background: transparent; text-transform: uppercase; resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all; font-family: inherit; line-height: 1.2; height: 30px; padding: 2px 0; border-bottom: 1px dashed #cbd5e1; }
+
+
+.cell-input-bottom { border: none; text-align: center; width: 100%; font-size: 8.5px; font-weight: 900; outline: none; background: #fef3c7; color: #b45309; border-radius: 2px; padding: 1px 0; }
 .cell-input-bottom.user-modified { background: #fee2e2; color: #991b1b; } 
 
 .col-action { width: 65px; min-width: 65px; background: #f8fafc; text-align: center; padding: 2px !important; }
 .btn-grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 44px; margin: 0 auto; }
 .row-action-btn { display: inline-flex; align-items: center; justify-content: center; width: 21px; height: 20px; font-size: 9px; border: none; border-radius: 2px; font-weight: bold; color: white; cursor: pointer; }
 
-/* 員工姓名方格：加粗放大 */
-.col-name { 
-    width: 100px; min-width: 100px; background: #e2e8f0; 
-    font-weight: 900; font-size: 16px !important;
-}
-.col-name input.cell-input {
-    font-weight: 900; font-size: 16px;
-}
+.col-name { width: 100px; min-width: 100px; background: #e2e8f0; font-weight: 900; font-size: 10px !important; }
 
-/* 員工號碼方格：加粗放大 */
-.col-no { 
-    width: 100px; min-width: 100px;
-    font-weight: bold; font-size: 16px !important;
-}
-.col-no input.cell-input {
-    font-weight: bold; font-size: 16px;
-}
+.col-name input.cell-input { font-weight: 900; font-size: 16px; border: none; background: transparent; width: 100%; text-align: center; }
 
-/* 當月總工時方格：縱向貫穿、超粗放大 */
-.col-hours { 
-    width: 65px; min-width: 65px; 
-    font-weight: 900; font-size: 15px !important;
-    vertical-align: middle;
-}
+.col-no { width: 100px; min-width: 100px; font-weight: 900; font-size: 10px !important; }
 
-/* 員工簽名方格：加粗放大、加大內邊距 */
-.col-sign { 
-    width: 115px; min-width: 115px; position: relative; padding: 4px !important; 
-    background: #fafafa; font-weight: bold; font-size: 16px !important;
-}
+.col-no input.cell-input { font-weight: 900; font-size: 16px; border: none; background: transparent; width: 100%; text-align: center; }
 
-.sig-container-wrapper { width: 100%; height: 70px; position: relative; }
-.sig-canvas { width: 100%; height: 70; display: block; cursor: crosshair; background: transparent; touch-action: none; position: absolute; top: 0; left: 0; z-index: 5; }
-.sig-print-img { width: 100%; height: 70px; display: none; position: absolute; top: 0; left: 0; z-index: 2; object-fit: contain; background: transparent; }
+
+.col-hours { width: 65px; min-width: 65px; font-weight: 900; font-size: 10px !important; vertical-align: middle; }
+.col-sign { width: 115px; min-width: 115px; position: relative; padding: 4px !important; background: #fafafa; font-weight: bold; font-size: 10px !important; }
+
+.sig-container-wrapper { width: 100%; height: 50px; position: relative; }
+.sig-canvas { width: 100%; height: 50px; display: block; cursor: crosshair; background: transparent; touch-action: none; position: absolute; top: 0; left: 0; z-index: 5; }
+.sig-print-img { width: 100%; height: 50px; display: none; position: absolute; top: 0; left: 0; z-index: 2; object-fit: contain; background: transparent; }
 .action-clear-sig { position: absolute; right: 2px; bottom: 2px; width: 18px; height: 18px; font-size: 10px; padding: 0; margin: 0; border: 1px solid #cbd5e1; background: rgba(241,245,249,0.9); color: #475569; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; z-index: 10; }
-.header-input { border: none; border-bottom: 1px solid #000; font-size: 18px; font-weight: bold; outline: none; padding: 2px; }
+.header-input { border: none; border-bottom: 1px solid #000; font-size: 12px; font-weight: bold; outline: none; padding: 2px; background: transparent; }
 .footer-sign-area { display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; padding: 0 10px; }
-.sign-line { border-top: 1px solid #000; width: 260px; margin-top: 50px; text-align: center; padding-top: 5px; font-size: 18px; }
+.sign-line { border-top: 1px solid #000; width: 260px; margin-top: -px; text-align: center; padding-top: -15px; font-size: 9px; }
+#trDailyTotalHours td {
+    font-size: 9px !important;
+}
 
-/* PDF 專用向量列印引擎防線 */
-.pdf-printing-target {
-    background: white !important;
-    padding: 0 !important;
-    width: 2200px !important;
+/* ==========================================================================
+   🖨️ 瀏覽器原生列印引擎最佳化設定 (100% 還原網頁版面)
+   ========================================================================== */
+@media print {
+    @page {
+        size: landscape; /* 預設橫向 */
+        margin: 5mm;     /* 縮小頁邊距，留出更多空間給大表格 */
+    }
+
+    .no-print-btn, .col-action, .action-clear-sig {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        padding: 0 !important;
+    }
+
+    .roster-report {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+        page-break-inside: avoid !important; /* 強制整張表不切斷 */
+    }
+
+    /* 確保寬度可以被列印引擎自由縮放 */
+    table.roster-table {
+        min-width: 100% !important; 
+    }
+
+    .sig-canvas { display: none !important; }
+    .sig-print-img { display: block !important; }
+    .cell-textarea-note { background: #e0f2fe !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .cell-input-bottom { background: #fef3c7 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .cell-input-bottom.user-modified { background: #fee2e2 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
-.pdf-printing-target .no-print-btn { display: none !important; }
-.pdf-printing-target .col-action { display: none !important; }
-.pdf-printing-target .sig-canvas { display: none !important; }
-.pdf-printing-target .sig-print-img { display: block !important; }
-.pdf-printing-target .cell-textarea-note { border: none !important; background: transparent !important; color: #000 !important; font-weight: bold !important; border-bottom: 1px dotted #000 !important; height: 26px !important; }
-.pdf-printing-target .cell-textarea-top { border: none !important; background: transparent !important; color: #000 !important; border-bottom: 1px dashed #000 !important; height: 26px !important; }
-.pdf-printing-target .cell-input-bottom { background: transparent !important; color: #000 !important; font-weight: bold !important; }
-/* 压缩顶部标题空白 */
-.pdf-printing-target .roster-report {
-    padding: 0px !important;
-}
-.pdf-printing-target .report-header {
-    margin-bottom: 0px !important;
-}
-.pdf-printing-target .report-title {
-    margin-bottom: 0px !important;
-    padding-bottom: 0px !important;
-}    </style>
+    </style>
 </head>
 <body>
 
@@ -130,7 +125,7 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
     📋 <span class="lang-txt" data-zh="代號及假期總覽" data-en="Codes & Holidays">代號及假期總覽</span>
 </button>
 
-<!-- 側邊滑出式大面板 (100% 獨立收置 11 種基本假期代號與最新 15 天勞工假) -->
+<!-- 側邊滑出式大面板 -->
 <div id="sideDrawerPanel" class="side-drawer-panel no-print-btn">
     <button class="drawer-close" onclick="toggleSideDrawer()">✕ Close</button>
     <h3 style="font-size:15px; margin-bottom:10px; color:var(--primary);" class="lang-txt" data-zh="📋 系統資訊快閱面板" data-en="📋 System Reference Ledger">📋 系統資訊快閱面板</h3>
@@ -155,14 +150,13 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         <input type="file" id="importSystemFile" accept=".txt" onchange="importSystemTxtFile(event)" style="display:none;">
     </label>
     <div style="width: 2px; height: 20px; background: #cbd5e1; margin: 0 5px;"></div>
-    <!-- 原Print按鈕升級為單頁 A4 智慧命名導出 PDF 功能 -->
-    <button class="btn btn-gray" style="background:#4f46e5;" onclick="exportRosterToPdf()"><span class="lang-txt" data-zh="📄 匯出 PDF" data-en="📄 Export PDF">📄 匯出 PDF</span></button>
+    
+    <button class="btn btn-gray" style="background:#4f46e5;" onclick="triggerPrint()"><span class="lang-txt" data-zh="🖨️ 預覽列印 / 另存 PDF" data-en="🖨️ Print / Save as PDF">🖨️ 預覽列印 / 另存 PDF</span></button>
     <button class="btn btn-danger" style="background:#dc2626;" onclick="btnResetAllSystem()"><span class="lang-txt" data-zh="🚨 清除所有" data-en="🚨 Reset All">🚨 清除所有</span></button>
 </div>
 
 <!-- 官方格式報表紙張 -->
 <div class="roster-report" id="rosterReportArea">
-    <!-- 智慧中英切換：更表大標題支援即時中英文切換 -->
     <div class="report-title lang-txt" id="mainRosterTitleLbl" data-zh="更表" data-en="ROSTER">更表</div>
     
     <table class="report-header">
@@ -179,18 +173,18 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         </tr>
     </table>
 
-    <div class="no-print-area">
+    <div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin: 10px 0;" class="no-print-btn">
-            <h2 style="font-size:14px; color:var(--accent); margin:0;" class="lang-txt" data-zh="更期代號自訂對照表" data-en="Shift Code Reference Table">更期代號自訂對照表</h2>
+            <h2 style="font-size:12px; color:var(--accent); margin:0;" class="lang-txt" data-zh="更期代號自訂對照表" data-en="Shift Code Reference Table">更期代號自訂對照表</h2>
             <button class="btn btn-primary" onclick="addNewCodeItemAtD()" style="padding:4px 8px; font-size:12px;"><span class="lang-txt" data-zh="＋ 增加代號列" data-en="＋ Add Code Row">＋ Add Code Row</span></button>
         </div>
         <div class="legend-section" id="legendContainer"></div>
     </div>
+    
     <!-- 主排班大表格 -->
     <table class="roster-table" id="mainRosterTable">
         <thead>
             <tr id="trHeaderDays"></tr>
-            <!-- 🎯 星期一至日（Mon~Sun）永久固定英文格式排 -->
             <tr id="trHeaderWdays"></tr>
         </thead>
         <tbody id="tbodyRows"></tbody>
@@ -244,7 +238,7 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         2024: { "1-1": "元旦", "2-10": "年初一", "2-12": "年初三", "2-13": "年初四", "4-4": "清明節", "5-1": "勞動節", "5-15": "佛誕", "6-10": "端午節", "7-1": "特區成立", "9-18": "中秋節翌日", "10-1": "國慶日", "10-11": "重陽節", "12-21": "冬至", "12-25": "聖誕節" },
         2025: { "1-1": "元旦", "1-29": "年初一", "1-30": "年初二", "1-31": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-5": "佛誕", "6-2": "端午節", "7-1": "特區成立", "10-1": "國慶日", "10-7": "中秋節翌日", "10-29": "重陽節", "12-22": "冬至", "12-25": "聖誕節" },
         2026: { "1-1": "元旦", "2-17": "年初一", "2-18": "年初二", "2-19": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-24": "佛誕", "6-19": "端午節", "7-1": "特區成立", "9-26": "中秋節翌日", "10-1": "國慶日", "10-19": "重陽節", "12-22": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" },
-        2027: { "1-1": "元旦", "2-6": "年初一", "2-7": "年初二", "2-8": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-13": "佛誕", "6-9": "端午節", "7-1": "特區成立", "9-16": "中秋節翌日", "10-1": "國慶日", "10-8": "重陽節", "12-22": "冬至", "12-25": "聖誕節", "12-27": "聖誕節翌日" },
+        2027: { "1-1": "元旦", "2-6": "年初一", "2-7": "年初2", "2-8": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-13": "佛誕", "6-9": "端午節", "7-1": "特區成立", "9-16": "中秋節翌日", "10-1": "國慶日", "10-8": "重陽節", "12-22": "冬至", "12-25": "聖誕節", "12-27": "聖誕節翌日" },
         2028: { "1-1": "元旦", "1-26": "年初一", "1-27": "年初二", "1-28": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-2": "佛誕", "5-28": "端午節", "7-1": "特區成立", "10-1": "國慶日", "10-4": "中秋節翌日", "10-26": "重陽節", "12-21": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" },
         2029: { "1-1": "元旦", "2-13": "年初一", "2-14": "年初二", "2-15": "年初三", "4-4": "清明節", "5-1": "勞動節", "5-20": "佛誕", "6-16": "端午節", "7-1": "特區成立", "9-22": "中秋節翌日", "10-1": "國慶日", "10-16": "重陽節", "12-21": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" },
         2030: { "1-1": "元旦", "2-3": "年初一", "2-4": "年初二", "2-5": "年初三", "4-5": "清明節", "5-1": "勞動節", "5-9": "佛誕", "6-5": "端午節", "7-1": "特區成立", "9-13": "中秋節翌日", "10-1": "國慶日", "10-6": "重陽節", "12-22": "冬至", "12-25": "聖誕節", "12-26": "聖誕節翌日" }
@@ -357,7 +351,7 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         });
         container.innerHTML = html;
     }
-    // 🎯 終極修復：100% 根除 1,1/1,1 複製 Bug，並將側邊欄假期與代號改為「中英文永久同時並存」顯示
+
     function updateHkHolidaysLedger() {
         const year = parseInt(document.getElementById('yearSelect').value) || 2026;
         document.getElementById('drawerYearTitle').innerText = year;
@@ -369,10 +363,9 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         } else {
             let htmlHolidays = '';
             Object.keys(HK_HOLIDAYS[year]).forEach(dateKey => {
-                const parts = dateKey.split('-'); // 1-1 拆分
+                const parts = dateKey.split('-'); 
                 const holidayZh = HK_HOLIDAYS[year][dateKey];
                 const holidayEn = LANG_DICT.en[holidayZh] || holidayZh;
-                // 🎯 核心補正：日/月精確組裝（如 1/1），並強制中英文並存顯示
                 htmlHolidays += `<li><span>📅 ${parts[1]}/${parts[0]}</span> ${holidayZh} | ${holidayEn}</li>`;
             });
             gridHolidays.innerHTML = htmlHolidays;
@@ -388,7 +381,6 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         essentialLeaves.forEach(item => {
             const leaveZh = LANG_DICT.zh[item.txt] || item.txt;
             const leaveEn = LANG_DICT.en[item.txt] || item.txt;
-            // 🎯 核心補正：基本代號對照永久同時顯示中文與英文
             htmlLeaves += `<li><span>🏷️ ${item.code}</span> ${leaveZh} | ${leaveEn}</li>`;
         });
         gridLeaves.innerHTML = htmlLeaves;
@@ -440,7 +432,7 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
                     <td>
                         <div class="cell-triple-container">
                             <textarea id="cell_note_${empIdx}_${d}" class="cell-textarea-note" placeholder="..." onchange="autoSave()">${savedNote}</textarea>
-                         <textarea id="cell_top_${empIdx}_${d}" class="cell-textarea-top" oninput="handleTopInput(${empIdx},${d})">${savedCode.toUpperCase()}</textarea>
+                            <textarea id="cell_top_${empIdx}_${d}" class="cell-textarea-top" oninput="handleTopInput(${empIdx},${d})">${savedCode.toUpperCase()}</textarea>
                             <input type="text" id="cell_btm_${empIdx}_${d}" class="cell-input-bottom ${modClass}" value="${savedHours}" onchange="handleBtmInput(${empIdx},${d})">
                         </div>
                     </td>`;
@@ -450,7 +442,7 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         document.getElementById('tbodyRows').innerHTML = rowsHtml; calculateRosterStats();
         setTimeout(() => { rosterData.employees.forEach((emp, empIdx) => { initSignaturePad(empIdx, emp.signature); }); }, 50);
     }
-    // 🎯 智慧解碼引擎：計算絕對時間差，100% 取消自動扣除 1 小時飯鐘，實到多久就直接算多長
+
     function parseTimeRangeToHours(str) {
         if (!str) return null;
         const clean = str.replace(/[:\s]/g, '').replace(/~/g, '-'); 
@@ -470,19 +462,17 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         if (startMins === null || endMins === null) return null;
         
         let diff = endMins - startMins;
-        if (diff < 0) diff += 24 * 60; // 跨深夜更期智慧演算補償
+        if (diff < 0) diff += 24 * 60; 
         
-        return parseFloat((diff / 60).toFixed(2)); // 🎯 直接輸出 100% 真實時數
+        return parseFloat((diff / 60).toFixed(2)); 
     }
 
-    // 第一行輸入更期代號或自訂時間帶時觸獲的智慧聯動
-   function handleTopInput(empIdx, d) {
-    const topInpEl = document.getElementById(`cell_top_${empIdx}_${d}`); // 1. 先獲取元素
-    let topVal = topInpEl.value.toUpperCase().trim(); // 2. 轉大寫
-    topInpEl.value = topVal; //  【加入這行】讓輸入框的文字在內部真正變成大寫！
-    
-    const btmInp = document.getElementById(`cell_btm_${empIdx}_${d}`);
-    // ...後面原本的程式碼保持不變...
+    function handleTopInput(empIdx, d) {
+        const topInpEl = document.getElementById(`cell_top_${empIdx}_${d}`); 
+        let topVal = topInpEl.value.toUpperCase().trim(); 
+        topInpEl.value = topVal; 
+        
+        const btmInp = document.getElementById(`cell_btm_${empIdx}_${d}`);
 
         if (!topVal) { btmInp.value = ''; btmInp.classList.remove('user-modified'); autoSave(); return; }
         
@@ -500,7 +490,6 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         autoSave();
     }
 
-    // 🎯 智慧失焦防卡鎖：打字時（如輸入 12.25）完全不干擾，移開手指或失焦才補全兩位小數與變紅
     function handleBtmInput(empIdx, d) {
         const btmInp = document.getElementById(`cell_btm_${empIdx}_${d}`);
         const rawVal = btmInp.value.trim();
@@ -508,8 +497,8 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         if (rawVal !== '') {
             let val = parseFloat(rawVal);
             if (!isNaN(val)) {
-                btmInp.value = val.toFixed(2); // 失焦後補齊
-                btmInp.classList.add('user-modified'); // 紅色特發更改標記
+                btmInp.value = val.toFixed(2); 
+                btmInp.classList.add('user-modified'); 
             } else {
                 btmInp.value = ''; btmInp.classList.remove('user-modified');
             }
@@ -519,7 +508,6 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         autoSave();
     }
 
-    // 總工時計算核心：全面升級小數點後雙位精密加總核心
     function calculateRosterStats(){
         const daysInMonth = getDaysInMonth(); let dailyTotalsArray = new Array(daysInMonth + 1).fill(0);
         rosterData.employees.forEach((emp, empIdx) => {
@@ -534,12 +522,11 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         for (let d = 1; d <= daysInMonth; d++) { chTotalRowHtml += `<td style="color:#0f172a; font-weight:900;">${dailyTotalsArray[d] > 0 ? dailyTotalsArray[d].toFixed(2) : '-'}</td>`; totalAllMonth += dailyTotalsArray[d]; }
         document.getElementById('trDailyTotalHours').innerHTML = chTotalRowHtml + `<td style="background:#e2e8f0; color:var(--success); font-weight:900;">${totalAllMonth.toFixed(2)} hrs</td><td></td>`;
     }
-    // 🎯 終極修正：落筆即時重置動態像素邊界，徹底扣除表格向右滾動造成的坐標拋離移位
+
     function initSignaturePad(idx, savedImgBase64){
         const canvas = document.getElementById(`sig_canvas_${idx}`); if (!canvas) return; const ctx = canvas.getContext("2d");
         const imgEl = document.getElementById(`sig_img_${idx}`);
         
-        // 確保初始像素寬高完全等於 CSS 實際物理高寬
         canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
         ctx.strokeStyle = "#000000"; ctx.lineWidth = 0.7; ctx.lineCap = "round"; ctx.lineJoin = "round";
         let isDrawing = false; let lastX = 0; let lastY = 0; canvasObjects[idx] = { instance: canvas, isSigned: false };
@@ -551,18 +538,13 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
             canvasObjects[idx].isSigned = true;
         }
         
-        // 🎯 核心補正：不依賴初始化 rect，落筆瞬間即時拉取最新幾何邊界，100% 根除滾動偏移 Bug
         function getCoords(e){
-            const cRect = canvas.getBoundingClientRect(); // ⚡ 即時獲取當前最新的網頁絕對邊界
+            const cRect = canvas.getBoundingClientRect(); 
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { 
-                x: clientX - cRect.left, 
-                y: clientY - cRect.top 
-            };
+            return { x: clientX - cRect.left, y: clientY - cRect.top };
         }
         
-        // 滑鼠手勢硬體流暢通道
         canvas.addEventListener("mousedown", (e)=>{ isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; });
         canvas.addEventListener("mousemove", (e)=>{
             if(!isDrawing) return; const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
@@ -573,13 +555,12 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
             if(isDrawing){
                 isDrawing=false;
                 const base64Data = canvas.toDataURL();
-                if (imgEl) imgEl.src = base64Data; // 建立 A4 實體映像供 PDF 快照讀取
+                if (imgEl) imgEl.src = base64Data; 
                 autoSave();
             }
         };
         canvas.addEventListener("mouseup", endDraw); window.addEventListener("mouseup", endDraw);
         
-        // 🎯 平板觸控筆/手指防滑動干擾：100% 阻斷拉扯整個頁面滾動條的現象
         canvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); e.stopPropagation(); isDrawing=true; const c=getCoords(e); lastX=c.x; lastY=c.y; }, { passive: false });
         canvas.addEventListener("touchmove", (e)=>{
             if(!isDrawing) return; e.preventDefault(); e.stopPropagation(); const c=getCoords(e); ctx.lineWidth=0.7; ctx.lineCap="round"; ctx.lineJoin="round";
@@ -588,79 +569,17 @@ table.roster-table th { background: #f1f5f9; font-weight: bold; position: relati
         canvas.addEventListener("touchend", (e)=>{ e.preventDefault(); e.stopPropagation(); endDraw(); }, { passive: false });
     }
 
- function exportRosterToPdf() {
-    syncUIToMemory(); 
-    
-    let rawCh = document.getElementById('metaCoffeeHouse').value.trim();
-    let chName = rawCh ? rawCh.toUpperCase() : "ROSTER"; 
-    let yy = document.getElementById('yearSelect').value;
-    let mm = parseInt(document.getElementById('monthSelect').value) || 7;
-    
-    let mmStr = mm < 10 ? '0' + mm : mm.toString();
-    let finalFileName = `${chName}${mmStr}${yy}.pdf`;
-
-    const targetElement = document.getElementById('rosterReportArea');
-    
-    // 預渲染所有簽名圖片
-    rosterData.employees.forEach((emp, empIdx) => {
-        const canvas = document.getElementById(`sig_canvas_${empIdx}`);
-        const imgEl = document.getElementById(`sig_img_${empIdx}`);
-        if (canvas && imgEl && canvasObjects[empIdx] && canvasObjects[empIdx].isSigned) {
-            imgEl.src = canvas.toDataURL();
-        }
-    });
-
-    targetElement.classList.add('pdf-printing-target');
-
-    // 【核心修正參數】強制單頁、自動縮放適配A4橫向
- const pdfOptions = {
-    margin: [2, 2, 5, 2],
-    filename: finalFileName,
-    image: { type: 'jpeg', quality: 0.95 },
-    html2canvas: {
-        scale: 1.2,
-        useCORS: true,
-        logging: false,
-        letterRendering: true,
-        width: 2200,
-    },
-    jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: 'landscape'
-    },
-    pagebreak: { mode: 'avoid-all' } // 簡化為 avoid-all，防止在表格中間或上方強制斷頁
-};
-
-    html2pdf()
-        .set(pdfOptions)
-        .from(targetElement)
-        .output('blob')
-        .then((pdfBlob) => {
-            const blobUrl = URL.createObjectURL(pdfBlob);
-            const downloadNode = document.createElement('a');
-            downloadNode.href = blobUrl;
-            downloadNode.download = finalFileName;
-            document.body.appendChild(downloadNode);
-            downloadNode.click();
-            downloadNode.remove();
-
-            setTimeout(() => {
-                const newWindow = window.open(blobUrl, '_blank');
-                if (!newWindow || newWindow.closed) {
-                    alert("PDF已生成，如下載失敗請關閉瀏覽器彈窗攔截");
-                }
-                URL.revokeObjectURL(blobUrl);
-            }, 300);
-
-            targetElement.classList.remove('pdf-printing-target');
-        })
-        .catch((err) => {
-            targetElement.classList.remove('pdf-printing-target');
-            console.error("PDF匯出錯誤:", err);
-            alert("PDF匯出失敗，請檢查網路載入依賴");
+    function triggerPrint() {
+        syncUIToMemory(); 
+        rosterData.employees.forEach((emp, empIdx) => {
+            const canvas = document.getElementById(`sig_canvas_${empIdx}`);
+            const imgEl = document.getElementById(`sig_img_${empIdx}`);
+            if (canvas && imgEl && canvasObjects[empIdx] && canvasObjects[empIdx].isSigned) {
+                imgEl.src = canvas.toDataURL();
+            }
         });
-}
+        window.print();
+    }
  
     function clearSingleSignature(idx){ if(confirm(LANG_DICT[currentLang].confirmSig)){ rosterData.employees[idx].signature=""; const canvas=document.getElementById(`sig_canvas_${idx}`); if(canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height); const imgEl=document.getElementById(`sig_img_${idx}`); if(imgEl) imgEl.src=""; if(canvasObjects[idx]) canvasObjects[idx].isSigned=false; autoSave(); } }
     function toggleSideDrawer() { document.getElementById('sideDrawerPanel').classList.toggle('open'); }
